@@ -1,0 +1,493 @@
+﻿/* RESET */
+* {
+  box-sizing: border-box;
+}
+
+/* CONTENEDOR PRINCIPAL */
+.pago-container {
+  min-height: calc(100vh - 80px); /* ajusta según tu navbar */
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 15px;
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color: #e5e7eb;
+}
+
+/* TÍTULO */
+.pago-container h2 {
+  text-align: center;
+  font-size: 1.8rem;
+  margin: 0;
+  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* LEYENDA */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  font-size: 0.95rem;
+  color: #cbd5e1;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* CUADRITOS DE COLOR */
+.color-box {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* COLORES */
+.trabajado { background-color: #04724D; }
+.descanso { background-color: #84BCDA; }
+.incapacidad_comun { background-color: #f59e0b; }
+.incapacidad_laboral { background-color: #ef4444; }
+
+/* CONTENEDOR CALENDARIO */
+.calendar-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* CALENDARIO */
+.react-calendar {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border: none;
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(15, 23, 42, 0.92);
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.28);
+  color: #e5e7eb;
+  overflow-x: hidden;
+}
+
+/* NAVEGACIÓN (mes/año) */
+.react-calendar__navigation {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.react-calendar__navigation button {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #e5e7eb;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.95rem;
+  border-radius: 12px;
+  padding: 8px 10px;
+  transition: all 0.2s ease;
+  min-width: 72px;
+  flex: 1 1 auto;
+}
+
+.react-calendar__navigation__label,
+.react-calendar__navigation button.react-calendar__navigation__label {
+  display: none !important;
+}
+
+.calendar-current-month {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+  padding: 10px 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  color: #e5e7eb;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.calendar-current-month:hover,
+.calendar-current-month:focus {
+  background: rgba(0,212,255,0.12);
+  color: #00d4ff;
+}
+
+.react-calendar__navigation button:hover,
+.react-calendar__navigation button:focus,
+.react-calendar__navigation button:active {
+  background: rgba(0, 212, 255, 0.12) !important;
+  color: #00d4ff !important;
+}
+
+@media (max-width: 640px) {
+  .react-calendar__navigation {
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .react-calendar__navigation button {
+    flex: 0 0 calc(50% - 8px);
+    min-width: unset;
+  }
+
+  .react-calendar__navigation button:nth-child(1) {
+    order: 3;
+  }
+
+  .react-calendar__navigation button:nth-child(2) {
+    order: 1;
+  }
+
+  .react-calendar__navigation button:nth-child(3) {
+    order: 2;
+  }
+
+  .react-calendar__navigation button:nth-child(4) {
+    order: 4;
+  }
+}
+
+/* DÍAS DE LA SEMANA */
+.react-calendar__month-view__weekdays {
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  padding: 0.5em;
+}
+
+/* GRID DE DÍAS */
+.react-calendar__month-view__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr)); /* 7 días */
+  gap: 8px;
+  width: 100%;
+}
+/* FORZAR 7 COLUMNAS REALES */
+.react-calendar__month-view__days,
+.react-calendar__month-view__weekdays {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 8px;
+  width: 100%;
+}
+
+/* RESET CLAVE (esto arregla el bug) */
+.react-calendar__tile {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: none !important;
+}
+
+/* CONTENEDORES DE OTRAS VISTAS */
+.react-calendar__year-view__months,
+.react-calendar__decade-view__years,
+.react-calendar__century-view__decades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* CADA DÍA */
+.react-calendar__tile {
+  min-height: 84px;
+  border-radius: 14px;
+  transition: none;
+  position: relative;
+  overflow: hidden;
+  background: rgba(255,255,255,0.08);
+  color: #e5e7eb;
+  border: 1px solid rgba(255,255,255,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6px 8px;
+}
+
+/* TEXTO DEL DÍA */
+.react-calendar__tile abbr {
+  display: block;
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: inherit;
+}
+
+/* SIN HOVER */
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus,
+.react-calendar__tile:enabled:focus-visible {
+  transform: none !important;
+  background: rgba(255,255,255,0.08) !important;
+  color: inherit !important;
+}
+
+.react-calendar__tile.trabajado {
+  background: #04724D;
+  color: #ffffff;
+  border-color: rgba(4, 114, 77, 0.4);
+}
+
+.react-calendar__tile.descanso {
+  background: #84BCDA;
+  color: #ffffff;
+  border-color: rgba(132, 188, 218, 0.4);
+}
+
+.react-calendar__tile.incapacidad_comun {
+  background: #f59e0b;
+  color: #0f172a;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.react-calendar__tile.incapacidad_laboral {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.react-calendar__tile.trabajado:enabled:hover,
+.react-calendar__tile.trabajado:enabled:focus,
+.react-calendar__tile.trabajado:enabled:focus-visible {
+  background: #04724D !important;
+  color: #ffffff !important;
+}
+
+.react-calendar__tile.descanso:enabled:hover,
+.react-calendar__tile.descanso:enabled:focus,
+.react-calendar__tile.descanso:enabled:focus-visible {
+  background: #84BCDA !important;
+  color: #ffffff !important;
+}
+
+.react-calendar__tile.incapacidad_comun:enabled:hover,
+.react-calendar__tile.incapacidad_comun:enabled:focus,
+.react-calendar__tile.incapacidad_comun:enabled:focus-visible {
+  background: #f59e0b !important;
+  color: #0f172a !important;
+}
+
+.react-calendar__tile.incapacidad_laboral:enabled:hover,
+.react-calendar__tile.incapacidad_laboral:enabled:focus,
+.react-calendar__tile.incapacidad_laboral:enabled:focus-visible {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+/* DÍA ACTUAL */
+.react-calendar__tile--now {
+  background: rgba(0, 212, 255, 0.16);
+  border: 2px solid #00d4ff;
+}
+
+/* DÍA SELECCIONADO */
+.react-calendar__tile--active {
+  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  color: white;
+}
+
+/* DÍAS FUERA DEL MES */
+.react-calendar__month-view__days__day--neighboringMonth {
+  opacity: 0.5;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .react-calendar__tile {
+    min-height: 70px;
+    padding: 8px;
+  }
+
+  .react-calendar__tile abbr {
+    font-size: 0.95rem;
+  }
+
+  .react-calendar__navigation {
+    gap: 8px;
+  }
+
+  .pago-container h2 {
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .react-calendar {
+    padding: 10px;
+  }
+
+  .react-calendar__navigation {
+    justify-content: center;
+  }
+
+  .react-calendar__navigation button {
+    font-size: 0.85rem;
+    padding: 8px 10px;
+  }
+
+  .react-calendar__tile {
+    min-height: 60px;
+    padding: 6px;
+  }
+
+  .react-calendar__tile abbr {
+    font-size: 0.9rem;
+  }
+
+  .legend {
+    font-size: 0.85rem;
+  }
+}
+
+.calendar-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 100;
+  padding: 20px;
+}
+
+.calendar-modal {
+  width: min(580px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: #0b1220;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.calendar-modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.calendar-modal-subtitle {
+  margin: 0 0 4px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.calendar-modal h3 {
+  margin: 0;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+.calendar-modal-close {
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.calendar-modal-content {
+  display: grid;
+  gap: 18px;
+}
+
+.calendar-modal-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calendar-modal-row.two-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.calendar-modal-label {
+  font-size: 0.88rem;
+  color: #94a3b8;
+}
+
+.calendar-modal-row select,
+.calendar-modal-row input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+}
+
+.calendar-modal-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.calendar-modal-button,
+.calendar-modal-secondary {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.calendar-modal-button {
+  background: #00d4ff;
+  color: #020617;
+}
+
+.calendar-modal-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+}
+
+.calendar-modal-button:disabled,
+.calendar-modal-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .calendar-modal {
+    padding: 18px;
+  }
+
+  .calendar-modal-row.two-columns {
+    grid-template-columns: 1fr;
+  }
+}

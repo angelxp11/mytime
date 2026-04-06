@@ -1,74 +1,175 @@
+/* OVERLAY (fondo oscuro) */
 .register-container {
-  padding: 20px;
-  max-width: 400px;
-  margin: auto;
-}
-
-.register-container h2 {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.register-form {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(2,6,23,0.9), rgba(15,23,42,0.95));
+  backdrop-filter: blur(10px);
   display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+/* CARD / MODAL */
+.register-container {
   flex-direction: column;
 }
 
-.form-group {
-  margin-bottom: 15px;
+.register-form {
+  background: rgba(15, 23, 42, 0.85);
+  padding: 30px;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(20px);
+  animation: popup 0.4s ease;
+  max-height: 80vh;
+  overflow-y: auto;
 }
+
+/* TÍTULO */
+.register-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* FORM GROUP */
 
 .form-group label {
-  display: block;
-  margin-bottom: 5px;
+  font-size: 0.85rem;
   color: #9ca3af;
-  font-size: 0.9rem;
 }
 
+/* INPUT CON ICONO */
 .input-icon {
-  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+  padding: 10px;
+  transition: 0.25s;
+  border: 1px solid transparent;
 }
 
 .input-icon svg {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
-  z-index: 1;
+  color: #00d4ff;
+  font-size: 0.9rem;
 }
 
-.form-group input {
-  width: 100%;
-  padding: 10px 10px 10px 35px;
-  background-color: rgba(255, 255, 255, 0.05);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+.icon-wrapper {
+  border-right: 1px solid rgba(255,255,255,0.2);
+  padding: 0 8px;
+  margin-right: 8px;
+}
+
+.eye-wrapper {
+  border-left: 1px solid rgba(255,255,255,0.2);
+  padding: 0 8px;
+  margin-left: 8px;
+  cursor: pointer;
+  color: #00d4ff;
+  font-size: 0.9rem;
+}
+
+/* INPUT */
+.input-icon input {
+  flex: 1;
+  background: transparent;
+  border: none;
   outline: none;
-  transition: 0.25s;
+  color: white;
+  font-size: 0.95rem;
 }
 
-.form-group input:focus {
+/* FOCUS EFECTO */
+.input-icon:focus-within {
   border: 1px solid #00d4ff;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 0 10px rgba(0,212,255,0.2);
 }
 
+/* BOTÓN PRINCIPAL */
 .register-button {
   width: 100%;
-  padding: 10px;
-  background-color: var(--accent-color);
-  color: var(--primary-color);
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 25px;
   border: none;
-  border-radius: 5px;
+  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  color: white;
+  font-weight: 500;
   cursor: pointer;
-  margin-top: 10px;
+  transition: 0.25s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Mobile styles */
-@media (max-width: 768px) {
-  .register-container {
-    padding: 10px;
-    max-width: 100%;
+/* HOVER BOTÓN */
+.register-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0,212,255,0.35);
+}
+
+/* CLICK */
+.register-button:active {
+  transform: scale(0.97);
+}
+
+/* BOTÓN GOOGLE (diferente estilo automático) */
+.register-button svg {
+  font-size: 1rem;
+}
+
+/* LINKS */
+.login-link {
+  text-align: center;
+  margin-top: 12px;
+}
+
+.login-link a {
+  font-size: 0.85rem;
+  color: #00d4ff;
+  text-decoration: none;
+  transition: 0.2s;
+}
+
+.login-link a:hover {
+  color: #007cf0;
+  text-decoration: underline;
+}
+
+/* ANIMACIÓN MODAL */
+@keyframes popup {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* SEPARATOR */
+.separator {
+  margin: 10px 0;
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+/* RESPONSIVE */
+@media (max-width: 480px) {
+  .register-form {
+    padding: 20px;
+    max-height: 90vh;
   }
 }

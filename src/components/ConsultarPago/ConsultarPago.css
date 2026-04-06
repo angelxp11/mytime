@@ -1,27 +1,343 @@
-.pago-container {
-  padding: 20px;
+/* OVERLAY */
+.consultar-pago-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 12, 30, 0.82);
+  backdrop-filter: blur(7px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 9999;
 }
 
-.pago-container h2 {
-  margin-bottom: 20px;
+/* MODAL */
+.consultar-pago-modal {
+  width: min(680px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #0b1220;
+  border-radius: 28px;
+  padding: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35);
 }
 
-.pago-list {
+.consultar-pago-modal::-webkit-scrollbar {
+  width: 10px;
+}
+
+.consultar-pago-modal::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+.consultar-pago-modal::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.45);
+  border-radius: 999px;
+}
+
+/* HEADER */
+.consultar-pago-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.consultar-pago-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #e2e8f0;
+}
+
+.consultar-pago-title h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  letter-spacing: -0.03em;
+}
+
+.consultar-pago-title p {
+  margin: 6px 0 0;
+  color: #cbd5e1;
+  font-size: 0.97rem;
+}
+
+.consultar-pago-close {
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.consultar-pago-close:hover {
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* FORMULARIO */
+.consultar-pago-form {
+  display: grid;
+  gap: 24px;
+}
+
+.form-section {
+  display: grid;
+  gap: 16px;
+}
+
+.form-group {
+  display: grid;
+  gap: 8px;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group select {
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #00d4ff;
+  background: rgba(0, 212, 255, 0.08);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+}
+
+/* ACCIONES */
+.consultar-pago-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.btn-calculate,
+.btn-cancel {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-calculate {
+  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  color: white;
+}
+
+.btn-calculate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 212, 255, 0.3);
+}
+
+.btn-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* SECCIÓN DE RESULTADOS */
+.results-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
 }
 
-.pago-card {
-  padding: 15px;
-  background-color: var(--card-background);
-  border: 1px solid var(--border-color);
-  border-radius: 5px;
+.calculation-report {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Mobile styles */
-@media (max-width: 768px) {
-  .pago-container {
-    padding: 10px;
+.calculation-report h3 {
+  text-align: center;
+  font-size: 1.3rem;
+  margin: 0 0 16px;
+  color: #00d4ff;
+}
+
+.calculation-report h4 {
+  font-size: 1rem;
+  margin: 16px 0 8px;
+  color: #cbd5e1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+}
+
+.report-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(0, 212, 255, 0.05);
+  border-left: 3px solid #00d4ff;
+  border-radius: 8px;
+}
+
+.report-header p {
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+
+.report-header strong {
+  color: #00d4ff;
+}
+
+.report-section {
+  margin-bottom: 16px;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.report-table thead {
+  background: rgba(0, 212, 255, 0.1);
+  border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+}
+
+.report-table th {
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 700;
+  color: #00d4ff;
+  font-size: 0.9rem;
+}
+
+.report-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.report-table tbody tr:hover {
+  background: rgba(0, 212, 255, 0.04);
+}
+
+.report-table td {
+  padding: 8px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.report-table td:first-child {
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.report-table td:last-child {
+  text-align: right;
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.report-table .total-row {
+  background: rgba(0, 212, 255, 0.12);
+  border-top: 2px solid #00d4ff;
+  border-bottom: 2px solid #00d4ff;
+  font-size: 0.95rem;
+}
+
+.report-table .total-row td {
+  color: #00d4ff;
+  font-weight: 700;
+  padding: 12px 8px;
+}
+
+/* BOTONES DE ACCIÓN */
+.action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.btn-download,
+.btn-new-calculation {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-download {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.btn-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(16, 185, 129, 0.3);
+}
+
+.btn-new-calculation {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.btn-new-calculation:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  .consultar-pago-modal {
+    padding: 20px;
+  }
+
+  .form-section {
+    gap: 12px;
+  }
+
+  .report-header {
+    grid-template-columns: 1fr;
+  }
+
+  .consultar-pago-actions,
+  .action-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .report-table {
+    font-size: 0.85rem;
+  }
+
+  .report-table td {
+    padding: 6px;
   }
 }

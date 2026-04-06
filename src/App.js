@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './components/server/api';
 import Navbar from './components/Navbar/Navbar';
@@ -11,10 +9,15 @@ import ResetPassword from './components/ResetPassword/ResetPassword';
 import HomePage from './components/HomePage/HomePage';
 import MisTrabajos from './components/MisTrabajos/MisTrabajos';
 import ConsultarPago from './components/ConsultarPago/ConsultarPago';
+import CalendarComponent from './components/Calendar/calendar';
+import Loading from './components/loading/loading';
+import RegisterHours from './components/registerhours/RegisterHours';
+import ToastContainer from './components/ToastContainer';
 
 function App() {
   const [currentView, setCurrentView] = useState('home');
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -24,13 +27,14 @@ function App() {
       } else {
         setCurrentView('login');
       }
+      setIsLoading(false);
     });
     return unsubscribe;
   }, []);
 
   const handleLogout = async () => {
+    setIsLoading(true);
     await auth.signOut();
-    setCurrentView('login');
   };
 
   const renderView = () => {
@@ -40,19 +44,27 @@ function App() {
       case 'register':
         return <Register setCurrentView={setCurrentView} />;
       case 'reset':
-        return <ResetPassword />;
+        return <ResetPassword setCurrentView={setCurrentView} />;
       case 'home':
         return <HomePage user={user} setCurrentView={setCurrentView} />;
       case 'trabajos':
-        return <MisTrabajos />;
+        return <MisTrabajos user={user} />;
+      case 'calendar':
+        return <CalendarComponent user={user} />;
       case 'pago':
-        return <ConsultarPago />;
+        return <ConsultarPago user={user} setCurrentView={setCurrentView} />;
+      case 'registerhours':
+        return <RegisterHours user={user} setCurrentView={setCurrentView} />;
       default:
         return <HomePage user={user} setCurrentView={setCurrentView} />;
     }
   };
 
-  if (!user && currentView !== 'register') {
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (!user) {
     return (
       <div className="App">
         {renderView()}

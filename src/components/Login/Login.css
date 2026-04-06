@@ -38,9 +38,6 @@
 }
 
 /* FORM GROUP */
-.form-group {
-  margin-bottom: 16px;
-}
 
 .form-group label {
   font-size: 0.85rem;
@@ -62,6 +59,11 @@
 .input-icon svg {
   color: #00d4ff;
   font-size: 0.9rem;
+}
+
+.icon-wrapper {
+  border-right: 1px solid rgba(255,255,255,0.2);
+  padding: 0 8px;
   margin-right: 8px;
 }
 
@@ -154,4 +156,11 @@
   .login-form {
     padding: 20px;
   }
+}
+
+/* SEPARATOR */
+.separator {
+  margin: 10px 0;
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.1);
 }

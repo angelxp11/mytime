@@ -1,0 +1,301 @@
+.register-hours-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 12, 30, 0.82);
+  backdrop-filter: blur(7px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 9999;
+}
+
+.register-hours-modal {
+  width: min(680px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #0b1220;
+  border-radius: 28px;
+  padding: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35);
+}
+
+.register-hours-modal::-webkit-scrollbar {
+  width: 10px;
+}
+
+.register-hours-modal::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+.register-hours-modal::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.45);
+  border-radius: 999px;
+}
+
+.register-hours-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.register-hours-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #e2e8f0;
+}
+
+.register-hours-title h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  letter-spacing: -0.03em;
+}
+
+.register-hours-title p {
+  margin: 6px 0 0;
+  color: #cbd5e1;
+  font-size: 0.97rem;
+}
+
+.register-hours-close {
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.register-hours-close:hover {
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.register-hours-form {
+  display: grid;
+  gap: 20px;
+}
+
+.register-hours-row {
+  display: grid;
+  gap: 18px;
+}
+
+.register-hours-row.two-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.register-hours-field {
+  display: grid;
+  gap: 10px;
+}
+
+.register-hours-field label {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.register-hours-field input[type='time'],
+.register-hours-field input[type='date'] {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #e2e8f0;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.register-hours-field input[type='time']:focus,
+.register-hours-field input[type='date']:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+  outline: none;
+}
+
+.register-hours-field select {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #e2e8f0;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.register-hours-field select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+  outline: none;
+}
+
+.register-hours-field select option {
+  background: #0b1220;
+  color: #e2e8f0;
+}
+
+.input-with-icon {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  color: #cbd5e1;
+}
+
+.input-with-icon svg {
+  color: #38bdf8;
+}
+
+.input-with-icon input {
+  border: none;
+  background: transparent;
+  color: #e2e8f0;
+  width: 100%;
+}
+
+.register-hours-switch {
+  position: relative;
+  display: inline-block;
+  width: 55px;
+  height: 30px;
+}
+
+.register-hours-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.slider::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.register-hours-switch input:checked + .slider {
+  background: #38bdf8;
+}
+
+.register-hours-switch input:checked + .slider::before {
+  transform: translateX(25px);
+}
+
+.switch-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  color: #e2e8f0;
+}
+
+.register-hours-note,
+.register-hours-info,
+.register-hours-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(148, 163, 184, 0.06);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.register-hours-note svg,
+.register-hours-info svg {
+  color: #38bdf8;
+}
+
+.duration-box {
+  padding: 18px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(148, 163, 184, 0.06);
+  color: #e2e8f0;
+}
+
+.duration-box strong {
+  display: block;
+  font-size: 1.2rem;
+  margin-bottom: 6px;
+}
+
+.register-hours-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.register-hours-submit,
+.register-hours-secondary {
+  border: none;
+  border-radius: 18px;
+  padding: 14px 22px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.register-hours-submit {
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.register-hours-submit:hover {
+  transform: translateY(-2px);
+}
+
+.register-hours-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+}
+
+.register-hours-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 720px) {
+  .register-hours-row.two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .register-hours-actions {
+    justify-content: stretch;
+  }
+
+  .register-hours-submit,
+  .register-hours-secondary {
+    width: 100%;
+  }
+}

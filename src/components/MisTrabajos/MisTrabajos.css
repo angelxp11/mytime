@@ -1,31 +1,160 @@
 .trabajos-container {
+  min-height: calc(100vh - 60px);
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(2, 6, 23, 0.9), rgba(15, 23, 42, 0.95));
 }
 
 .trabajos-container h2 {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  font-size: 2rem;
+  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .trabajos-list {
-  display: flex;
-  flex-direction: column;
+  width: 100%;
+  max-width: 980px;
+  display: grid;
   gap: 10px;
 }
 
 .trabajo-card {
-  padding: 15px;
-  background-color: var(--card-background);
-  border: 1px solid var(--border-color);
-  border-radius: 5px;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.25);
+  position: relative;
+}
+
+.trabajo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
 }
 
 .trabajo-card h3 {
   margin-top: 0;
+  margin-bottom: 12px;
 }
 
-/* Mobile styles */
+.edit-button {
+  padding: 8px 12px;
+  background: rgba(0, 212, 255, 0.15);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 12px;
+  color: #00d4ff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.edit-button:hover {
+  background: rgba(0, 212, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.edit-button:active {
+  transform: scale(0.95);
+}
+
+.create-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 140px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+  background: rgba(0, 212, 255, 0.12);
+  border-color: rgba(0, 212, 255, 0.25);
+  margin-bottom: 10px;
+}
+
+.create-card:hover {
+  transform: translateY(-3px);
+  background: rgba(0, 212, 255, 0.18);
+}
+
+.trabajo-card p {
+  margin: 8px 0 0;
+  color: #cbd5e1;
+}
+
+.trabajo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trabajo-form h3 {
+  margin-top: 0;
+}
+
+.trabajo-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trabajo-form input,
+.trabajo-form textarea,
+.trabajo-form select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+}
+
+.trabajo-form textarea {
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.trabajo-button {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.trabajo-button.cancelar {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+.trabajo-button:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
 @media (max-width: 768px) {
   .trabajos-container {
-    padding: 10px;
+    padding: 16px;
+  }
+
+  .trabajos-list {
+    max-width: 100%;
   }
 }

@@ -49,7 +49,9 @@ const Login = ({ setCurrentView }) => {
         <div className="form-group">
           <label>Correo Electrónico:</label>
           <div className="input-icon">
-            <FaEnvelope />
+            <div className="icon-wrapper">
+              <FaEnvelope />
+            </div>
             <input
               type="email"
               id="email"
@@ -62,7 +64,9 @@ const Login = ({ setCurrentView }) => {
         <div className="form-group">
           <label>Contraseña:</label>
           <div className="input-icon">
-            <FaLock />
+            <div className="icon-wrapper">
+              <FaLock />
+            </div>
             <input
               type="password"
               id="password"
@@ -75,10 +79,11 @@ const Login = ({ setCurrentView }) => {
         <button type="submit" className="login-button" disabled={loading}>
           {loading ? 'Cargando...' : 'Iniciar Sesión'}
         </button>
+        <hr className="separator" />
+        <button onClick={handleGoogleLogin} className="login-button" disabled={loading}>
+          <FaGoogle /> {loading ? 'Cargando...' : 'Iniciar con Google'}
+        </button>
       </form>
-      <button onClick={handleGoogleLogin} className="login-button" disabled={loading}>
-        <FaGoogle /> {loading ? 'Cargando...' : 'Iniciar con Google'}
-      </button>
       <div className="reset-link">
         <a href="#" onClick={() => setCurrentView('reset')}>¿Olvidaste tu contraseña?</a>
       </div>

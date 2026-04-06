@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import '../../colors.css';
 import './ResetPassword.css';
 
-const ResetPassword = () => {
+const ResetPassword = ({ setCurrentView }) => {
   const [email, setEmail] = useState('');
 
   const handleSubmit = (e) => {
@@ -29,6 +29,12 @@ const ResetPassword = () => {
           Enviar Enlace de Restablecimiento
         </button>
       </form>
+      <div className="login-link">
+        <a href="#" onClick={() => setCurrentView('login')}>Volver al inicio de sesión</a>
+      </div>
+      <div className="register-link">
+        <a href="#" onClick={() => setCurrentView('register')}>¿No tienes cuenta? Regístrate</a>
+      </div>
     </div>
   );
 };

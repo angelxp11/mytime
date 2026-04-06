@@ -1,0 +1,238 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.65);
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 10010;
+  padding: 40px 24px;
+  overflow-y: auto;
+}
+
+.modal-overlay::-webkit-scrollbar {
+  width: 10px;
+}
+
+.modal-overlay::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.modal-overlay::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.24);
+  border-radius: 999px;
+}
+
+.create-work-modal {
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100vh - 80px);
+  background: rgba(15, 23, 42, 0.92);
+  padding: 30px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(24px);
+  animation: popup 0.35s ease;
+  overflow-y: auto;
+}
+
+.create-work-modal::-webkit-scrollbar {
+  width: 10px;
+}
+
+.create-work-modal::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+.create-work-modal::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.32);
+  border-radius: 999px;
+}
+
+.create-work-modal h3 {
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 1.95rem;
+  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  color: #cbd5e1;
+  font-size: 0.92rem;
+}
+
+.trabajo-form input,
+.trabajo-form textarea,
+.trabajo-form select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  outline: none;
+}
+
+/* Quitar flechas del input number */
+.trabajo-form input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.trabajo-form input[type="number"]::-webkit-outer-spin-button,
+.trabajo-form input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.trabajo-form textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.trabajo-form input:focus,
+.trabajo-form textarea:focus,
+.trabajo-form select:focus {
+  border-color: rgba(0, 212, 255, 0.5);
+  box-shadow: 0 0 18px rgba(0, 212, 255, 0.15);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.value-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+
+.value-card span {
+  display: block;
+  font-size: 0.84rem;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.value-card strong {
+  color: #f8fafc;
+  font-size: 1.05rem;
+}
+
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.trabajo-button {
+  width: 100%;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  border: none;
+  border-radius: 18px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.trabajo-button:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.trabajo-button.cancelar {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #cbd5e1;
+}
+
+.trabajo-button.eliminar {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: white;
+}
+
+.trabajo-button.eliminar:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .create-work-modal {
+    padding: 24px;
+  }
+
+  .form-grid,
+  .values-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes popup {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  color: white;
+  font-weight: 500;
+  z-index: 10000;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.toast-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.toast-error {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
