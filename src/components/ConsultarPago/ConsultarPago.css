@@ -1,0 +1,27 @@
+.pago-container {
+  padding: 20px;
+}
+
+.pago-container h2 {
+  margin-bottom: 20px;
+}
+
+.pago-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pago-card {
+  padding: 15px;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .pago-container {
+    padding: 10px;
+  }
+}

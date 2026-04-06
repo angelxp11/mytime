@@ -1,0 +1,31 @@
+.trabajos-container {
+  padding: 20px;
+}
+
+.trabajos-container h2 {
+  margin-bottom: 20px;
+}
+
+.trabajos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trabajo-card {
+  padding: 15px;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+}
+
+.trabajo-card h3 {
+  margin-top: 0;
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .trabajos-container {
+    padding: 10px;
+  }
+}

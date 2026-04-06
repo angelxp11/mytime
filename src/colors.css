@@ -1,0 +1,28 @@
+/* Dark theme colors */
+:root {
+  --primary-color: #1a1a1a;
+  --secondary-color: #2a2a2a;
+  --accent-color: #61dafb;
+  --text-color: #ffffff;
+  --text-secondary: #cccccc;
+  --background-color: #121212;
+  --card-background: #1e1e1e;
+  --border-color: #333333;
+  --error-color: #ff6b6b;
+  --success-color: #4ecdc4;
+  --warning-color: #ffa726;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+* {
+  box-sizing: border-box;
+}

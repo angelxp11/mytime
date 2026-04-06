@@ -1,0 +1,134 @@
+/* Navbar base */
+.navbar {
+  width: 100%;
+  height: 65px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 25px;
+  backdrop-filter: blur(12px);
+  background: rgba(15, 15, 25, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* Marca */
+.navbar-brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  cursor: pointer;
+}
+
+/* Menú */
+.navbar-menu {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  transition: 0.3s ease;
+}
+
+/* Botones */
+.navbar-item {
+  background: transparent;
+  border: none;
+  color: #e4e4e7;
+  font-size: 0.95rem;
+  padding: 8px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Hover elegante */
+.navbar-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #00d4ff;
+  transform: translateY(-1px);
+}
+
+/* Botón logout especial */
+.navbar-item.logout {
+  background: rgba(255, 0, 0, 0.08);
+  color: #ff6b6b;
+}
+
+.navbar-item.logout:hover {
+  background: rgba(255, 0, 0, 0.2);
+  color: #ff4d4d;
+}
+
+/* Burger */
+.navbar-burger {
+  display: none;
+  font-size: 1.6rem;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.navbar-burger:hover {
+  color: #00d4ff;
+  transform: rotate(90deg);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .navbar-menu {
+    position: absolute;
+    top: 65px;
+    right: 0;
+    width: 240px;
+    height: calc(100vh - 65px);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    background: rgba(15, 15, 25, 0.95);
+    backdrop-filter: blur(15px);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .navbar-menu.is-open {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .navbar-item {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+  }
+
+  .navbar-burger {
+    display: block;
+  }
+}
+
+/* Animación suave de entrada */
+.navbar-menu.is-open .navbar-item {
+  animation: slideFade 0.3s ease forwards;
+}
+
+@keyframes slideFade {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
