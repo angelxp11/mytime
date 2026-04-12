@@ -381,6 +381,7 @@
   border-radius: 22px;
   padding: 24px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
 }
 
 .calendar-modal-header {
@@ -448,6 +449,7 @@
   border-radius: 12px;
   padding: 12px 14px;
   font-size: 0.95rem;
+  box-sizing: border-box;
 }
 
 .calendar-modal-actions {
@@ -483,11 +485,31 @@
 }
 
 @media (max-width: 640px) {
+  .calendar-modal-overlay {
+    padding: 12px;
+  }
+
   .calendar-modal {
-    padding: 18px;
+    width: 100%;
+    padding: 16px;
   }
 
   .calendar-modal-row.two-columns {
     grid-template-columns: 1fr;
+  }
+
+  .calendar-modal-row select,
+  .calendar-modal-row input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .calendar-modal-actions {
+    flex-direction: column;
+  }
+
+  .calendar-modal-button,
+  .calendar-modal-secondary {
+    width: 100%;
   }
 }

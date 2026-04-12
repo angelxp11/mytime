@@ -5,7 +5,13 @@ import { db } from '../server/api';
 import { showToast } from '../ToastContainer';
 import './RegisterHours.css';
 
-const getTodayDateInput = () => new Date().toISOString().slice(0, 10);
+const getTodayDateInput = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const parseTime = (value) => {
   if (!value) return null;
@@ -97,7 +103,15 @@ const RegisterHours = ({ user, setCurrentView }) => {
         { merge: true }
       );
       showToast('Registro guardado con éxito.', 'success');
-      setCurrentView('home');
+      if (todayActive) {
+        setCurrentView('home');
+      } else {
+        // Limpiar campos cuando el switch está desactivado
+        setEntryTime('18:00');
+        setExitTime('02:00');
+        setTipo('trabajado');
+        setIsSubmitting(false);
+      }
     } catch (error) {
       console.error('Error guardando horas:', error);
       showToast('No se pudo guardar el registro. Intenta de nuevo.', 'error');

@@ -4,6 +4,8 @@ import { FiX, FiCalendar, FiClock } from 'react-icons/fi';
 import { db } from '../server/api';
 import './ConsultarPago.css';
 import Loading from '../loading/loading';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 
 const formatLocalDate = (date) => {
   const year = date.getFullYear();
@@ -32,9 +34,9 @@ const formatFechaDisplay = (dateStr) => {
 };
 
 const formatHoras = (horas) => {
-  const h = Math.floor(horas);
-  const m = Math.round((horas - h) * 60);
-  return `${h}h ${m}m`;
+  const hours = Math.floor(horas);
+  const minutes = Math.round((horas - hours) * 60);
+  return `${hours}h ${minutes}m`;
 };
 
 const ConsultarPago = ({ user, setCurrentView }) => {
@@ -45,6 +47,40 @@ const ConsultarPago = ({ user, setCurrentView }) => {
   const [diasData, setDiasData] = useState({});
   const [loading, setLoading] = useState(false);
   const [calculations, setCalculations] = useState(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [view, setView] = useState('month');
+  const [selectingMode, setSelectingMode] = useState('start'); // 'start' or 'end'
+
+  const formatMonthYear = (locale, date) => {
+    const formatted = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(date);
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  };
+
+  const handleActiveStartDateChange = ({ activeStartDate }) => {
+    setCurrentMonth(activeStartDate);
+  };
+
+  const handleViewChange = ({ activeStartDate, view: nextView }) => {
+    if (activeStartDate) setCurrentMonth(activeStartDate);
+    if (nextView) setView(nextView);
+  };
+
+  const handleMonthClick = () => {
+    setView(prev => {
+      if (prev === 'month') return 'year';
+      if (prev === 'year') return 'decade';
+      return 'month';
+    });
+  };
+
+  const handleDayClick = (date) => {
+    const dateStr = formatLocalDate(date);
+    if (selectingMode === 'start') {
+      setStartDate(dateStr);
+    } else {
+      setEndDate(dateStr);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -409,30 +445,49 @@ const ConsultarPago = ({ user, setCurrentView }) => {
         {!calculations ? (
           <form className="consultar-pago-form">
             <div className="form-section">
-              <div className="form-group">
-                <label htmlFor="startDate">
-                  <FiCalendar size={16} />
-                  Fecha Inicial
-                </label>
-                <input
-                  type="date"
-                  id="startDate"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="endDate">
-                  <FiCalendar size={16} />
-                  Fecha Final
-                </label>
-                <input
-                  type="date"
-                  id="endDate"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
+              <div className="calendar-section">
+                <label>Seleccionar Rango de Fechas</label>
+                <div className="select-mode">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={selectingMode === 'end'}
+                      onChange={() => setSelectingMode(selectingMode === 'start' ? 'end' : 'start')}
+                    />
+                    Seleccionar Fecha Final
+                  </label>
+                </div>
+                <button type="button" className="calendar-current-month" onClick={handleMonthClick}>
+                  {formatMonthYear('es-ES', currentMonth)}
+                </button>
+                <div className="calendar-container">
+                  <Calendar
+                    onClickDay={handleDayClick}
+                    tileClassName={({ date, view }) => {
+                      if (view === 'month') {
+                        const dateStr = formatLocalDate(date);
+                        let classes = [];
+                        if (dateStr === startDate) classes.push('range-start');
+                        if (dateStr === endDate) classes.push('range-end');
+                        if (dateStr > startDate && dateStr < endDate) classes.push('range-middle');
+                        const dayData = diasData[dateStr];
+                        if (dayData && dayData.tipo && classes.length === 0) {
+                          classes.push(dayData.tipo);
+                        }
+                        return classes.length ? classes : null;
+                      }
+                      return null;
+                    }}
+                    locale="es-ES"
+                    calendarType="iso8601"
+                    view={view}
+                    onViewChange={handleViewChange}
+                    formatMonthYear={formatMonthYear}
+                    navigationLabel={() => null}
+                    activeStartDate={currentMonth}
+                    onActiveStartDateChange={handleActiveStartDateChange}
+                  />
+                </div>
               </div>
 
               <div className="form-group">

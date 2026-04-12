@@ -19,6 +19,7 @@
   padding: 32px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
 }
 
 .register-hours-modal::-webkit-scrollbar {
@@ -111,6 +112,7 @@
   background: rgba(15, 23, 42, 0.92);
   color: #e2e8f0;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
 }
 
 .register-hours-field input[type='time']:focus,
@@ -128,6 +130,7 @@
   background: rgba(15, 23, 42, 0.92);
   color: #e2e8f0;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
 }
 
 .register-hours-field select:focus {
@@ -151,10 +154,13 @@
   background: rgba(15, 23, 42, 0.92);
   border: 1px solid rgba(148, 163, 184, 0.16);
   color: #cbd5e1;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .input-with-icon svg {
   color: #38bdf8;
+  flex-shrink: 0;
 }
 
 .input-with-icon input {
@@ -162,6 +168,8 @@
   background: transparent;
   color: #e2e8f0;
   width: 100%;
+  box-sizing: border-box;
+  padding: 0;
 }
 
 .register-hours-switch {
@@ -286,6 +294,17 @@
 }
 
 @media (max-width: 720px) {
+  .register-hours-overlay {
+    padding: 12px;
+  }
+
+  .register-hours-modal {
+    width: 100%;
+    max-width: 100%;
+    padding: 20px;
+    max-height: calc(100vh - 24px);
+  }
+
   .register-hours-row.two-columns {
     grid-template-columns: 1fr;
   }
@@ -297,5 +316,13 @@
   .register-hours-submit,
   .register-hours-secondary {
     width: 100%;
+  }
+
+  .register-hours-field input[type='time'],
+  .register-hours-field input[type='date'],
+  .register-hours-field select,
+  .input-with-icon {
+    width: 100%;
+    box-sizing: border-box;
   }
 }

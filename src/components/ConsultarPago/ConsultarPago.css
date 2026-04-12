@@ -341,3 +341,293 @@
     padding: 6px;
   }
 }
+
+/* CALENDARIO */
+.calendar-section {
+  display: grid;
+  gap: 12px;
+}
+
+.calendar-section label {
+  font-weight: 600;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.select-mode {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.select-mode label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.select-mode input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ff7605;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  background-color: #fff;
+}
+
+.select-mode input[type="checkbox"]:hover {
+  border-color: #ff7605;
+  box-shadow: 0 0 0 3px rgba(255, 118, 5, 0.2);
+}
+
+.select-mode input[type="checkbox"]:checked {
+  background-color: #ff7605;
+  border-color: #ff7605;
+}
+
+.select-mode input[type="checkbox"]:checked::after {
+  content: "✔";
+  color: white;
+  font-size: 12px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+}
+
+.select-mode input[type="checkbox"]:active {
+  transform: scale(0.95);
+}
+
+.calendar-current-month {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+  padding: 10px 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  color: #e5e7eb;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.calendar-current-month:hover,
+.calendar-current-month:focus {
+  background: rgba(0,212,255,0.12);
+  color: #00d4ff;
+}
+
+.calendar-container {
+  display: flex;
+  justify-content: center;
+}
+
+.react-calendar {
+  width: 100%;
+  max-width: 400px;
+  border: none;
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(15, 23, 42, 0.92);
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.28);
+  color: #e5e7eb;
+}
+
+.react-calendar__navigation {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.react-calendar__navigation button {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #e5e7eb;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.95rem;
+  border-radius: 12px;
+  padding: 8px 10px;
+  transition: all 0.2s ease;
+  min-width: 72px;
+  flex: 1 1 auto;
+}
+
+.react-calendar__navigation button:hover,
+.react-calendar__navigation button:focus {
+  background: rgba(0, 212, 255, 0.12);
+  color: #00d4ff;
+}
+
+.react-calendar__month-view__weekdays {
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.react-calendar__tile {
+  min-height: 40px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+  background: rgba(255,255,255,0.08);
+  color: #e5e7eb;
+  border: 1px solid rgba(255,255,255,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6px 8px;
+}
+
+.react-calendar__tile abbr {
+  display: block;
+  width: 100%;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: inherit;
+}
+
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+  background: inherit;
+  color: inherit;
+}
+
+/* RANGO */
+.range-start {
+  background: #ff7605 !important;
+  color: white !important;
+  border-color: #ff7605;
+  animation: blink 1s infinite;
+}
+
+.range-end {
+  background: #ff7605 !important;
+  color: white !important;
+  border-color: #ff7605;
+  animation: blink 1s infinite;
+}
+
+.range-middle {
+  background: rgba(255, 118, 5, 0.3) !important;
+  color: #e5e7eb !important;
+  border-color: rgba(255, 118, 5, 0.5);
+  animation: blink 1s infinite;
+}
+/* HOVER PARA RANGO (igual que trabajado: mantiene color pero baja opacidad) */
+.range-start:hover,
+.range-end:hover {
+  background: #ff7605 !important;
+  opacity: 0.8;
+}
+
+.range-middle:hover {
+  background: rgba(255, 118, 5, 0.3) !important;
+  opacity: 0.8;
+}
+.range-start:hover,
+.range-end:hover {
+  filter: brightness(1.1);
+}
+
+.range-middle:hover {
+  filter: brightness(1.15);
+}
+/* 🔥 SOBRESCRIBIR HOVER DEL CALENDARIO PARA RANGO */
+.react-calendar__tile.range-start:enabled:hover,
+.react-calendar__tile.range-end:enabled:hover {
+  background: #ff7605 !important;
+  color: #fff !important;
+  opacity: 0.85;
+}
+
+.react-calendar__tile.range-middle:enabled:hover {
+  background: rgba(255, 118, 5, 0.3) !important;
+  color: #e5e7eb !important;
+  opacity: 0.85;
+}
+/* CUANDO SE HACE CLICK (estado activo del calendar) */
+.react-calendar__tile.range-start:enabled:active,
+.react-calendar__tile.range-end:enabled:active,
+.react-calendar__tile--active.range-start,
+.react-calendar__tile--active.range-end {
+  background: #ff7605 !important;
+  color: #fff !important;
+}
+
+.react-calendar__tile.range-middle:enabled:active,
+.react-calendar__tile--active.range-middle {
+  background: rgba(255, 118, 5, 0.3) !important;
+  color: #e5e7eb !important;
+}
+
+
+/* ANIMACIÓN INTERMITENTE */
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+/* TIPOS DE DÍAS (DIFERENTES A CALENDAR) */
+.trabajado {
+  background-color: #10b981 !important; /* Verde diferente */
+  color: #ffffff !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+.descanso {
+  background-color: #3b82f6 !important; /* Azul diferente */
+  color: #ffffff !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+.incapacidad_comun {
+  background-color: #f97316 !important; /* Naranja diferente */
+  color: #0f172a !important;
+  border-color: rgba(249, 115, 22, 0.4) !important;
+}
+
+.incapacidad_laboral {
+  background-color: #dc2626 !important; /* Rojo diferente */
+  color: #ffffff !important;
+  border-color: rgba(220, 38, 38, 0.4) !important;
+}
+
+.react-calendar__tile--now {
+  background: rgba(0, 212, 255, 0.16);
+  border: 2px solid #00d4ff;
+}
+
+@media (max-width: 480px) {
+  .react-calendar {
+    padding: 10px;
+  }
+
+  .react-calendar__tile {
+    min-height: 35px;
+    padding: 4px;
+  }
+
+  .react-calendar__tile abbr {
+    font-size: 0.8rem;
+  }
+}

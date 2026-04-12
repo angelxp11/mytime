@@ -36,6 +36,7 @@
   backdrop-filter: blur(24px);
   animation: popup 0.35s ease;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .create-work-modal::-webkit-scrollbar {
@@ -84,6 +85,7 @@
   background: rgba(255, 255, 255, 0.06);
   color: #f8fafc;
   outline: none;
+  box-sizing: border-box;
 }
 
 /* Quitar flechas del input number */
@@ -183,14 +185,28 @@
   transform: translateY(-1px);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .create-work-modal {
-    padding: 24px;
+    padding: 20px;
+    max-width: 100%;
+    max-height: calc(100vh - 60px);
   }
 
   .form-grid,
   .values-grid {
     grid-template-columns: 1fr;
+  }
+
+  .trabajo-form input,
+  .trabajo-form textarea,
+  .trabajo-form select {
+    width: 100%;
+    padding: 12px 14px;
+    box-sizing: border-box;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
   }
 }
 

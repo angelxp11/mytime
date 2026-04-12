@@ -4,8 +4,15 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../server/api';
 import '../../colors.css';
 import './HomePage.css';
+import Loading from '../loading/loading';
 
-const getTodayDateInput = () => new Date().toISOString().slice(0, 10);
+const getTodayDateInput = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const formatName = (value) => {
   return value
@@ -18,11 +25,13 @@ const formatName = (value) => {
 
 const HomePage = ({ user, setCurrentView }) => {
   const [hasRegisteredToday, setHasRegisteredToday] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
 
     const checkTodayRegistration = async () => {
+      setLoading(true);
       try {
         const docRef = doc(db, 'horasTrabajadas', user.uid);
         const docSnap = await getDoc(docRef);
@@ -36,6 +45,8 @@ const HomePage = ({ user, setCurrentView }) => {
       } catch (error) {
         console.error('Error checking today registration:', error);
         setHasRegisteredToday(false);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -55,6 +66,14 @@ const HomePage = ({ user, setCurrentView }) => {
   }
 
   const displayName = user.displayName ? formatName(user.displayName) : user.email;
+
+  if (loading) {
+    return (
+      <div className="home-container">
+        <Loading text="Cargando..." />
+      </div>
+    );
+  }
 
   return (
     <div className="home-container">
