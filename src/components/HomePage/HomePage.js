@@ -14,6 +14,22 @@ const getTodayDateInput = () => {
   return `${year}-${month}-${day}`;
 };
 
+const getMondayOfWeek = (date) => {
+  const result = new Date(date);
+  const day = result.getDay();
+  const diff = (day + 6) % 7;
+  result.setDate(result.getDate() - diff);
+  result.setHours(0, 0, 0, 0);
+  return result;
+};
+
+const formatDateInput = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const formatName = (value) => {
   return value
     .trim()
@@ -25,6 +41,7 @@ const formatName = (value) => {
 
 const HomePage = ({ user, setCurrentView }) => {
   const [hasRegisteredToday, setHasRegisteredToday] = useState(false);
+  const [todayScheduleText, setTodayScheduleText] = useState('No hay horario para hoy');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,18 +50,42 @@ const HomePage = ({ user, setCurrentView }) => {
     const checkTodayRegistration = async () => {
       setLoading(true);
       try {
-        const docRef = doc(db, 'horasTrabajadas', user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          const today = getTodayDateInput();
-          setHasRegisteredToday(!!data.dias && !!data.dias[today]);
+        const [horasSnap, horariosSnap] = await Promise.all([
+          getDoc(doc(db, 'horasTrabajadas', user.uid)),
+          getDoc(doc(db, 'HORARIOS', user.uid)),
+        ]);
+
+        const today = getTodayDateInput();
+        const registered = horasSnap.exists() ? !!horasSnap.data()?.dias?.[today] : false;
+        setHasRegisteredToday(registered);
+
+        if (horariosSnap.exists()) {
+          const scheduleData = horariosSnap.data();
+          const monday = getMondayOfWeek(new Date());
+          const weekStartDate = formatDateInput(monday);
+          const savedWeek = scheduleData?.semanas?.[weekStartDate];
+          const todaySchedule = savedWeek?.days?.find((day) => day.date === today);
+
+          if (todaySchedule) {
+            if (todaySchedule.tipo === 'trabajado') {
+              const start = todaySchedule.startTime || '00:00';
+              const end = todaySchedule.endTime || '00:00';
+              setTodayScheduleText(`Hoy trabajas de ${start} a ${end}`);
+            } else if (todaySchedule.tipo === 'descanso') {
+              setTodayScheduleText('Descanso');
+            } else {
+              setTodayScheduleText(`Horario: ${todaySchedule.tipo}`);
+            }
+          } else {
+            setTodayScheduleText('No hay horario para hoy');
+          }
         } else {
-          setHasRegisteredToday(false);
+          setTodayScheduleText('No hay horario para hoy');
         }
       } catch (error) {
         console.error('Error checking today registration:', error);
         setHasRegisteredToday(false);
+        setTodayScheduleText('No hay horario para hoy');
       } finally {
         setLoading(false);
       }
@@ -83,6 +124,10 @@ const HomePage = ({ user, setCurrentView }) => {
           : `Bienvenido ${displayName}, Hoy no has ingresado tu entrada ni salida`
         }
       </h1>
+      <div className="home-today-schedule">
+        <span>Horario para hoy</span>
+        <strong>{todayScheduleText}</strong>
+      </div>
       <p>Tu plataforma para gestionar horas de trabajo y pagos.</p>
       <div className="home-buttons">
         <button className="home-button" onClick={() => setCurrentView('registerhours')}>

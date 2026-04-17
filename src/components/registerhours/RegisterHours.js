@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FiCalendar, FiClock, FiSave, FiX } from 'react-icons/fi';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../server/api';
 import { showToast } from '../ToastContainer';
 import './RegisterHours.css';
@@ -11,6 +11,28 @@ const getTodayDateInput = () => {
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+};
+
+const getMondayOfWeek = (date) => {
+  const result = new Date(date);
+  const day = result.getDay();
+  const diff = (day + 6) % 7;
+  result.setDate(result.getDate() - diff);
+  result.setHours(0, 0, 0, 0);
+  return result;
+};
+
+const formatDateInput = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getDayName = (dateString) => {
+  const names = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const date = new Date(`${dateString}T00:00:00`);
+  return names[date.getDay()];
 };
 
 const parseTime = (value) => {
@@ -60,12 +82,49 @@ const RegisterHours = ({ user, setCurrentView }) => {
   const [exitTime, setExitTime] = useState('02:00');
   const [tipo, setTipo] = useState('trabajado');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [missingDescansoDays, setMissingDescansoDays] = useState([]);
+  const [showDescansoPrompt, setShowDescansoPrompt] = useState(false);
 
   useEffect(() => {
     if (todayActive) {
       setSelectedDate(getTodayDateInput());
     }
   }, [todayActive]);
+
+  useEffect(() => {
+    const loadMissingDescansoDays = async () => {
+      if (!user) return;
+
+      const weekStart = getMondayOfWeek(new Date());
+      const weekStartDate = formatDateInput(weekStart);
+
+      try {
+        const [horariosSnap, horasSnap] = await Promise.all([
+          getDoc(doc(db, 'HORARIOS', user.uid)),
+          getDoc(doc(db, 'horasTrabajadas', user.uid)),
+        ]);
+
+        const registeredDates = horasSnap.exists() ? Object.keys(horasSnap.data()?.dias || {}) : [];
+        const savedWeek = horariosSnap.exists() ? horariosSnap.data()?.semanas?.[weekStartDate] : null;
+
+        const missingDays = (savedWeek?.days || [])
+          .filter((day) => day.tipo === 'descanso')
+          .filter((day) => !registeredDates.includes(day.date));
+
+        if (missingDays.length > 0) {
+          setMissingDescansoDays(missingDays);
+          setShowDescansoPrompt(true);
+        } else {
+          setMissingDescansoDays([]);
+          setShowDescansoPrompt(false);
+        }
+      } catch (error) {
+        console.error('Error cargando días de descanso:', error);
+      }
+    };
+
+    loadMissingDescansoDays();
+  }, [user]);
 
   const worked = useMemo(() => calculateWorked(entryTime, exitTime), [entryTime, exitTime]);
 
@@ -119,6 +178,66 @@ const RegisterHours = ({ user, setCurrentView }) => {
     }
   };
 
+  const handleRegisterMissingDescansoDays = async () => {
+    if (!user || missingDescansoDays.length === 0) return;
+
+    const diasPayload = missingDescansoDays.reduce((acc, day) => {
+      acc[day.date] = {
+        tipo: 'descanso',
+        registeredAt: new Date().toISOString(),
+        date: day.date,
+        worked: {
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
+        },
+      };
+      return acc;
+    }, {});
+
+    try {
+      await setDoc(
+        doc(db, 'horasTrabajadas', user.uid),
+        {
+          dias: diasPayload,
+        },
+        { merge: true }
+      );
+
+      showToast('Días de descanso registrados correctamente.', 'success');
+      setShowDescansoPrompt(false);
+      setMissingDescansoDays([]);
+    } catch (error) {
+      console.error('Error registrando días de descanso:', error);
+      showToast('No se pudieron registrar los días de descanso.', 'error');
+    }
+  };
+
+  const renderDescansoMessage = () => {
+    if (!showDescansoPrompt || missingDescansoDays.length === 0) return null;
+
+    const namesArray = missingDescansoDays.map((day) => getDayName(day.date));
+    const names = namesArray.length > 1
+      ? `${namesArray.slice(0, -1).join(', ')} y ${namesArray[namesArray.length - 1]}`
+      : namesArray[0];
+
+    return (
+      <div className="register-hours-alert">
+        <p>
+          Tienes días de descanso en la semana no registrados: <strong>{names}</strong>. ¿Deseas registrarlos como días de descanso?
+        </p>
+        <div className="register-hours-alert-actions">
+          <button type="button" className="register-hours-alert-yes" onClick={handleRegisterMissingDescansoDays}>
+            Sí
+          </button>
+          <button type="button" className="register-hours-alert-no" onClick={() => setShowDescansoPrompt(false)}>
+            No
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="register-hours-overlay">
       <div className="register-hours-modal">
@@ -147,6 +266,8 @@ const RegisterHours = ({ user, setCurrentView }) => {
               Usa el switch para registrar el día de hoy o elegir una fecha pasada. Si el switch está activo, el registro se guardará en la fecha de hoy; si está inactivo, podrás escoger otra fecha.
             </p>
           </div>
+
+          {renderDescansoMessage()}
 
           <div className="register-hours-row">
             <label className="switch-label">

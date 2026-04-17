@@ -341,6 +341,9 @@ const CalendarComponent = ({ user }) => {
                           type="time"
                           value={editEntryTime}
                           onChange={(e) => setEditEntryTime(e.target.value)}
+                          min="00:00"
+                          max="23:59"
+                          step="60"
                           required
                         />
                       </div>
@@ -350,6 +353,9 @@ const CalendarComponent = ({ user }) => {
                           type="time"
                           value={editExitTime}
                           onChange={(e) => setEditExitTime(e.target.value)}
+                          min="00:00"
+                          max="23:59"
+                          step="60"
                           required
                         />
                       </div>

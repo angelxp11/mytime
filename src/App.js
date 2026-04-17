@@ -10,6 +10,7 @@ import HomePage from './components/HomePage/HomePage';
 import MisTrabajos from './components/MisTrabajos/MisTrabajos';
 import ConsultarPago from './components/ConsultarPago/ConsultarPago';
 import CalendarComponent from './components/Calendar/calendar';
+import Horario from './components/horario/horario';
 import Loading from './components/loading/loading';
 import RegisterHours from './components/registerhours/RegisterHours';
 import ToastContainer from './components/ToastContainer';
@@ -55,6 +56,8 @@ function App() {
         return <ConsultarPago user={user} setCurrentView={setCurrentView} />;
       case 'registerhours':
         return <RegisterHours user={user} setCurrentView={setCurrentView} />;
+      case 'horarios':
+        return <Horario user={user} setCurrentView={setCurrentView} />;
       default:
         return <HomePage user={user} setCurrentView={setCurrentView} />;
     }

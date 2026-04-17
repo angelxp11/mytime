@@ -238,6 +238,57 @@
   border: 1px solid rgba(148, 163, 184, 0.14);
 }
 
+.register-hours-alert {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  color: #e0f2fe;
+}
+
+.register-hours-alert p {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.register-hours-alert-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.register-hours-alert-yes,
+.register-hours-alert-no {
+  padding: 10px 18px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.register-hours-alert-yes {
+  background: #22c55e;
+  color: #0f172a;
+}
+
+.register-hours-alert-no {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.register-hours-alert-yes:hover {
+  background: #16a34a;
+}
+
+.register-hours-alert-no:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
 .register-hours-note svg,
 .register-hours-info svg {
   color: #38bdf8;

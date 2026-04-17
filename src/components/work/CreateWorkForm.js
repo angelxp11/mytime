@@ -200,6 +200,9 @@ const CreateWorkForm = ({ onCreate, onCancel, editingJob, onDelete }) => {
               type="time"
               value={diurnalStart}
               onChange={(e) => setDiurnalStart(e.target.value)}
+              min="00:00"
+              max="23:59"
+              step="60"
               required
             />
           </div>
@@ -209,14 +212,17 @@ const CreateWorkForm = ({ onCreate, onCancel, editingJob, onDelete }) => {
               type="time"
               value={diurnalEnd}
               onChange={(e) => setDiurnalEnd(e.target.value)}
+              min="00:00"
+              max="23:59"
+              step="60"
               required
             />
           </div>
-        </div>
 
-        <div className="form-group">
-          <label>Rango Nocturno</label>
-          <input type="text" value={getNocturnalRange(diurnalStart, diurnalEnd)} readOnly />
+          <div className="form-group">
+            <label>Rango Nocturno</label>
+            <input type="text" value={getNocturnalRange(diurnalStart, diurnalEnd)} readOnly />
+          </div>
         </div>
 
         <div className="form-group">
