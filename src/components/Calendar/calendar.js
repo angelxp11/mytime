@@ -334,31 +334,29 @@ const CalendarComponent = ({ user }) => {
 
                 {editTipo === 'trabajado' && (
                   <>
-                    <div className="calendar-modal-row two-columns">
-                      <div>
-                        <label className="calendar-modal-label">Hora de entrada</label>
-                        <input
-                          type="time"
-                          value={editEntryTime}
-                          onChange={(e) => setEditEntryTime(e.target.value)}
-                          min="00:00"
-                          max="23:59"
-                          step="60"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="calendar-modal-label">Hora de salida</label>
-                        <input
-                          type="time"
-                          value={editExitTime}
-                          onChange={(e) => setEditExitTime(e.target.value)}
-                          min="00:00"
-                          max="23:59"
-                          step="60"
-                          required
-                        />
-                      </div>
+                    <div className="calendar-modal-row">
+                      <label className="calendar-modal-label">Hora de entrada</label>
+                      <input
+                        type="time"
+                        value={editEntryTime}
+                        onChange={(e) => setEditEntryTime(e.target.value)}
+                        min="00:00"
+                        max="23:59"
+                        step="60"
+                        required
+                      />
+                    </div>
+                    <div className="calendar-modal-row">
+                      <label className="calendar-modal-label">Hora de salida</label>
+                      <input
+                        type="time"
+                        value={editExitTime}
+                        onChange={(e) => setEditExitTime(e.target.value)}
+                        min="00:00"
+                        max="23:59"
+                        step="60"
+                        required
+                      />
                     </div>
                     <div className="calendar-modal-row">
                       <span className="calendar-modal-label">Duración calculada</span>

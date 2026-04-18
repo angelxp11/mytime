@@ -429,12 +429,6 @@
   gap: 8px;
 }
 
-.calendar-modal-row.two-columns {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
 .calendar-modal-label {
   font-size: 0.88rem;
   color: #94a3b8;
@@ -492,10 +486,6 @@
   .calendar-modal {
     width: 100%;
     padding: 16px;
-  }
-
-  .calendar-modal-row.two-columns {
-    grid-template-columns: 1fr;
   }
 
   .calendar-modal-row select,

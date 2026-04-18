@@ -39,12 +39,153 @@ const formatHoras = (horas) => {
   return `${hours}h ${minutes}m`;
 };
 
+const getFestivos = () => {
+  const festivosText = `// 01/01/2026 - Año Nuevo
+// 12/01/2026 - Día de los Reyes Magos
+// 23/03/2026 - Día de San José
+// 02/04/2026 - Jueves Santo
+// 03/04/2026 - Viernes Santo
+// 01/05/2026 - Día del Trabajo
+// 18/05/2026 - Ascensión del Señor
+// 08/06/2026 - Corphus Christi
+// 15/06/2026 - Sagrado Corazón de Jesús
+// 29/06/2026 - San Pedro y San Pablo
+// 20/07/2026 - Día de la Independencia
+// 07/08/2026 - Batalla de Boyacá
+// 17/08/2026 - La Asunción de la Virgen
+// 12/10/2026 - Día de la Raza
+// 02/11/2026 - Todos los Santos
+// 16/11/2026 - Independencia de Cartagena
+// 08/12/2026 - Día de la Inmaculada Concepción
+// 25/12/2026 - Día de Navidad`;
+  const festivos = new Set();
+  const lines = festivosText.split('\n');
+  lines.forEach(line => {
+    const match = line.match(/\/\/ (\d{2})\/(\d{2})\/(\d{4}) -/);
+    if (match) {
+      const [, day, month, year] = match;
+      festivos.add(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+    }
+  });
+  return festivos;
+};
+
+const parseTime = (value) => {
+  if (!value) return null;
+  const [hour, minute] = value.split(':').map(Number);
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+  return { hour, minute, second: 0 };
+};
+
+const calculateWorked = (entryValue, exitValue) => {
+  const entry = parseTime(entryValue);
+  const exit = parseTime(exitValue);
+  if (!entry || !exit) {
+    return { hours: 0, minutes: 0, seconds: 0 };
+  }
+
+  let entrySeconds = entry.hour * 3600 + entry.minute * 60 + entry.second;
+  let exitSeconds = exit.hour * 3600 + exit.minute * 60 + exit.second;
+
+  if (exitSeconds <= entrySeconds) {
+    exitSeconds += 24 * 3600;
+  }
+
+  const diff = exitSeconds - entrySeconds;
+  return {
+    hours: Math.floor(diff / 3600),
+    minutes: Math.floor((diff % 3600) / 60),
+    seconds: diff % 60,
+  };
+};
+
+const getMondayOfWeek = (date) => {
+  const result = new Date(date);
+  const day = result.getDay();
+  const diff = (day + 6) % 7;
+  result.setDate(result.getDate() - diff);
+  result.setHours(0, 0, 0, 0);
+  return result;
+};
+
+const getHorarioForDay = (dateStr, horariosData) => {
+  const date = createDateFromString(dateStr);
+  const monday = getMondayOfWeek(date);
+  const weekStart = formatLocalDate(monday);
+  const weekData = horariosData[weekStart];
+  if (!weekData) return null;
+  const dayOfWeek = date.getDay(); // 0 sunday, 1 monday, etc.
+  const daySchedule = weekData.days.find((day) => {
+    if (typeof day.id !== 'undefined') {
+      return day.id === dayOfWeek;
+    }
+    return day.date === dateStr;
+  });
+  return daySchedule;
+};
+
+const calculateMinDiff = (time1, time2) => {
+  const t1 = parseTime(time1);
+  const t2 = parseTime(time2);
+  if (!t1 || !t2) return 0;
+  const min1 = t1.hour * 60 + t1.minute;
+  const min2 = t2.hour * 60 + t2.minute;
+  return min2 - min1; // positiva si t2 > t1
+};
+
+const calculateAdjustmentMinutes = (scheduledTime, actualTime, type) => {
+  const scheduled = parseTime(scheduledTime);
+  const actual = parseTime(actualTime);
+  if (!scheduled || !actual) return 0;
+
+  const scheduledMinutes = scheduled.hour * 60 + scheduled.minute;
+  const actualMinutes = actual.hour * 60 + actual.minute;
+
+  if (type === 'entrada') {
+    return scheduledMinutes - actualMinutes; // early entry is positive
+  }
+
+  return actualMinutes - scheduledMinutes; // late exit is positive
+};
+
+const calculateWorkedMinutes = (startTime, endTime) => {
+  const start = parseTime(startTime);
+  const end = parseTime(endTime);
+  if (!start || !end) return 0;
+
+  let startMinutes = start.hour * 60 + start.minute;
+  let endMinutes = end.hour * 60 + end.minute;
+  if (endMinutes <= startMinutes) {
+    endMinutes += 24 * 60;
+  }
+  return endMinutes - startMinutes;
+};
+
+const formatMinutes = (minutes) => {
+  const sign = minutes < 0 ? '-' : '';
+  const absMinutes = Math.abs(minutes);
+  const hours = Math.floor(absMinutes / 60);
+  const mins = absMinutes % 60;
+  return `${sign}${hours}h ${mins}m`;
+};
+
+const formatMin = (min) => {
+  if (min === 0) return '0m';
+  const abs = Math.abs(min);
+  const hours = Math.floor(abs / 60);
+  const mins = abs % 60;
+  const sign = min > 0 ? '+' : '-';
+  if (hours > 0) return `${sign}${hours}h ${mins}m`;
+  return `${sign}${mins}m`;
+};
+
 const ConsultarPago = ({ user, setCurrentView }) => {
   const [startDate, setStartDate] = useState(getTodayDateInput());
   const [endDate, setEndDate] = useState(getTodayDateInput());
   const [trabajos, setTrabajos] = useState([]);
   const [selectedTrabajo, setSelectedTrabajo] = useState('');
   const [diasData, setDiasData] = useState({});
+  const [horariosData, setHorariosData] = useState({});
   const [loading, setLoading] = useState(false);
   const [calculations, setCalculations] = useState(null);
   const [reportMode, setReportMode] = useState('classic');
@@ -87,6 +228,7 @@ const ConsultarPago = ({ user, setCurrentView }) => {
     if (!user) return;
     loadTrabajos();
     loadDiasData();
+    loadHorariosData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -119,6 +261,18 @@ const ConsultarPago = ({ user, setCurrentView }) => {
     }
   };
 
+  const loadHorariosData = async () => {
+    try {
+      const docRef = doc(db, 'HORARIOS', user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setHorariosData(docSnap.data().semanas || {});
+      }
+    } catch (error) {
+      console.error('Error cargando horarios:', error);
+    }
+  };
+
   const calculatePayment = () => {
     setLoading(true);
     try {
@@ -131,16 +285,15 @@ const ConsultarPago = ({ user, setCurrentView }) => {
       const startDateTime = createDateFromString(startDate);
       const endDateTime = createDateFromString(endDate);
 
+      const festivos = getFestivos();
+
       const isDominicalDate = (dateStr) => {
-        const dayDataForDate = diasData[dateStr] || {};
         const dayOfWeek = createDateFromString(dateStr).getDay();
-        return dayDataForDate.festivo === true
-          || dayDataForDate.holiday === true
-          || dayDataForDate.esFestivo === true
-          || dayOfWeek === 0;
+        return dayOfWeek === 0 || festivos.has(dateStr);
       };
 
       const diasLaborados = [];
+      const detalles = [];
       let totalHoras = 0;
       let horasDiurnas = 0;
       let horasNocturnas = 0;
@@ -378,6 +531,10 @@ const ConsultarPago = ({ user, setCurrentView }) => {
 
     const pdf = new jsPDF('p', 'mm', 'a4');
 
+    // 🔑 IMPORTANTE (faltaba en tu código)
+    const startDateTime = createDateFromString(calculations.startDate);
+    const endDateTime = createDateFromString(calculations.endDate);
+
     // Helpers
     const formatMoney = (value) =>
       `$${Math.floor(value).toLocaleString('es-CO')}`;
@@ -407,93 +564,35 @@ const ConsultarPago = ({ user, setCurrentView }) => {
 
     y += 10;
 
-    // 🧮 TABLA
+    // 🧮 TABLA PRINCIPAL
     const pdfRows = reportMode === 'classic'
       ? [
-          {
-            label: 'Horas Diurnas',
-            quantityLabel: formatHoras(calculations.horasDiurnas),
-            amount: calculations.pagoBase,
-          },
-          {
-            label: 'Horas Nocturnas',
-            quantityLabel: formatHoras(calculations.horasNocturnas),
-            amount: calculations.pagoNocturno,
-          },
-          {
-            label: 'Horas Diurnas Dominical',
-            quantityLabel: formatHoras(calculations.horasDiurnaDominical),
-            amount: calculations.pagoDiurnaDominical,
-          },
-          {
-            label: 'Horas Nocturnas Dominical',
-            quantityLabel: formatHoras(calculations.horasNocturnaDominical),
-            amount: calculations.pagoNocturnaDominical,
-          },
-          {
-            label: 'Horas Extra Diurna',
-            quantityLabel: formatHoras(calculations.horasExtraDiurna),
-            amount: calculations.pagoExtraDiurna,
-          },
-          {
-            label: 'Horas Extra Nocturna',
-            quantityLabel: formatHoras(calculations.horasExtraNocturna),
-            amount: calculations.pagoExtraNocturna,
-          },
-          {
-            label: 'Horas Extra Dominical Diurna',
-            quantityLabel: formatHoras(calculations.horasExtraDominicalDiurna),
-            amount: calculations.pagoExtraDominicalDiurna,
-          },
-          {
-            label: 'Horas Extra Dominical Nocturna',
-            quantityLabel: formatHoras(calculations.horasExtraDominicalNocturna),
-            amount: calculations.pagoExtraDominicalNocturna,
-          },
-          {
-            label: 'Incapacidad Común',
-            quantityLabel: `${calculations.diasIncapacidadComun} días`,
-            amount: calculations.pagoIncapacidadComun,
-          },
-          {
-            label: 'Incapacidad Laboral',
-            quantityLabel: `${calculations.diasIncapacidadLaboral} días`,
-            amount: calculations.pagoIncapacidadLaboral,
-          },
-          {
-            label: 'Auxilio Transporte',
-            quantityLabel: `${calculations.detalles.length} días`,
-            amount: calculations.auxilioTransporte,
-          },
+          { label: 'Horas Diurnas', quantityLabel: formatHoras(calculations.horasDiurnas), amount: calculations.pagoBase },
+          { label: 'Horas Nocturnas', quantityLabel: formatHoras(calculations.horasNocturnas), amount: calculations.pagoNocturno },
+          { label: 'Horas Diurnas Dominical', quantityLabel: formatHoras(calculations.horasDiurnaDominical), amount: calculations.pagoDiurnaDominical },
+          { label: 'Horas Nocturnas Dominical', quantityLabel: formatHoras(calculations.horasNocturnaDominical), amount: calculations.pagoNocturnaDominical },
+          { label: 'Horas Extra Diurna', quantityLabel: formatHoras(calculations.horasExtraDiurna), amount: calculations.pagoExtraDiurna },
+          { label: 'Horas Extra Nocturna', quantityLabel: formatHoras(calculations.horasExtraNocturna), amount: calculations.pagoExtraNocturna },
+          { label: 'Horas Extra Dominical Diurna', quantityLabel: formatHoras(calculations.horasExtraDominicalDiurna), amount: calculations.pagoExtraDominicalDiurna },
+          { label: 'Horas Extra Dominical Nocturna', quantityLabel: formatHoras(calculations.horasExtraDominicalNocturna), amount: calculations.pagoExtraDominicalNocturna },
+          { label: 'Incapacidad Común', quantityLabel: `${calculations.diasIncapacidadComun} días`, amount: calculations.pagoIncapacidadComun },
+          { label: 'Incapacidad Laboral', quantityLabel: `${calculations.diasIncapacidadLaboral} días`, amount: calculations.pagoIncapacidadLaboral },
+          { label: 'Auxilio Transporte', quantityLabel: `${calculations.detalles.length} días`, amount: calculations.auxilioTransporte },
         ]
       : [
-          {
-            label: 'Horas Diarias',
-            quantityLabel: formatHoras(calculations.totalHoras),
-            amount: calculations.totalHoras * calculations.baseHourly,
-          },
+          { label: 'Horas Diarias', quantityLabel: formatHoras(calculations.totalHoras), amount: calculations.totalHoras * calculations.baseHourly },
           {
             label: 'Recargo Nocturno',
             quantityLabel: formatHoras(calculations.horasNocturnas + calculations.horasExtraNocturna),
-            amount:
-              (calculations.pagoNocturnoRecargo || 0) +
-              (calculations.pagoExtraNocturnaRecargo || 0),
+            amount: (calculations.pagoNocturnoRecargo || 0) + (calculations.pagoExtraNocturnaRecargo || 0),
           },
-          {
-            label: 'Horas Dominicales',
-            quantityLabel: formatHoras(calculations.totalDominicalHours),
-            amount: calculations.totalDominicalAmount,
-          },
-          {
-            label: 'Auxilio Transporte',
-            quantityLabel: `${calculations.detalles.length} días`,
-            amount: calculations.auxilioTransporte,
-          },
+          { label: 'Horas Dominicales', quantityLabel: formatHoras(calculations.totalDominicalHours), amount: calculations.totalDominicalAmount },
+          { label: 'Auxilio Transporte', quantityLabel: `${calculations.detalles.length} días`, amount: calculations.auxilioTransporte },
         ];
 
-    // Encabezados
+    // Encabezado
     pdf.setFont('helvetica', 'bold');
-    pdf.setFillColor(30, 41, 59); // oscuro
+    pdf.setFillColor(30, 41, 59);
     pdf.setTextColor(255, 255, 255);
 
     pdf.rect(15, y, 180, 8, 'F');
@@ -535,8 +634,107 @@ const ConsultarPago = ({ user, setCurrentView }) => {
     pdf.text(formatHoras(calculations.totalHoras), 90, y + 2);
     pdf.text(formatMoney(pdfTotalAmount), 160, y + 2, { align: 'right' });
 
-    // 📅 FOOTER
+    // 🔥 NUEVA TABLA DE CONTROL DE HORARIO
     y += 15;
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('CONTROL DE HORARIO', 15, y);
+
+    y += 6;
+
+    // Encabezados
+    pdf.setFontSize(9);
+    pdf.setFillColor(30, 41, 59);
+    pdf.setTextColor(255, 255, 255);
+
+    pdf.rect(15, y, 180, 8, 'F');
+
+    pdf.text('Día', 16, y + 5);
+    pdf.text('Ent H', 40, y + 5);
+    pdf.text('Ent R', 60, y + 5);
+    pdf.text('Sal H', 80, y + 5);
+    pdf.text('Sal R', 100, y + 5);
+    pdf.text('Tiempo', 150, y + 5);
+
+    y += 10;
+
+    const tableHorario = [];
+
+    for (let d = new Date(startDateTime); d <= endDateTime; d.setDate(d.getDate() + 1)) {
+      const dateStr = formatLocalDate(d);
+      const dayData = diasData[dateStr];
+
+      if (!dayData || dayData.tipo !== 'trabajado') continue;
+
+      const daySchedule = getHorarioForDay(dateStr, horariosData);
+      const entradaH = daySchedule?.startTime || '-';
+      const salidaH = daySchedule?.endTime || '-';
+      const entradaR = dayData.entrada || '-';
+      const salidaR = dayData.salida || '-';
+
+      const diffEntrada = entradaH !== '-' && entradaR !== '-' ? calculateAdjustmentMinutes(entradaH, entradaR, 'entrada') : 0;
+      const diffSalida = salidaH !== '-' && salidaR !== '-' ? calculateAdjustmentMinutes(salidaH, salidaR, 'salida') : 0;
+      const scheduleMinutes = entradaH !== '-' && salidaH !== '-' ? calculateWorkedMinutes(entradaH, salidaH) : 0;
+      const registeredMinutes = entradaR !== '-' && salidaR !== '-' ? calculateWorkedMinutes(entradaR, salidaR) : 0;
+      const total = diffEntrada + diffSalida;
+
+      tableHorario.push({
+        fecha: dateStr,
+        entradaH,
+        entradaR,
+        salidaH,
+        salidaR,
+        total,
+        scheduleMinutes,
+        registeredMinutes,
+      });
+    }
+
+    const totalScheduleMinutes = tableHorario.reduce((sum, row) => sum + row.scheduleMinutes, 0);
+    const totalRegisteredMinutes = tableHorario.reduce((sum, row) => sum + row.registeredMinutes, 0);
+    const totalAdjustmentMinutes = tableHorario.reduce((sum, row) => sum + row.total, 0);
+
+    const filteredTableHorario = tableHorario.filter(row => row.total !== 0);
+
+    pdf.setTextColor(0, 0, 0);
+
+    filteredTableHorario.forEach((row, i) => {
+      if (i % 2 === 0) {
+        pdf.setFillColor(245, 245, 245);
+        pdf.rect(15, y - 4, 180, 8, 'F');
+      }
+
+      pdf.text(formatFechaDisplay(row.fecha), 16, y);
+      pdf.text(row.entradaH || '-', 40, y);
+      pdf.text(row.entradaR || '-', 60, y);
+      pdf.text(row.salidaH || '-', 80, y);
+      pdf.text(row.salidaR || '-', 100, y);
+
+      pdf.setTextColor(row.total >= 0 ? 0 : 255, row.total >= 0 ? 128 : 0, 0);
+      pdf.text(formatMin(row.total), 150, y);
+      pdf.setTextColor(0, 0, 0);
+
+      y += 8;
+    });
+
+    if (filteredTableHorario.length > 0) {
+      y += 4;
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Totales por horario:', 15, y);
+      pdf.text(formatMinutes(totalScheduleMinutes), 80, y);
+      y += 6;
+      pdf.text('Totales por registro:', 15, y);
+      pdf.text(formatMinutes(totalRegisteredMinutes), 80, y);
+      y += 6;
+      pdf.text('Ajuste total:', 15, y);
+      pdf.setTextColor(totalAdjustmentMinutes >= 0 ? 0 : 255, totalAdjustmentMinutes >= 0 ? 128 : 0, 0);
+      pdf.text(formatMin(totalAdjustmentMinutes), 80, y);
+      pdf.setTextColor(0, 0, 0);
+    }
+
+    // 📅 FOOTER
+    y += 10;
 
     pdf.setTextColor(100);
     pdf.setFontSize(9);
