@@ -39,10 +39,11 @@ const formatName = (value) => {
     .join(' ');
 };
 
-const HomePage = ({ user, setCurrentView }) => {
+const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
   const [hasRegisteredToday, setHasRegisteredToday] = useState(false);
   const [todayScheduleText, setTodayScheduleText] = useState('No hay horario para hoy');
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -50,10 +51,16 @@ const HomePage = ({ user, setCurrentView }) => {
     const checkTodayRegistration = async () => {
       setLoading(true);
       try {
-        const [horasSnap, horariosSnap] = await Promise.all([
+        const [horasSnap, horariosSnap, usuarioSnap] = await Promise.all([
           getDoc(doc(db, 'horasTrabajadas', user.uid)),
           getDoc(doc(db, 'HORARIOS', user.uid)),
+          getDoc(doc(db, 'usuarios', user.uid)),
         ]);
+
+        // Obtener el name de la colección usuarios
+        if (usuarioSnap.exists()) {
+          setUserName(usuarioSnap.data().name);
+        }
 
         const today = getTodayDateInput();
         const registered = horasSnap.exists() ? !!horasSnap.data()?.dias?.[today] : false;
@@ -106,7 +113,7 @@ const HomePage = ({ user, setCurrentView }) => {
     );
   }
 
-  const displayName = user.displayName ? formatName(user.displayName) : user.email;
+  const displayName = userName ? formatName(userName) : user.email;
 
   if (loading) {
     return (
@@ -139,6 +146,9 @@ const HomePage = ({ user, setCurrentView }) => {
         </button>
         <button className="home-button" onClick={() => setCurrentView('pago')}>
           Consultar Pago
+        </button>
+        <button className="home-button" onClick={() => setShowCopiModal(true)}>
+          Recuperar Datos
         </button>
       </div>
     </div>

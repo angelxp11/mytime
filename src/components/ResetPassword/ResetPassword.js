@@ -1,14 +1,25 @@
 import React, { useState } from 'react';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../server/api';
+import { showToast } from '../ToastContainer';
 import '../../colors.css';
 import './ResetPassword.css';
 
 const ResetPassword = ({ setCurrentView }) => {
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle reset password logic here
-    console.log('Reset Password for:', email);
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      showToast('Enlace de restablecimiento enviado a tu correo', 'success');
+      setCurrentView('login');
+    } catch (error) {
+      showToast('Error al enviar el enlace: ' + error.message, 'error');
+    }
+    setLoading(false);
   };
 
   return (
@@ -25,8 +36,8 @@ const ResetPassword = ({ setCurrentView }) => {
             required
           />
         </div>
-        <button type="submit" className="reset-button">
-          Enviar Enlace de Restablecimiento
+        <button type="submit" className="reset-button" disabled={loading}>
+          {loading ? 'Enviando...' : 'Enviar Enlace de Restablecimiento'}
         </button>
       </form>
       <div className="login-link">

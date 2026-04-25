@@ -717,9 +717,9 @@ const ConsultarPago = ({ user, setCurrentView }) => {
       // Calcular minutos registrados (considerando si cruza medianoche)
       const registeredMinutes = entradaR !== '-' && salidaR !== '-' ? calculateWorkedMinutes(entradaR, salidaR, isNextDay) : 0;
       
-      // Total: llegada temprana (positiva) + tiempo extra (positiva)
-      // La llegada tarde (negativa) se muestra pero no se suma al total
-      const total = (diffEntrada > 0 ? diffEntrada : 0) + (diffSalida > 0 ? diffSalida : 0);
+      // Total: llegada temprana (positiva) + tiempo extra (positiva) - llegada tarde (negativa)
+      // La llegada tarde (negativa) se resta del tiempo extra
+      const total = diffEntrada + diffSalida;
 
       tableHorario.push({
         fecha: dateStr,

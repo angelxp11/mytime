@@ -67,6 +67,15 @@
   margin-right: 8px;
 }
 
+.eye-wrapper {
+  border-left: 1px solid rgba(255,255,255,0.2);
+  padding: 0 8px;
+  margin-left: 8px;
+  cursor: pointer;
+  color: #00d4ff;
+  font-size: 0.9rem;
+}
+
 /* INPUT */
 .input-icon input {
   flex: 1;

@@ -2,24 +2,25 @@ import React, { useState } from 'react';
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db, provider } from '../server/api';
-import { toast } from 'react-toastify';
+import { showToast } from '../ToastContainer';
 import '../../colors.css';
 import './Login.css';
-import { FaEnvelope, FaLock, FaGoogle } from "react-icons/fa";
+import { FaEnvelope, FaLock, FaGoogle, FaEye, FaEyeSlash } from "react-icons/fa";
 
 const Login = ({ setCurrentView }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      toast.success('Inicio de sesión exitoso');
+      showToast('Inicio de sesión exitoso', 'success');
     } catch (error) {
-      toast.error('Error al iniciar sesión: ' + error.message);
+      showToast('Error al iniciar sesión: ' + error.message, 'error');
     }
     setLoading(false);
   };
@@ -35,9 +36,9 @@ const Login = ({ setCurrentView }) => {
         email: user.email,
         id: user.uid
       }, { merge: true });
-      toast.success('Inicio de sesión con Google exitoso');
+      showToast('Inicio de sesión con Google exitoso', 'success');
     } catch (error) {
-      toast.error('Error al iniciar sesión con Google: ' + error.message);
+      showToast('Error al iniciar sesión con Google: ' + error.message, 'error');
     }
     setLoading(false);
   };
@@ -68,12 +69,19 @@ const Login = ({ setCurrentView }) => {
               <FaLock />
             </div>
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <div
+              type="button"
+              className="eye-wrapper"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </div>
           </div>
         </div>
         <button type="submit" className="login-button" disabled={loading}>

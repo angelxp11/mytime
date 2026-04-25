@@ -14,11 +14,13 @@ import Horario from './components/horario/horario';
 import Loading from './components/loading/loading';
 import RegisterHours from './components/registerhours/RegisterHours';
 import ToastContainer from './components/ToastContainer';
+import CopiModal from './funtions/copi';
 
 function App() {
   const [currentView, setCurrentView] = useState('home');
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showCopiModal, setShowCopiModal] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -47,7 +49,7 @@ function App() {
       case 'reset':
         return <ResetPassword setCurrentView={setCurrentView} />;
       case 'home':
-        return <HomePage user={user} setCurrentView={setCurrentView} />;
+        return <HomePage user={user} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} />;
       case 'trabajos':
         return <MisTrabajos user={user} />;
       case 'calendar':
@@ -83,6 +85,7 @@ function App() {
         {renderView()}
       </main>
       <ToastContainer />
+      <CopiModal isOpen={showCopiModal} onClose={() => setShowCopiModal(false)} user={user} />
     </div>
   );
 }

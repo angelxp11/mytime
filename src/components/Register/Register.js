@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createUserWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db, provider } from '../server/api';
-import { toast } from 'react-toastify';
+import { showToast } from '../ToastContainer';
 import { FaUser, FaEnvelope, FaLock, FaGoogle, FaEye, FaEyeSlash } from "react-icons/fa";
 import '../../colors.css';
 import './Register.css';
@@ -19,7 +19,7 @@ const Register = ({ setCurrentView }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      toast.error('Las contraseñas no coinciden');
+      showToast('Las contraseñas no coinciden', 'error');
       return;
     }
     setLoading(true);
@@ -32,9 +32,9 @@ const Register = ({ setCurrentView }) => {
         email: email,
         id: user.uid
       });
-      toast.success('Registro exitoso');
+      showToast('Registro exitoso', 'success');
     } catch (error) {
-      toast.error('Error al registrarse: ' + error.message);
+      showToast('Error al registrarse: ' + error.message, 'error');
     }
     setLoading(false);
   };
@@ -50,9 +50,9 @@ const Register = ({ setCurrentView }) => {
         email: user.email,
         id: user.uid
       }, { merge: true });
-      toast.success('Registro con Google exitoso');
+      showToast('Registro con Google exitoso', 'success');
     } catch (error) {
-      toast.error('Error al registrarse con Google: ' + error.message);
+      showToast('Error al registrarse con Google: ' + error.message, 'error');
     }
     setLoading(false);
   };
