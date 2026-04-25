@@ -133,28 +133,52 @@ const calculateMinDiff = (time1, time2) => {
   return min2 - min1; // positiva si t2 > t1
 };
 
-const calculateAdjustmentMinutes = (scheduledTime, actualTime, type) => {
+const calculateAdjustmentMinutes = (scheduledTime, actualTime, type, isNextDay = false, baseDate = null) => {
   const scheduled = parseTime(scheduledTime);
   const actual = parseTime(actualTime);
   if (!scheduled || !actual) return 0;
 
-  const scheduledMinutes = scheduled.hour * 60 + scheduled.minute;
-  const actualMinutes = actual.hour * 60 + actual.minute;
+  let scheduledMinutes = scheduled.hour * 60 + scheduled.minute;
+  let actualMinutes = actual.hour * 60 + actual.minute;
 
-  if (type === 'entrada') {
-    return scheduledMinutes - actualMinutes; // early entry is positive
+  // Si la salida es después de medianoche (ej. 00:36), tratarla como del día siguiente
+  // En este caso, sumamos 24 horas (1440 minutos) a la hora real
+  if (isNextDay) {
+    actualMinutes += 24 * 60;
   }
 
-  return actualMinutes - scheduledMinutes; // late exit is positive
+  if (type === 'entrada') {
+    return scheduledMinutes - actualMinutes; // early entry is positive, late is negative
+  }
+
+  return actualMinutes - scheduledMinutes; // late exit is positive, early is negative
 };
 
-const calculateWorkedMinutes = (startTime, endTime) => {
+// Nueva función para verificar si la salida cruza medianoche
+const doesExitCrossMidnight = (entryTime, exitTime) => {
+  const entry = parseTime(entryTime);
+  const exit = parseTime(exitTime);
+  if (!entry || !exit) return false;
+  
+  // Si la hora de salida es menor que la de entrada, significa que cruza medianoche
+  // También consideramos que si la salida es antes de las 12:00 PM y la entrada es después de las 12:00 PM
+  return exit.hour < entry.hour || (exit.hour === entry.hour && exit.minute <= entry.minute);
+};
+
+const calculateWorkedMinutes = (startTime, endTime, isNextDay = false) => {
   const start = parseTime(startTime);
   const end = parseTime(endTime);
   if (!start || !end) return 0;
 
   let startMinutes = start.hour * 60 + start.minute;
   let endMinutes = end.hour * 60 + end.minute;
+  
+  // Si la salida es después de medianoche (ej. 00:36), treat it as next day
+  // En este caso, sumamos 24 horas (1440 minutos) a la hora de salida
+  if (isNextDay) {
+    endMinutes += 24 * 60;
+  }
+  
   if (endMinutes <= startMinutes) {
     endMinutes += 24 * 60;
   }
@@ -643,19 +667,21 @@ const ConsultarPago = ({ user, setCurrentView }) => {
 
     y += 6;
 
-    // Encabezados
+    // Encabezados con las nuevas columnas
     pdf.setFontSize(9);
     pdf.setFillColor(30, 41, 59);
     pdf.setTextColor(255, 255, 255);
 
-    pdf.rect(15, y, 180, 8, 'F');
+    pdf.rect(15, y, 195, 8, 'F');
 
     pdf.text('Día', 16, y + 5);
-    pdf.text('Ent H', 40, y + 5);
-    pdf.text('Ent R', 60, y + 5);
-    pdf.text('Sal H', 80, y + 5);
-    pdf.text('Sal R', 100, y + 5);
-    pdf.text('Tiempo', 150, y + 5);
+    pdf.text('Ent H', 38, y + 5);
+    pdf.text('Ent R', 58, y + 5);
+    pdf.text('Sal H', 78, y + 5);
+    pdf.text('Sal R', 98, y + 5);
+    pdf.text('Llegan', 118, y + 5);
+    pdf.text('+ Tiempo', 138, y + 5);
+    pdf.text('Total', 158, y + 5);
 
     y += 10;
 
@@ -673,11 +699,27 @@ const ConsultarPago = ({ user, setCurrentView }) => {
       const entradaR = dayData.entrada || '-';
       const salidaR = dayData.salida || '-';
 
+      // Verificar si la salida cruza medianoche usando la nueva función
+      const isNextDay = doesExitCrossMidnight(entradaR, salidaR);
+      
+      // Calcular diferencia de llegada: entrada programada - entrada real
+      // Positivo = llegó antes (temprano), Negativo = llegó tarde
       const diffEntrada = entradaH !== '-' && entradaR !== '-' ? calculateAdjustmentMinutes(entradaH, entradaR, 'entrada') : 0;
-      const diffSalida = salidaH !== '-' && salidaR !== '-' ? calculateAdjustmentMinutes(salidaH, salidaR, 'salida') : 0;
+      
+      // Calcular tiempo extra de salida:
+      // Simple: salida real - salida programada (sin ajustar por llegada temprana)
+      // Si la salida cruza medianoche, sumamos 24 horas
+      const diffSalida = salidaH !== '-' && salidaR !== '-' ? calculateAdjustmentMinutes(salidaH, salidaR, 'salida', isNextDay) : 0;
+      
+      // Calcular minutos trabajados según el horario
       const scheduleMinutes = entradaH !== '-' && salidaH !== '-' ? calculateWorkedMinutes(entradaH, salidaH) : 0;
-      const registeredMinutes = entradaR !== '-' && salidaR !== '-' ? calculateWorkedMinutes(entradaR, salidaR) : 0;
-      const total = diffEntrada + diffSalida;
+      
+      // Calcular minutos registrados (considerando si cruza medianoche)
+      const registeredMinutes = entradaR !== '-' && salidaR !== '-' ? calculateWorkedMinutes(entradaR, salidaR, isNextDay) : 0;
+      
+      // Total: llegada temprana (positiva) + tiempo extra (positiva)
+      // La llegada tarde (negativa) se muestra pero no se suma al total
+      const total = (diffEntrada > 0 ? diffEntrada : 0) + (diffSalida > 0 ? diffSalida : 0);
 
       tableHorario.push({
         fecha: dateStr,
@@ -685,6 +727,8 @@ const ConsultarPago = ({ user, setCurrentView }) => {
         entradaR,
         salidaH,
         salidaR,
+        diffEntrada,
+        diffSalida,
         total,
         scheduleMinutes,
         registeredMinutes,
@@ -694,25 +738,56 @@ const ConsultarPago = ({ user, setCurrentView }) => {
     const totalScheduleMinutes = tableHorario.reduce((sum, row) => sum + row.scheduleMinutes, 0);
     const totalRegisteredMinutes = tableHorario.reduce((sum, row) => sum + row.registeredMinutes, 0);
     const totalAdjustmentMinutes = tableHorario.reduce((sum, row) => sum + row.total, 0);
+    // Total de llegada temprana (solo positivos)
+    const totalLlegadaTemprano = tableHorario.reduce((sum, row) => sum + (row.diffEntrada > 0 ? row.diffEntrada : 0), 0);
+    // Total de llegada tarde (solo negativos)
+    const totalLlegadaTarde = tableHorario.reduce((sum, row) => sum + (row.diffEntrada < 0 ? row.diffEntrada : 0), 0);
+    // Total de tiempo extra (solo positivos)
+    const totalTiempoExtra = tableHorario.reduce((sum, row) => sum + (row.diffSalida > 0 ? row.diffSalida : 0), 0);
 
-    const filteredTableHorario = tableHorario.filter(row => row.total !== 0);
+    // Mostrar filas donde hubo diferencias (llegada temprana, llegada tarde, o tiempo extra)
+    const filteredTableHorario = tableHorario.filter(row => row.diffEntrada !== 0 || row.diffSalida !== 0);
 
     pdf.setTextColor(0, 0, 0);
 
     filteredTableHorario.forEach((row, i) => {
       if (i % 2 === 0) {
         pdf.setFillColor(245, 245, 245);
-        pdf.rect(15, y - 4, 180, 8, 'F');
+        pdf.rect(15, y - 4, 195, 8, 'F');
       }
 
       pdf.text(formatFechaDisplay(row.fecha), 16, y);
-      pdf.text(row.entradaH || '-', 40, y);
-      pdf.text(row.entradaR || '-', 60, y);
-      pdf.text(row.salidaH || '-', 80, y);
-      pdf.text(row.salidaR || '-', 100, y);
+      pdf.text(row.entradaH || '-', 38, y);
+      pdf.text(row.entradaR || '-', 58, y);
+      pdf.text(row.salidaH || '-', 78, y);
+      pdf.text(row.salidaR || '-', 98, y);
 
-      pdf.setTextColor(row.total >= 0 ? 0 : 255, row.total >= 0 ? 128 : 0, 0);
-      pdf.text(formatMin(row.total), 150, y);
+      // Columna de llegada: positivo = llegó antes, negativo = llegó tarde
+      if (row.diffEntrada !== 0) {
+        pdf.setTextColor(row.diffEntrada > 0 ? 0 : 255, row.diffEntrada > 0 ? 128 : 0, 0);
+        pdf.text(formatMin(row.diffEntrada), 118, y);
+      } else {
+        pdf.setTextColor(0, 0, 0);
+        pdf.text('-', 118, y);
+      }
+      
+      // Columna de más tiempo: siempre positivo (tiempo extra)
+      if (row.diffSalida > 0) {
+        pdf.setTextColor(0, 128, 0);
+        pdf.text(formatMin(row.diffSalida), 138, y);
+      } else {
+        pdf.setTextColor(0, 0, 0);
+        pdf.text('-', 138, y);
+      }
+      
+      // Columna total
+      if (row.total !== 0) {
+        pdf.setTextColor(row.total > 0 ? 0 : 255, row.total > 0 ? 128 : 0, 0);
+        pdf.text(formatMin(row.total), 158, y);
+      } else {
+        pdf.setTextColor(0, 0, 0);
+        pdf.text('-', 158, y);
+      }
       pdf.setTextColor(0, 0, 0);
 
       y += 8;
@@ -721,15 +796,43 @@ const ConsultarPago = ({ user, setCurrentView }) => {
     if (filteredTableHorario.length > 0) {
       y += 4;
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Totales por horario:', 15, y);
-      pdf.text(formatMinutes(totalScheduleMinutes), 80, y);
-      y += 6;
-      pdf.text('Totales por registro:', 15, y);
-      pdf.text(formatMinutes(totalRegisteredMinutes), 80, y);
-      y += 6;
-      pdf.text('Ajuste total:', 15, y);
+      pdf.text('RESUMEN ACUMULADO:', 15, y);
+      y += 8;
+      
+      // Llegadas tempranas
+      pdf.setTextColor(0, 128, 0);
+      pdf.text('Llegadas tempranas:', 15, y);
+      pdf.text(formatMin(totalLlegadaTemprano), 80, y);
+      y += 7;
+
+      // Llegadas tardes (en rojo)
+      pdf.setTextColor(255, 0, 0);
+      pdf.text('Llegadas tardes:', 15, y);
+      pdf.text(formatMin(totalLlegadaTarde), 80, y);
+      y += 7;
+
+      // Tiempo extra
+      pdf.setTextColor(0, 128, 0);
+      pdf.text('Tiempo extra:', 15, y);
+      pdf.text(formatMin(totalTiempoExtra), 80, y);
+      y += 7;
+
+      // Ajuste total
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('Total ajuste:', 15, y);
       pdf.setTextColor(totalAdjustmentMinutes >= 0 ? 0 : 255, totalAdjustmentMinutes >= 0 ? 128 : 0, 0);
       pdf.text(formatMin(totalAdjustmentMinutes), 80, y);
+      pdf.setTextColor(0, 0, 0);
+
+      // Totales por horario y registro
+      y += 7;
+      pdf.setTextColor(0, 0, 128);
+      pdf.text('Totales por horario:', 15, y);
+      pdf.text(formatHoras(totalScheduleMinutes / 60), 80, y);
+      y += 7;
+      pdf.setTextColor(0, 0, 128);
+      pdf.text('Totales por registro:', 15, y);
+      pdf.text(formatHoras(totalRegisteredMinutes / 60), 80, y);
       pdf.setTextColor(0, 0, 0);
     }
 
@@ -970,6 +1073,44 @@ const ConsultarPago = ({ user, setCurrentView }) => {
                 <p><strong>Horas pagadas totales:</strong> {formatHoras(calculations.totalHoras)}</p>
                 <p><strong>Horas recargo nocturno:</strong> {formatHoras(recargoNocturnoHours)}</p>
                 <p><strong>Horas recargo dominical:</strong> {formatHoras(recargoDominicalHours)}</p>
+                {/* Totales por horario y registro */}
+                <p><strong>Totales por horario:</strong> {formatHoras((() => {
+                  // Recalcular aquí para la vista
+                  let tableHorario = [];
+                  const startDateTime = createDateFromString(calculations.startDate);
+                  const endDateTime = createDateFromString(calculations.endDate);
+                  for (let d = new Date(startDateTime); d <= endDateTime; d.setDate(d.getDate() + 1)) {
+                    const dateStr = formatLocalDate(d);
+                    const dayData = diasData[dateStr];
+                    if (!dayData || dayData.tipo !== 'trabajado') continue;
+                    const daySchedule = getHorarioForDay(dateStr, horariosData);
+                    const entradaH = daySchedule?.startTime || '-';
+                    const salidaH = daySchedule?.endTime || '-';
+                    // Calcular minutos trabajados según el horario
+                    const scheduleMinutes = entradaH !== '-' && salidaH !== '-' ? calculateWorkedMinutes(entradaH, salidaH) : 0;
+                    tableHorario.push({ scheduleMinutes });
+                  }
+                  const totalScheduleMinutes = tableHorario.reduce((sum, row) => sum + row.scheduleMinutes, 0);
+                  return totalScheduleMinutes / 60;
+                })())}</p>
+                <p><strong>Totales por registro:</strong> {formatHoras((() => {
+                  let tableHorario = [];
+                  const startDateTime = createDateFromString(calculations.startDate);
+                  const endDateTime = createDateFromString(calculations.endDate);
+                  for (let d = new Date(startDateTime); d <= endDateTime; d.setDate(d.getDate() + 1)) {
+                    const dateStr = formatLocalDate(d);
+                    const dayData = diasData[dateStr];
+                    if (!dayData || dayData.tipo !== 'trabajado') continue;
+                    const entradaR = dayData.entrada || '-';
+                    const salidaR = dayData.salida || '-';
+                    const isNextDay = doesExitCrossMidnight(entradaR, salidaR);
+                    // Calcular minutos registrados (considerando si cruza medianoche)
+                    const registeredMinutes = entradaR !== '-' && salidaR !== '-' ? calculateWorkedMinutes(entradaR, salidaR, isNextDay) : 0;
+                    tableHorario.push({ registeredMinutes });
+                  }
+                  const totalRegisteredMinutes = tableHorario.reduce((sum, row) => sum + row.registeredMinutes, 0);
+                  return totalRegisteredMinutes / 60;
+                })())}</p>
               </div>
 
               <div className="report-switch-section">
