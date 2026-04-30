@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../server/api';
 import { showToast } from '../ToastContainer';
 import Loading from '../loading/loading';
+import CompartirHorario from './compartirmihorario/compartirhorario';
 import './horario.css';
 
 const weekOptions = [
@@ -125,6 +126,8 @@ const Horario = ({ user }) => {
   const [scheduleDays, setScheduleDays] = useState(() => createScheduleDays(currentMonday));
   const [loading, setLoading] = useState(false);
   const [scheduleLoaded, setScheduleLoaded] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharedWith, setSharedWith] = useState([]);
 
   const currentWeekStart = useMemo(() => {
     if (useCustomPicker) {
@@ -291,6 +294,38 @@ const Horario = ({ user }) => {
     );
   };
 
+  // Cargar usuarios compartidos
+  const loadSharedWith = async () => {
+    if (!user) return;
+    try {
+      const docRef = doc(db, 'HORARIOS', user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setSharedWith(data?.sharedWith || []);
+      }
+    } catch (error) {
+      console.error('Error cargando usuarios compartidos:', error);
+    }
+  };
+
+  // Cargar usuarios compartidos cuando el usuario cambia
+  useEffect(() => {
+    loadSharedWith();
+  }, [user]);
+
+  const handleOpenShareModal = () => {
+    setShowShareModal(true);
+  };
+
+  const handleCloseShareModal = () => {
+    setShowShareModal(false);
+  };
+
+  const handleShareUpdated = (updatedSharedWith) => {
+    setSharedWith(updatedSharedWith);
+  };
+
   if (loading) {
     return <Loading text="Cargando horario..." />;
   }
@@ -418,8 +453,19 @@ const Horario = ({ user }) => {
           <button type="button" className="horario-save-button" onClick={handleSaveSchedule}>
             Guardar horario
           </button>
+          <button type="button" className="horario-share-button" onClick={handleOpenShareModal}>
+            Compartir mi horario
+          </button>
         </div>
       </div>
+
+      <CompartirHorario
+        user={user}
+        isOpen={showShareModal}
+        onClose={handleCloseShareModal}
+        sharedWith={sharedWith}
+        onShareUpdated={handleShareUpdated}
+      />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FiClock } from 'react-icons/fi';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../server/api';
 import '../../colors.css';
 import './HomePage.css';
@@ -39,9 +39,13 @@ const formatName = (value) => {
     .join(' ');
 };
 
+const getFirstName = (fullName) => {
+  return fullName.trim().split(/\s+/)[0];
+};
+
 const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
   const [hasRegisteredToday, setHasRegisteredToday] = useState(false);
-  const [todayScheduleText, setTodayScheduleText] = useState('No hay horario para hoy');
+  const [todaySchedules, setTodaySchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState(null);
 
@@ -57,15 +61,21 @@ const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
           getDoc(doc(db, 'usuarios', user.uid)),
         ]);
 
-        // Obtener el name de la colección usuarios
+        let firstNameUser = 'Usuario';
+
         if (usuarioSnap.exists()) {
-          setUserName(usuarioSnap.data().name);
+          const name = usuarioSnap.data().name;
+          setUserName(name);
+          firstNameUser = getFirstName(formatName(name));
         }
 
         const today = getTodayDateInput();
         const registered = horasSnap.exists() ? !!horasSnap.data()?.dias?.[today] : false;
         setHasRegisteredToday(registered);
 
+        const allSchedules = [];
+
+        // Horario propio
         if (horariosSnap.exists()) {
           const scheduleData = horariosSnap.data();
           const monday = getMondayOfWeek(new Date());
@@ -77,22 +87,84 @@ const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
             if (todaySchedule.tipo === 'trabajado') {
               const start = todaySchedule.startTime || '00:00';
               const end = todaySchedule.endTime || '00:00';
-              setTodayScheduleText(`Hoy trabajas de ${start} a ${end}`);
-            } else if (todaySchedule.tipo === 'descanso') {
-              setTodayScheduleText('Descanso');
+
+              allSchedules.push({
+                name: firstNameUser,
+                ingreso: start,
+                salida: end,
+              });
             } else {
-              setTodayScheduleText(`Horario: ${todaySchedule.tipo}`);
+              allSchedules.push({
+                name: firstNameUser,
+                ingreso: '—',
+                salida: '—',
+              });
             }
           } else {
-            setTodayScheduleText('No hay horario para hoy');
+            allSchedules.push({
+              name: firstNameUser,
+              ingreso: '—',
+              salida: '—',
+            });
           }
         } else {
-          setTodayScheduleText('No hay horario para hoy');
+          allSchedules.push({
+            name: firstNameUser,
+            ingreso: '—',
+            salida: '—',
+          });
+        }
+
+        // Horarios compartidos
+        try {
+          const horariosRef = collection(db, 'HORARIOS');
+          const querySnapshot = await getDocs(horariosRef);
+
+          for (const horariosDoc of querySnapshot.docs) {
+            const horariosData = horariosDoc.data();
+
+            if (horariosData.sharedWith && horariosData.sharedWith.includes(user.email)) {
+              const usuarioDocRef = doc(db, 'usuarios', horariosDoc.id);
+              const usuarioDocSnap = await getDoc(usuarioDocRef);
+
+              if (usuarioDocSnap.exists()) {
+                const usuarioData = usuarioDocSnap.data();
+                const firstName = getFirstName(usuarioData.name || 'Usuario');
+
+                const monday = getMondayOfWeek(new Date());
+                const weekStartDate = formatDateInput(monday);
+                const savedWeek = horariosData?.semanas?.[weekStartDate];
+                const todayScheduleShared = savedWeek?.days?.find((day) => day.date === today);
+
+                if (todayScheduleShared && todayScheduleShared.tipo === 'trabajado') {
+                  const start = todayScheduleShared.startTime || '00:00';
+                  const end = todayScheduleShared.endTime || '00:00';
+
+                  allSchedules.push({
+                    name: firstName,
+                    ingreso: start,
+                    salida: end,
+                  });
+                } else {
+                  allSchedules.push({
+                    name: firstName,
+                    ingreso: '—',
+                    salida: '—',
+                  });
+                }
+              }
+            }
+          }
+
+          setTodaySchedules(allSchedules);
+        } catch (error) {
+          console.error('Error cargando horarios compartidos:', error);
+          setTodaySchedules(allSchedules);
         }
       } catch (error) {
         console.error('Error checking today registration:', error);
         setHasRegisteredToday(false);
-        setTodayScheduleText('No hay horario para hoy');
+        setTodaySchedules([]);
       } finally {
         setLoading(false);
       }
@@ -131,11 +203,31 @@ const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
           : `Bienvenido ${displayName}, Hoy no has ingresado tu entrada ni salida`
         }
       </h1>
+
       <div className="home-today-schedule">
         <span>Horario para hoy</span>
-        <strong>{todayScheduleText}</strong>
+
+        <div className="schedule-table">
+          {todaySchedules.length > 0 ? (
+            todaySchedules.map((item, index) => (
+              <div className="schedule-row" key={index}>
+                <span>{item.name}</span>
+                <span>{item.ingreso}</span>
+                <span>{item.salida}</span>
+              </div>
+            ))
+          ) : (
+            <div className="schedule-row">
+              <span>Sin datos</span>
+              <span>—</span>
+              <span>—</span>
+            </div>
+          )}
+        </div>
       </div>
+
       <p>Tu plataforma para gestionar horas de trabajo y pagos.</p>
+
       <div className="home-buttons">
         <button className="home-button" onClick={() => setCurrentView('registerhours')}>
           <FiClock size={18} style={{ marginRight: '10px' }} />

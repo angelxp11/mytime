@@ -354,6 +354,315 @@
   opacity: 0.75;
 }
 
+.horario-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.horario-share-button {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: #ffffff;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.horario-share-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(6, 182, 212, 0.2);
+}
+
+.horario-shared-list {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.horario-shared-list h3 {
+  margin: 0 0 12px 0;
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.horario-shared-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.horario-shared-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.horario-shared-item:last-child {
+  margin-bottom: 0;
+}
+
+.horario-remove-share-btn {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.horario-remove-share-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #ff5252;
+}
+
+/* Overlay */
+.horario-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+/* Modal */
+.horario-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.horario-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 22px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.horario-modal-header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.horario-modal-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.horario-modal-close:hover {
+  background: rgba(148, 163, 184, 0.1);
+  color: #e2e8f0;
+}
+
+.horario-modal-content {
+  padding: 20px 22px;
+}
+
+.horario-search-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.horario-search-section label {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.horario-search-input-wrapper {
+  display: flex;
+  gap: 10px;
+}
+
+.horario-search-input-wrapper input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.95);
+  color: #f8fafc;
+  font-size: 0.95rem;
+}
+
+.horario-search-input-wrapper input:focus {
+  outline: none;
+  border-color: rgba(0, 212, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+}
+
+.horario-search-button {
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.horario-search-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(0, 212, 255, 0.2);
+}
+
+.horario-search-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.horario-search-results {
+  margin-bottom: 20px;
+}
+
+.horario-results-title {
+  margin: 0 0 12px 0;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.horario-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.horario-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.horario-result-item:hover {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(0, 212, 255, 0.3);
+}
+
+.horario-result-item.selected {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: rgba(0, 212, 255, 0.5);
+}
+
+.horario-result-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.horario-result-name {
+  color: #e2e8f0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.horario-result-email {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.horario-result-item input[type='radio'] {
+  width: 20px;
+  height: 20px;
+  margin-left: 12px;
+  accent-color: #00d4ff;
+  cursor: pointer;
+}
+
+.horario-modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 16px 22px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.horario-modal-cancel,
+.horario-modal-accept {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.horario-modal-cancel {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+}
+
+.horario-modal-cancel:hover {
+  background: rgba(148, 163, 184, 0.25);
+  color: #e2e8f0;
+}
+
+.horario-modal-accept {
+  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  color: #ffffff;
+}
+
+.horario-modal-accept:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(0, 212, 255, 0.2);
+}
+
+
 @media (max-width: 780px) {
   .horario-header {
     flex-direction: column;
@@ -362,6 +671,20 @@
 
   .horario-select-wrapper {
     min-width: unset;
+  }
+
+  .horario-actions {
+    flex-direction: column;
+  }
+
+  .horario-save-button,
+  .horario-share-button {
+    width: 100%;
+  }
+
+  .horario-modal {
+    width: 95%;
+    max-width: none;
   }
 }
 
