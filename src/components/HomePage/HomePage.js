@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { FiClock } from 'react-icons/fi';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { FiClock, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { doc, getDoc, collection, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../server/api';
 import '../../colors.css';
 import './HomePage.css';
 import Loading from '../loading/loading';
+import ModalConfirmation from '../modalconfirmation/modalconfirmation';
 
 const getTodayDateInput = () => {
   const today = new Date();
@@ -43,135 +44,271 @@ const getFirstName = (fullName) => {
   return fullName.trim().split(/\s+/)[0];
 };
 
+const parseTimeToMinutes = (time) => {
+  if (!time || time === '—') return null;
+  const [hour, minute] = time.split(':').map(Number);
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+  return hour * 60 + minute;
+};
+
+const isTimeRangeOverlap = (startA, endA, startB, endB) => {
+  if (startA == null || endA == null || startB == null || endB == null) return false;
+  return startA < endB && endA > startB;
+};
+
+const markOverlappingSchedules = (schedules) => {
+  if (schedules.length === 0) return schedules;
+
+  const userSchedule = schedules[0]; // El primer horario es siempre del usuario
+  const userStart = parseTimeToMinutes(userSchedule.ingreso);
+  const userEnd = parseTimeToMinutes(userSchedule.salida);
+  const userHasSchedule = userStart !== null && userEnd !== null;
+
+  const markedSchedules = schedules.map((item, index) => {
+    let overlap = false;
+    if (index === 0) {
+      // Usuario: siempre overlap si tiene horario
+      overlap = userHasSchedule;
+    } else {
+      // Compañeros: overlap solo si se solapan con el usuario
+      const itemStart = parseTimeToMinutes(item.ingreso);
+      const itemEnd = parseTimeToMinutes(item.salida);
+      overlap = userHasSchedule && isTimeRangeOverlap(userStart, userEnd, itemStart, itemEnd);
+    }
+    return { ...item, overlap };
+  });
+
+  // Ordenar: primero los que tienen overlap (verde), luego los que no (rojo)
+  return markedSchedules.sort((a, b) => {
+    if (a.overlap && !b.overlap) return -1;
+    if (!a.overlap && b.overlap) return 1;
+    return 0; // Mantener orden relativo si ambos true o ambos false
+  });
+};
+
+const getFriendlyDayLabel = (date) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const selected = new Date(date);
+  selected.setHours(0, 0, 0, 0);
+  const diff = Math.round((selected - today) / (1000 * 60 * 60 * 24));
+
+  if (diff === 0) return 'HOY';
+  if (diff === 1) return 'MAÑANA';
+  if (diff === -1) return 'AYER';
+  return selected.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase();
+};
+
 const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
   const [hasRegisteredToday, setHasRegisteredToday] = useState(false);
   const [todaySchedules, setTodaySchedules] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [sharedWith, setSharedWith] = useState([]);
+  const [showShareBackModal, setShowShareBackModal] = useState(false);
+  const [shareBackUser, setShareBackUser] = useState(null);
 
   useEffect(() => {
     if (!user) return;
 
     const checkTodayRegistration = async () => {
-      setLoading(true);
       try {
-        const [horasSnap, horariosSnap, usuarioSnap] = await Promise.all([
+        const [horasSnap, usuarioSnap] = await Promise.all([
           getDoc(doc(db, 'horasTrabajadas', user.uid)),
-          getDoc(doc(db, 'HORARIOS', user.uid)),
           getDoc(doc(db, 'usuarios', user.uid)),
         ]);
-
-        let firstNameUser = 'Usuario';
 
         if (usuarioSnap.exists()) {
           const name = usuarioSnap.data().name;
           setUserName(name);
-          firstNameUser = getFirstName(formatName(name));
         }
 
         const today = getTodayDateInput();
         const registered = horasSnap.exists() ? !!horasSnap.data()?.dias?.[today] : false;
         setHasRegisteredToday(registered);
+      } catch (error) {
+        console.error('Error checking today registration:', error);
+        setHasRegisteredToday(false);
+      }
+    };
 
-        const allSchedules = [];
+    checkTodayRegistration();
+  }, [user]);
 
-        // Horario propio
+  useEffect(() => {
+    if (!user) return;
+
+    const loadSelectedSchedules = async () => {
+      setTodaySchedules([]); // Reset to show loading
+      const selectedDateStr = formatDateInput(selectedDate);
+      const monday = getMondayOfWeek(selectedDate);
+      const weekStartDate = formatDateInput(monday);
+      const allSchedules = [];
+
+      try {
+        const horariosSnap = await getDoc(doc(db, 'HORARIOS', user.uid));
+        let firstNameUser = 'Usuario';
+        let userSharedWith = [];
+
         if (horariosSnap.exists()) {
           const scheduleData = horariosSnap.data();
-          const monday = getMondayOfWeek(new Date());
-          const weekStartDate = formatDateInput(monday);
+          userSharedWith = scheduleData.sharedWith || [];
+          setSharedWith(userSharedWith);
+          const usuarioSnap = await getDoc(doc(db, 'usuarios', user.uid));
+          if (usuarioSnap.exists()) {
+            firstNameUser = getFirstName(formatName(usuarioSnap.data().name || 'Usuario'));
+          }
+
           const savedWeek = scheduleData?.semanas?.[weekStartDate];
-          const todaySchedule = savedWeek?.days?.find((day) => day.date === today);
+          const selectedSchedule = savedWeek?.days?.find((day) => day.date === selectedDateStr);
 
-          if (todaySchedule) {
-            if (todaySchedule.tipo === 'trabajado') {
-              const start = todaySchedule.startTime || '00:00';
-              const end = todaySchedule.endTime || '00:00';
-
-              allSchedules.push({
-                name: firstNameUser,
-                ingreso: start,
-                salida: end,
-              });
-            } else {
-              allSchedules.push({
-                name: firstNameUser,
-                ingreso: '—',
-                salida: '—',
-              });
-            }
+          if (selectedSchedule && selectedSchedule.tipo === 'trabajado') {
+            allSchedules.push({
+              name: firstNameUser,
+              ingreso: selectedSchedule.startTime || '00:00',
+              salida: selectedSchedule.endTime || '00:00',
+              email: user.email, // Usuario actual
+            });
           } else {
             allSchedules.push({
               name: firstNameUser,
               ingreso: '—',
               salida: '—',
+              email: user.email,
             });
           }
         } else {
+          const usuarioSnap = await getDoc(doc(db, 'usuarios', user.uid));
+          if (usuarioSnap.exists()) {
+            firstNameUser = getFirstName(formatName(usuarioSnap.data().name || 'Usuario'));
+          }
           allSchedules.push({
             name: firstNameUser,
             ingreso: '—',
             salida: '—',
+            email: user.email,
           });
+          setSharedWith([]);
         }
 
-        // Horarios compartidos
         try {
           const horariosRef = collection(db, 'HORARIOS');
           const querySnapshot = await getDocs(horariosRef);
 
           for (const horariosDoc of querySnapshot.docs) {
             const horariosData = horariosDoc.data();
-
             if (horariosData.sharedWith && horariosData.sharedWith.includes(user.email)) {
               const usuarioDocRef = doc(db, 'usuarios', horariosDoc.id);
               const usuarioDocSnap = await getDoc(usuarioDocRef);
 
               if (usuarioDocSnap.exists()) {
-                const usuarioData = usuarioDocSnap.data();
-                const firstName = getFirstName(usuarioData.name || 'Usuario');
-
-                const monday = getMondayOfWeek(new Date());
-                const weekStartDate = formatDateInput(monday);
+                const userData = usuarioDocSnap.data();
+                const firstName = getFirstName(formatName(userData.name || 'Usuario'));
+                const email = userData.email;
                 const savedWeek = horariosData?.semanas?.[weekStartDate];
-                const todayScheduleShared = savedWeek?.days?.find((day) => day.date === today);
+                const selectedScheduleShared = savedWeek?.days?.find((day) => day.date === selectedDateStr);
 
-                if (todayScheduleShared && todayScheduleShared.tipo === 'trabajado') {
-                  const start = todayScheduleShared.startTime || '00:00';
-                  const end = todayScheduleShared.endTime || '00:00';
-
+                if (selectedScheduleShared && selectedScheduleShared.tipo === 'trabajado') {
                   allSchedules.push({
                     name: firstName,
-                    ingreso: start,
-                    salida: end,
+                    ingreso: selectedScheduleShared.startTime || '00:00',
+                    salida: selectedScheduleShared.endTime || '00:00',
+                    email: email,
                   });
                 } else {
                   allSchedules.push({
                     name: firstName,
                     ingreso: '—',
                     salida: '—',
+                    email: email,
                   });
                 }
               }
             }
           }
-
-          setTodaySchedules(allSchedules);
         } catch (error) {
           console.error('Error cargando horarios compartidos:', error);
-          setTodaySchedules(allSchedules);
+        }
+
+        const markedSchedules = markOverlappingSchedules(allSchedules);
+        setTodaySchedules(markedSchedules);
+
+        // Verificar si hay un compañero que te compartió pero tú no le has compartido
+        const sharedCompanions = markedSchedules.slice(1).filter(schedule => !userSharedWith.includes(schedule.email));
+        if (sharedCompanions.length > 0 && !showShareBackModal) {
+          const companion = sharedCompanions[0];
+          const key = `declineShare_${user.email}_${companion.email}_${formatDateInput(selectedDate)}`;
+          const declinedAt = localStorage.getItem(key);
+          if (declinedAt) {
+            const now = Date.now();
+            const diff = now - parseInt(declinedAt);
+            const oneDay = 24 * 60 * 60 * 1000;
+            if (diff < oneDay) {
+              // Aún no ha pasado un día, no mostrar
+              return;
+            } else {
+              // Ha pasado, remover la clave
+              localStorage.removeItem(key);
+            }
+          }
+          setShareBackUser(companion); // Mostrar modal para el primero
+          setShowShareBackModal(true);
         }
       } catch (error) {
-        console.error('Error checking today registration:', error);
-        setHasRegisteredToday(false);
+        console.error('Error cargando horarios del día seleccionado:', error);
         setTodaySchedules([]);
       } finally {
-        setLoading(false);
+        // Loading handled by checking todaySchedules.length
       }
     };
 
-    checkTodayRegistration();
-  }, [user]);
+    loadSelectedSchedules();
+  }, [user, selectedDate, showShareBackModal]);
+
+  const handlePreviousDay = () => {
+    setSelectedDate((current) => {
+      const previous = new Date(current);
+      previous.setDate(previous.getDate() - 1);
+      return previous;
+    });
+  };
+
+  const handleNextDay = () => {
+    setSelectedDate((current) => {
+      const next = new Date(current);
+      next.setDate(next.getDate() + 1);
+      return next;
+    });
+  };
+
+  const handleShareBackConfirm = async () => {
+    if (!shareBackUser || !user) return;
+
+    try {
+      const updatedSharedWith = [...sharedWith, shareBackUser.email];
+      await setDoc(
+        doc(db, 'HORARIOS', user.uid),
+        { sharedWith: updatedSharedWith },
+        { merge: true }
+      );
+      setSharedWith(updatedSharedWith);
+      setShowShareBackModal(false);
+      setShareBackUser(null);
+      // Recargar schedules para reflejar el cambio
+      // Como selectedDate no cambió, el useEffect se ejecutará de nuevo
+    } catch (error) {
+      console.error('Error compartiendo horario de vuelta:', error);
+    }
+  };
+
+  const handleShareBackCancel = () => {
+    if (shareBackUser && user) {
+      const key = `declineShare_${user.email}_${shareBackUser.email}_${formatDateInput(selectedDate)}`;
+      localStorage.setItem(key, Date.now().toString());
+    }
+    setShowShareBackModal(false);
+    setShareBackUser(null);
+  };
 
   if (!user) {
     return (
@@ -187,10 +324,10 @@ const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
 
   const displayName = userName ? formatName(userName) : user.email;
 
-  if (loading) {
+  if (todaySchedules.length === 0) {
     return (
       <div className="home-container">
-        <Loading text="Cargando..." />
+        <Loading />
       </div>
     );
   }
@@ -205,24 +342,29 @@ const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
       </h1>
 
       <div className="home-today-schedule">
-        <span>Horario para hoy</span>
+        <div className="schedule-header">
+          <button className="date-nav" onClick={handlePreviousDay} aria-label="Día anterior">
+            <FiChevronLeft size={20} />
+          </button>
+
+          <div className="selected-day-label">
+            <strong>{getFriendlyDayLabel(selectedDate)}</strong>
+            <span>{formatDateInput(selectedDate)}</span>
+          </div>
+
+          <button className="date-nav" onClick={handleNextDay} aria-label="Día siguiente">
+            <FiChevronRight size={20} />
+          </button>
+        </div>
 
         <div className="schedule-table">
-          {todaySchedules.length > 0 ? (
-            todaySchedules.map((item, index) => (
-              <div className="schedule-row" key={index}>
-                <span>{item.name}</span>
-                <span>{item.ingreso}</span>
-                <span>{item.salida}</span>
-              </div>
-            ))
-          ) : (
-            <div className="schedule-row">
-              <span>Sin datos</span>
-              <span>—</span>
-              <span>—</span>
+          {todaySchedules.map((item, index) => (
+            <div className={`schedule-row${item.overlap ? ' overlap' : ' no-overlap'}`} key={index}>
+              <span>{item.name}</span>
+              <span>{item.ingreso}</span>
+              <span>{item.salida}</span>
             </div>
-          )}
+          ))}
         </div>
       </div>
 
@@ -243,6 +385,15 @@ const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
           Recuperar Datos
         </button>
       </div>
+
+      <ModalConfirmation
+        isOpen={showShareBackModal}
+        title="¿Quieres compartir tu horario?"
+        message={`Tu compañero ${shareBackUser?.name} ha compartido su horario contigo. ¿Quieres compartirle también tu horario?`}
+        onConfirm={handleShareBackConfirm}
+        onCancel={handleShareBackCancel}
+        onClose={handleShareBackCancel}
+      />
     </div>
   );
 };
