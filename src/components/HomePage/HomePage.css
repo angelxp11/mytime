@@ -198,6 +198,110 @@
   font-size: 0.95rem;
 }
 
+/* Banner de subscripción vencida */
+.subscription-expired-banner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.98), rgba(74, 222, 128, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 22px;
+  padding: 24px 26px;
+  margin: 24px auto 0;
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.24);
+  animation: fadeInDown 0.6s ease;
+  max-width: 760px;
+  width: 100%;
+}
+
+.expired-message {
+  display: grid;
+  gap: 10px;
+  align-items: flex-start;
+  text-align: left;
+  flex: 1;
+}
+
+.expired-text {
+  color: #ffffff;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.expired-description {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1rem;
+  line-height: 1.55;
+  max-width: 560px;
+}
+
+.renew-button {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 14px 24px;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+  white-space: nowrap;
+}
+
+.renew-button:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+.expired-icon {
+  font-size: 1.5rem;
+  animation: pulse 2s infinite;
+}
+
+.expired-text {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.renew-button {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #ffffff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+}
+
+.renew-button:hover {
+  background: linear-gradient(135deg, #15803d, #166534);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+}
+
+.renew-button:active {
+  transform: translateY(0);
+}
+
+/* Animación de pulso para el icono */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
 /* Contenedor de botones */
 .home-buttons {
   display: flex;

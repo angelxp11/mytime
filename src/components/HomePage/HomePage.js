@@ -99,7 +99,7 @@ const getFriendlyDayLabel = (date) => {
   return selected.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase();
 };
 
-const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
+const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPlanModal }) => {
   const [hasRegisteredToday, setHasRegisteredToday] = useState(false);
   const [todaySchedules, setTodaySchedules] = useState([]);
   const [userName, setUserName] = useState(null);
@@ -119,8 +119,8 @@ const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
         ]);
 
         if (usuarioSnap.exists()) {
-          const name = usuarioSnap.data().name;
-          setUserName(name);
+          const userData = usuarioSnap.data();
+          setUserName(userData.name);
         }
 
         const today = getTodayDateInput();
@@ -324,6 +324,28 @@ const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
 
   const displayName = userName ? formatName(userName) : user.email;
 
+  const isSubscriptionExpired = () => {
+    if (!userPlan) return false;
+
+    if (userPlan.plan !== 'premium') return true;
+    if (!userPlan.expirationDate) return false;
+
+    const now = new Date();
+    return userPlan.expirationDate < now;
+  };
+
+  const canRegisterHours = () => {
+    return userPlan?.plan === 'premium' && !isSubscriptionExpired();
+  };
+
+  const handleRegisterHoursClick = () => {
+    if (canRegisterHours()) {
+      setCurrentView('registerhours');
+    } else {
+      setShowPlanModal(true);
+    }
+  };
+
   if (todaySchedules.length === 0) {
     return (
       <div className="home-container">
@@ -368,12 +390,29 @@ const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
         </div>
       </div>
 
+      {isSubscriptionExpired() && (
+        <div className="subscription-expired-banner">
+          <div className="expired-message">
+            <div>
+              <span className="expired-icon">⚠️</span>
+              <span className="expired-text">Mejora tu plan</span>
+            </div>
+            <p className="expired-description">
+              Desbloquea el registro de horas diarias y apoya al desarrollador para seguir mejorando MyTime.
+            </p>
+          </div>
+          <button className="renew-button" onClick={() => setShowPlanModal(true)}>
+            Mejorar plan
+          </button>
+        </div>
+      )}
+
       <p>Tu plataforma para gestionar horas de trabajo y pagos.</p>
 
       <div className="home-buttons">
-        <button className="home-button" onClick={() => setCurrentView('registerhours')}>
+        <button className="home-button" onClick={handleRegisterHoursClick}>
           <FiClock size={18} style={{ marginRight: '10px' }} />
-          Registrar Horas
+          {canRegisterHours() ? 'Registrar Horas' : 'Actualizar a Premium'}
         </button>
         <button className="home-button" onClick={() => setCurrentView('trabajos')}>
           Ver Mis Trabajos
@@ -394,6 +433,7 @@ const HomePage = ({ user, setCurrentView, setShowCopiModal }) => {
         onCancel={handleShareBackCancel}
         onClose={handleShareBackCancel}
       />
+
     </div>
   );
 };

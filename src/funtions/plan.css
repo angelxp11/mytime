@@ -1,0 +1,210 @@
+.plan-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px 0;
+  overflow-y: auto;
+  z-index: 1100;
+}
+
+.plan-modal-content {
+  width: min(92%, 720px);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: rgba(18, 18, 30, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    /* ocultar scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE y Edge antiguos */
+}
+
+.plan-modal-content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+
+}
+
+.plan-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 24px 26px 16px;
+}
+
+.plan-modal-header h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 1.5rem;
+}
+
+.plan-modal-subtitle {
+  margin: 8px 0 0;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  max-width: 520px;
+}
+
+.plan-close-button {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  font-size: 28px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.plan-modal-body {
+  padding: 0 26px 24px;
+}
+
+.plan-info-card {
+  display: grid;
+  gap: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 22px;
+}
+
+.plan-qr {
+  width: min(100%, 320px);
+  height: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.plan-info-card::-webkit-scrollbar {
+  width: 8px;
+}
+
+.plan-info-card::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+}
+
+.plan-info-card::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+}
+
+.plan-info-card {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) rgba(255, 255, 255, 0.05);
+}
+
+.plan-label-row,
+.plan-price-row,
+.plan-months-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.plan-label,
+.plan-price-row span,
+.plan-months-row label {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.plan-status {
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-size: 0.9rem;
+}
+
+.plan-status.free {
+  background: rgba(148, 163, 184, 0.18);
+  color: #94a3b8;
+}
+
+.plan-status.premium {
+  background: linear-gradient(135deg, #eab308, #f59e0b);
+  color: #1f2937;
+}
+
+.plan-months-row select {
+  background: rgba(15, 23, 42, 0.98);
+  color: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 120px;
+}
+
+.plan-months-row select option {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.plan-qr-section {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+}
+
+.plan-qr {
+  max-width: 100%;
+  height: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.plan-instructions {
+  color: #cbd5e1;
+  line-height: 1.75;
+  font-size: 0.96rem;
+}
+
+.plan-instructions ol {
+  margin: 10px 0 0 18px;
+}
+
+.plan-instructions li {
+  margin-bottom: 8px;
+}
+
+.plan-success-message {
+  color: #dcfce7;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.plan-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 26px 26px;
+}
+
+.plan-request-button {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  color: #1f2937;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 24px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.plan-request-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.25);
+}
+
+.plan-request-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
