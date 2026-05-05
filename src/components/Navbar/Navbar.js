@@ -11,8 +11,19 @@ const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal
     setIsOpen(!isOpen);
   };
 
+  const isSubscriptionExpired = () => {
+    if (!userPlan) return true;
+    if (userPlan.plan !== 'premium') return true;
+    if (!userPlan.expirationDate) return false;
+    return new Date(userPlan.expirationDate) < new Date();
+  };
+
   const handleNavClick = (view) => {
-    setCurrentView(view);
+    if (view === 'pago' && isSubscriptionExpired()) {
+      setShowPlanModal(true);
+    } else {
+      setCurrentView(view);
+    }
     setIsOpen(false); // Close menu on mobile after click
   };
 

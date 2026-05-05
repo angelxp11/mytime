@@ -105,6 +105,9 @@ function App() {
       case 'calendar':
         return <CalendarComponent user={user} />;
       case 'pago':
+        if (!userPlan || userPlan.plan !== 'premium') {
+          return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+        }
         return <ConsultarPago user={user} setCurrentView={setCurrentView} />;
       case 'registerhours':
         if (!userPlan || userPlan.plan !== 'premium') {

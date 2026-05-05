@@ -346,6 +346,14 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
     }
   };
 
+  const handleConsultarPagoClick = () => {
+    if (userPlan?.plan === 'premium' && !isSubscriptionExpired()) {
+      setCurrentView('pago');
+    } else {
+      setShowPlanModal(true);
+    }
+  };
+
   if (todaySchedules.length === 0) {
     return (
       <div className="home-container">
@@ -417,8 +425,8 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
         <button className="home-button" onClick={() => setCurrentView('trabajos')}>
           Ver Mis Trabajos
         </button>
-        <button className="home-button" onClick={() => setCurrentView('pago')}>
-          Consultar Pago
+        <button className="home-button" onClick={handleConsultarPagoClick}>
+          {canRegisterHours() ? 'Consultar Pago' : 'Actualizar a Premium'}
         </button>
         <button className="home-button" onClick={() => setShowCopiModal(true)}>
           Recuperar Datos
