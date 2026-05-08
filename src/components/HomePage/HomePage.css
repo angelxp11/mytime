@@ -148,6 +148,21 @@
   transition: all 0.2s ease;
 }
 
+/* Celda fusionada (LIBRE o NO REGISTRADO) */
+.merged-cell {
+  grid-column: 2 / 4 !important;
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: center;
+  font-size: 0.95rem;
+  color: #e5e7eb;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /* Hover sutil tipo app moderna */
 .schedule-row span:hover {
   border-color: rgba(0, 212, 255, 0.5);

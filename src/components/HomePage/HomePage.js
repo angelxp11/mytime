@@ -66,6 +66,19 @@ const markOverlappingSchedules = (schedules) => {
 
   const markedSchedules = schedules.map((item, index) => {
     let overlap = false;
+    
+    // Determinar si la celda debe fusionarse (LIBRE o NO REGISTRADO)
+    let merged = false;
+    let mergedText = '';
+    
+    if (item.ingreso === 'LI' && item.salida === 'BRE') {
+      merged = true;
+      mergedText = 'DESCANSO';
+    } else if (item.ingreso === 'NO' && item.salida === 'REGISTRO') {
+      merged = true;
+      mergedText = 'NO REGISTRADO';
+    }
+    
     if (index === 0) {
       // Usuario: siempre overlap si tiene horario
       overlap = userHasSchedule;
@@ -75,7 +88,7 @@ const markOverlappingSchedules = (schedules) => {
       const itemEnd = parseTimeToMinutes(item.salida);
       overlap = userHasSchedule && isTimeRangeOverlap(userStart, userEnd, itemStart, itemEnd);
     }
-    return { ...item, overlap };
+    return { ...item, overlap, merged, mergedText };
   });
 
   // Ordenar: primero los que tienen overlap (verde), luego los que no (rojo)
@@ -169,11 +182,20 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
               salida: selectedSchedule.endTime || '00:00',
               email: user.email, // Usuario actual
             });
-          } else {
+          } else if (selectedSchedule && selectedSchedule.tipo !== 'trabajado') {
+            // Día de descanso
             allSchedules.push({
               name: firstNameUser,
-              ingreso: '—',
-              salida: '—',
+              ingreso: 'LI',
+              salida: 'BRE',
+              email: user.email,
+            });
+          } else {
+            // No ha registrado
+            allSchedules.push({
+              name: firstNameUser,
+              ingreso: 'NO',
+              salida: 'REGISTRO',
               email: user.email,
             });
           }
@@ -184,8 +206,8 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
           }
           allSchedules.push({
             name: firstNameUser,
-            ingreso: '—',
-            salida: '—',
+            ingreso: 'NO',
+            salida: 'REGISTRO',
             email: user.email,
           });
           setSharedWith([]);
@@ -215,11 +237,20 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                     salida: selectedScheduleShared.endTime || '00:00',
                     email: email,
                   });
-                } else {
+                } else if (selectedScheduleShared && selectedScheduleShared.tipo !== 'trabajado') {
+                  // Día de descanso
                   allSchedules.push({
                     name: firstName,
-                    ingreso: '—',
-                    salida: '—',
+                    ingreso: 'LI',
+                    salida: 'BRE',
+                    email: email,
+                  });
+                } else {
+                  // No ha registrado
+                  allSchedules.push({
+                    name: firstName,
+                    ingreso: 'NO',
+                    salida: 'REGISTRO',
                     email: email,
                   });
                 }
@@ -391,8 +422,14 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
           {todaySchedules.map((item, index) => (
             <div className={`schedule-row${item.overlap ? ' overlap' : ' no-overlap'}`} key={index}>
               <span>{item.name}</span>
-              <span>{item.ingreso}</span>
-              <span>{item.salida}</span>
+              {item.merged ? (
+                <span className="merged-cell">{item.mergedText}</span>
+              ) : (
+                <>
+                  <span>{item.ingreso}</span>
+                  <span>{item.salida}</span>
+                </>
+              )}
             </div>
           ))}
         </div>
