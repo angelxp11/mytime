@@ -16,10 +16,19 @@
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 10px;
-  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  animation: fadeInDown 0.6s ease;
+}
+
+.home-container h1.registered {
+  background: linear-gradient(135deg, #22c55e, #16a34a60);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: fadeInDown 0.6s ease;
+}
+
+.home-container h1.not-registered {
+  background: linear-gradient(135deg, #ef4444, #dc262651);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Descripción */
@@ -111,26 +120,54 @@
   align-items: stretch;
 }
 
-.schedule-row.overlap {
+/* Categoría 0: Coinciden (Verde) */
+.schedule-row.category-0 {
   background: rgba(34, 197, 94, 0.12);
   border-left: 4px solid #22c55e;
   border-radius: 16px;
   padding: 6px;
 }
 
-.schedule-row.overlap span {
+.schedule-row.category-0 span {
   background: transparent;
   border-color: transparent;
 }
 
-.schedule-row.no-overlap {
+/* Categoría 1: No coinciden pero tienen horario (Rojo) */
+.schedule-row.category-1 {
   background: rgba(239, 68, 68, 0.12);
   border-left: 4px solid #ef4444;
   border-radius: 16px;
   padding: 6px;
 }
 
-.schedule-row.no-overlap span {
+.schedule-row.category-1 span {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Categoría 2: Descanso (Celeste #B0DFF6) */
+.schedule-row.category-2 {
+  background: rgba(176, 223, 246, 0.12);
+  border-left: 4px solid #B0DFF6;
+  border-radius: 16px;
+  padding: 6px;
+}
+
+.schedule-row.category-2 span {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Categoría 3: No registrado (Amarillo #FDD212) */
+.schedule-row.category-3 {
+  background: rgba(253, 210, 18, 0.12);
+  border-left: 4px solid #FDD212;
+  border-radius: 16px;
+  padding: 6px;
+}
+
+.schedule-row.category-3 span {
   background: transparent;
   border-color: transparent;
 }

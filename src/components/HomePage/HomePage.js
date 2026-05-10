@@ -31,6 +31,13 @@ const formatDateInput = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+const formatDateDisplay = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${day}/${month}/${year}`;
+};
+
 const formatName = (value) => {
   return value
     .trim()
@@ -66,6 +73,7 @@ const markOverlappingSchedules = (schedules) => {
 
   const markedSchedules = schedules.map((item, index) => {
     let overlap = false;
+    let category = 0; // 0: overlap, 1: no-overlap con horario, 2: descanso, 3: no registrado
     
     // Determinar si la celda debe fusionarse (LIBRE o NO REGISTRADO)
     let merged = false;
@@ -74,29 +82,37 @@ const markOverlappingSchedules = (schedules) => {
     if (item.ingreso === 'LI' && item.salida === 'BRE') {
       merged = true;
       mergedText = 'DESCANSO';
+      category = 2; // Descanso
     } else if (item.ingreso === 'NO' && item.salida === 'REGISTRO') {
       merged = true;
       mergedText = 'NO REGISTRADO';
+      category = 3; // No registrado
+    } else {
+      if (index === 0) {
+        // Usuario: siempre overlap si tiene horario
+        overlap = userHasSchedule;
+      } else {
+        // Compañeros: overlap solo si se solapan con el usuario
+        const itemStart = parseTimeToMinutes(item.ingreso);
+        const itemEnd = parseTimeToMinutes(item.salida);
+        overlap = userHasSchedule && isTimeRangeOverlap(userStart, userEnd, itemStart, itemEnd);
+      }
+      
+      if (overlap) {
+        category = 0; // Coincide (verde)
+      } else {
+        category = 1; // No coincide pero tiene horario (rojo)
+      }
     }
     
-    if (index === 0) {
-      // Usuario: siempre overlap si tiene horario
-      overlap = userHasSchedule;
-    } else {
-      // Compañeros: overlap solo si se solapan con el usuario
-      const itemStart = parseTimeToMinutes(item.ingreso);
-      const itemEnd = parseTimeToMinutes(item.salida);
-      overlap = userHasSchedule && isTimeRangeOverlap(userStart, userEnd, itemStart, itemEnd);
-    }
-    return { ...item, overlap, merged, mergedText };
+    return { ...item, overlap, merged, mergedText, category };
   });
 
-  // Ordenar: primero los que tienen overlap (verde), luego los que no (rojo)
-  return markedSchedules.sort((a, b) => {
-    if (a.overlap && !b.overlap) return -1;
-    if (!a.overlap && b.overlap) return 1;
-    return 0; // Mantener orden relativo si ambos true o ambos false
-  });
+  // Mantener el usuario en posición 0, ordenar el resto por categoría
+  const userItem = markedSchedules[0];
+  const otherItems = markedSchedules.slice(1).sort((a, b) => a.category - b.category);
+  
+  return [userItem, ...otherItems];
 };
 
 const getFriendlyDayLabel = (date) => {
@@ -218,6 +234,9 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
           const querySnapshot = await getDocs(horariosRef);
 
           for (const horariosDoc of querySnapshot.docs) {
+            // No incluir al usuario autenticado
+            if (horariosDoc.id === user.uid) continue;
+            
             const horariosData = horariosDoc.data();
             if (horariosData.sharedWith && horariosData.sharedWith.includes(user.email)) {
               const usuarioDocRef = doc(db, 'usuarios', horariosDoc.id);
@@ -225,7 +244,8 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
 
               if (usuarioDocSnap.exists()) {
                 const userData = usuarioDocSnap.data();
-                const firstName = getFirstName(formatName(userData.name || 'Usuario'));
+                const fullName = formatName(userData.name || 'Usuario');
+                const firstName = getFirstName(fullName);
                 const email = userData.email;
                 const savedWeek = horariosData?.semanas?.[weekStartDate];
                 const selectedScheduleShared = savedWeek?.days?.find((day) => day.date === selectedDateStr);
@@ -233,6 +253,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                 if (selectedScheduleShared && selectedScheduleShared.tipo === 'trabajado') {
                   allSchedules.push({
                     name: firstName,
+                    fullName: fullName,
                     ingreso: selectedScheduleShared.startTime || '00:00',
                     salida: selectedScheduleShared.endTime || '00:00',
                     email: email,
@@ -241,6 +262,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                   // Día de descanso
                   allSchedules.push({
                     name: firstName,
+                    fullName: fullName,
                     ingreso: 'LI',
                     salida: 'BRE',
                     email: email,
@@ -249,6 +271,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                   // No ha registrado
                   allSchedules.push({
                     name: firstName,
+                    fullName: fullName,
                     ingreso: 'NO',
                     salida: 'REGISTRO',
                     email: email,
@@ -395,7 +418,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
 
   return (
     <div className="home-container">
-      <h1>
+      <h1 className={hasRegisteredToday ? 'registered' : 'not-registered'}>
         {hasRegisteredToday
           ? `Felicidades ${displayName}, Ya tienes el registro de hoy`
           : `Bienvenido ${displayName}, Hoy no has ingresado tu entrada ni salida`
@@ -410,7 +433,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
 
           <div className="selected-day-label">
             <strong>{getFriendlyDayLabel(selectedDate)}</strong>
-            <span>{formatDateInput(selectedDate)}</span>
+            <span>{formatDateDisplay(selectedDate)}</span>
           </div>
 
           <button className="date-nav" onClick={handleNextDay} aria-label="Día siguiente">
@@ -420,7 +443,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
 
         <div className="schedule-table">
           {todaySchedules.map((item, index) => (
-            <div className={`schedule-row${item.overlap ? ' overlap' : ' no-overlap'}`} key={index}>
+            <div className={`schedule-row category-${item.category}`} key={index}>
               <span>{item.name}</span>
               {item.merged ? (
                 <span className="merged-cell">{item.mergedText}</span>
@@ -473,7 +496,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
       <ModalConfirmation
         isOpen={showShareBackModal}
         title="¿Quieres compartir tu horario?"
-        message={`Tu compañero ${shareBackUser?.name} ha compartido su horario contigo. ¿Quieres compartirle también tu horario?`}
+        message={`Tu compañero ${shareBackUser?.fullName} ha compartido su horario contigo. ¿Quieres compartirle también tu horario?`}
         onConfirm={handleShareBackConfirm}
         onCancel={handleShareBackCancel}
         onClose={handleShareBackCancel}
