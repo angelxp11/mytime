@@ -10,6 +10,7 @@ import Register from './components/Register/Register';
 import ResetPassword from './components/ResetPassword/ResetPassword';
 import HomePage from './components/HomePage/HomePage';
 import MisTrabajos from './components/MisTrabajos/MisTrabajos';
+import Grupos from './components/grupos/grupos';
 import ConsultarPago from './components/ConsultarPago/ConsultarPago';
 import CalendarComponent from './components/Calendar/calendar';
 import Horario from './components/horario/horario';
@@ -102,6 +103,8 @@ function App() {
         return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
       case 'trabajos':
         return <MisTrabajos user={user} />;
+      case 'grupos':
+        return <Grupos user={user} />;
       case 'calendar':
         return <CalendarComponent user={user} />;
       case 'pago':
@@ -147,7 +150,7 @@ function App() {
       <main style={{ minHeight: 'calc(100vh - 60px)' }}>
         {renderView()}
       </main>
-      <Footer user={user} />
+      {currentView === 'home' && <Footer user={user} />}
       <ToastContainer />
       <PlanModal
         isOpen={showPlanModal}

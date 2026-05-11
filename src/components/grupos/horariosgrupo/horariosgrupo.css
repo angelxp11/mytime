@@ -1,0 +1,688 @@
+.horariosgrupo-container {
+  min-height: calc(100vh - 60px);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(2, 6, 23, 0.9), rgba(15, 23, 42, 0.95));
+}
+
+.horariosgrupo-back-button {
+  align-self: flex-start;
+  background: rgba(0, 212, 255, 0.12);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  color: #00d4ff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  margin-bottom: 20px;
+  transition: all 0.2s ease;
+}
+
+.horariosgrupo-back-button:hover {
+  background: rgba(0, 212, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.horariosgrupo-header {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.horariosgrupo-header h2 {
+  margin: 0;
+  font-size: 2rem;
+  background: linear-gradient(135deg, #00d4ff, #007cf0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.horariosgrupo-header p {
+  margin: 8px 0 0;
+  color: #94a3b8;
+}
+
+/* ─── CONTROLS ─── */
+.horariosgrupo-controls {
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.horariosgrupo-select-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.horariosgrupo-select-wrapper label {
+  color: #cbd5e1;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.horariosgrupo-select-wrapper select {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  background: rgba(15, 23, 42, 0.95);
+  color: #e5e7eb;
+}
+
+.horariosgrupo-week-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.horariosgrupo-week-number,
+.horariosgrupo-week-status {
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  color: #e5e7eb;
+}
+
+.horariosgrupo-week-status.loaded {
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #22c55e;
+}
+
+.horariosgrupo-week-status.unloaded {
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fca5a5;
+}
+
+.horariosgrupo-last-updated {
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  color: #94a3b8;
+}
+
+/* ─── TOGGLE SWITCH PROPIO ─── */
+.horariosgrupo-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.horariosgrupo-toggle-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.horariosgrupo-toggle-track {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  transition: background 0.25s ease, border-color 0.25s ease;
+  flex-shrink: 0;
+}
+
+.horariosgrupo-toggle-input:checked + .horariosgrupo-toggle-track {
+  background: rgba(0, 212, 255, 0.35);
+  border-color: rgba(0, 212, 255, 0.7);
+}
+
+.horariosgrupo-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #94a3b8;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.horariosgrupo-toggle-input:checked + .horariosgrupo-toggle-track .horariosgrupo-toggle-thumb {
+  transform: translateX(20px);
+  background: #00d4ff;
+}
+
+.horariosgrupo-toggle-text {
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* ─── CUSTOM DATE ─── */
+.horariosgrupo-custom-week {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.horariosgrupo-custom-week label {
+  color: #cbd5e1;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.horariosgrupo-custom-week input {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  background: rgba(15, 23, 42, 0.95);
+  color: #e5e7eb;
+  width: fit-content;
+}
+
+.horariosgrupo-error {
+  color: #fca5a5;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ─── AVISO ROTACIÓN MÓVIL ─── */
+.horariosgrupo-landscape-prompt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  max-width: 600px;
+  width: 100%;
+}
+
+.horariosgrupo-landscape-icon {
+  font-size: 1.6rem;
+  animation: horariosgrupo-rotate-hint 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes horariosgrupo-rotate-hint {
+  0%, 100% { transform: rotate(0deg); }
+  40%       { transform: rotate(90deg); }
+  60%       { transform: rotate(90deg); }
+}
+
+.horariosgrupo-landscape-prompt p {
+  margin: 0;
+  color: #fbbf24;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ─── TABLA ─── */
+.horariosgrupo-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.horariosgrupo-table-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.horariosgrupo-table {
+  border-collapse: collapse;
+  background: rgba(15, 23, 42, 0.95);
+  min-width: max-content;
+  width: 100%;
+}
+
+.horariosgrupo-th {
+  background: rgba(2, 132, 199, 0.18);
+  border: 1px solid rgba(56, 189, 248, 0.14);
+  padding: 6px 4px;
+  text-align: center;
+  color: #dbeafe;
+  font-weight: 700;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+.horariosgrupo-th-name {
+  min-width: 140px;
+  text-align: left;
+  padding-left: 10px;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: rgba(2, 100, 160, 0.3);
+}
+
+.horariosgrupo-th-day {
+  min-width: 200px;
+  background: rgba(2, 132, 199, 0.22);
+}
+
+.horariosgrupo-day-weekday {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  text-transform: capitalize;
+}
+
+.horariosgrupo-day-date {
+  font-size: 0.82rem;
+  color: #dbeafe;
+  font-weight: 700;
+}
+
+.horariosgrupo-th-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 700;
+  padding: 4px 2px;
+  background: rgba(15, 23, 42, 0.95);
+  min-width: 36px;
+}
+
+/* Columna total horas semanales */
+.horariosgrupo-th-rowtotal {
+  min-width: 52px;
+  background: rgba(34, 197, 94, 0.12);
+  border-left: 2px solid rgba(34, 197, 94, 0.3);
+  color: #86efac;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  text-align: center;
+  position: sticky;
+  right: 0;
+  z-index: 2;
+}
+
+/* ─── FILAS ─── */
+.horariosgrupo-row {
+  transition: background 0.15s ease;
+  cursor: grab;
+}
+
+.horariosgrupo-row:hover {
+  background: rgba(56, 189, 248, 0.04);
+}
+
+.horariosgrupo-row.dragging {
+  opacity: 0.45;
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.horariosgrupo-td {
+  border: 1px solid rgba(56, 189, 248, 0.1);
+  padding: 4px 3px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Celda nombre */
+.horariosgrupo-td-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  min-width: 140px;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: rgba(15, 23, 42, 0.98);
+  border-right: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.horariosgrupo-drag-handle {
+  color: #64748b;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.horariosgrupo-participant-name {
+  color: #e5e7eb;
+  font-size: 0.84rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Estado select */
+.horariosgrupo-td-estado {
+  padding: 3px 2px;
+}
+
+.horariosgrupo-cell-estado {
+  font-size: 0.75rem;
+  padding: 3px 4px;
+  border-radius: 6px;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  background: rgba(15, 23, 42, 0.95);
+  color: #e5e7eb;
+  width: 52px;
+  text-align: center;
+}
+
+.horariosgrupo-cell-estado:focus {
+  outline: none;
+  border-color: rgba(34, 197, 94, 0.6);
+}
+
+/* Celda DESCANSO */
+.horariosgrupo-td-descanso {
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  color: #fca5a5;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-align: center;
+  padding: 4px;
+}
+
+/* Input 2 dígitos */
+.horariosgrupo-cell-2dig {
+  width: 26px;
+  min-width: 26px;
+  max-width: 26px;
+  padding: 3px 2px;
+  border-radius: 5px;
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  background: rgba(2, 6, 23, 0.9);
+  color: #e5e7eb;
+  font-size: 0.78rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.horariosgrupo-cell-2dig:focus {
+  outline: none;
+  border-color: rgba(34, 197, 94, 0.6);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.1);
+}
+
+.horariosgrupo-cell-2dig:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Total del día */
+.horariosgrupo-td-total {
+  color: #22c55e;
+  font-weight: 700;
+  font-size: 0.78rem;
+  background: rgba(34, 197, 94, 0.06);
+}
+
+/* Total semanal (columna sticky derecha) */
+.horariosgrupo-td-rowtotal {
+  color: #4ade80;
+  font-weight: 800;
+  font-size: 0.85rem;
+  background: rgba(34, 197, 94, 0.10);
+  border-left: 2px solid rgba(34, 197, 94, 0.3);
+  text-align: center;
+  padding: 4px 6px;
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  white-space: nowrap;
+}
+
+/* ─── ACTIONS ─── */
+.horariosgrupo-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  width: 100%;
+  max-width: 1200px;
+  flex-wrap: wrap;
+}
+
+.horariosgrupo-save-button {
+  background: linear-gradient(135deg, #22c55e, #0f766e);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.horariosgrupo-save-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 197, 74, 0.3);
+}
+
+.horariosgrupo-save-button:active {
+  transform: translateY(0);
+}
+
+/* Botón pegar Excel */
+.horariosgrupo-paste-button {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(14, 165, 233, 0.22));
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  padding: 12px 24px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.horariosgrupo-paste-button:hover {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.28), rgba(14, 165, 233, 0.32));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+}
+
+.horariosgrupo-paste-button:active {
+  transform: translateY(0);
+}
+
+/* ─── MODAL ─── */
+.horariosgrupo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.horariosgrupo-modal {
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 560px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+
+.horariosgrupo-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+}
+
+.horariosgrupo-modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #e5e7eb;
+}
+
+.horariosgrupo-modal-close {
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  color: #fca5a5;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.horariosgrupo-modal-close:hover {
+  background: rgba(248, 113, 113, 0.22);
+}
+
+.horariosgrupo-modal-body {
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.horariosgrupo-modal-hint {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.horariosgrupo-modal-hint code {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: 0.8rem;
+  color: #7dd3fc;
+}
+
+.horariosgrupo-modal-hint strong {
+  color: #cbd5e1;
+}
+
+.horariosgrupo-modal-hint--sub {
+  color: #7dd3fc;
+  font-size: 0.82rem;
+  background: rgba(56, 189, 248, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.14);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.horariosgrupo-modal-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 12px;
+  color: #e5e7eb;
+  font-size: 0.8rem;
+  font-family: 'Courier New', monospace;
+  padding: 12px;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+  line-height: 1.5;
+}
+
+.horariosgrupo-modal-textarea:focus {
+  outline: none;
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.08);
+}
+
+.horariosgrupo-modal-error {
+  margin: 0;
+  color: #fca5a5;
+  font-size: 0.85rem;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.horariosgrupo-modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 14px 22px 18px;
+  border-top: 1px solid rgba(56, 189, 248, 0.12);
+}
+
+.horariosgrupo-modal-cancel {
+  background: rgba(56, 189, 248, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  color: #94a3b8;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.horariosgrupo-modal-cancel:hover {
+  background: rgba(56, 189, 248, 0.12);
+  color: #cbd5e1;
+}
+
+.horariosgrupo-modal-apply {
+  background: linear-gradient(135deg, #22c55e, #0f766e);
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.horariosgrupo-modal-apply:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+@media (max-width: 768px) {
+  .horariosgrupo-td-name {
+    min-width: 110px;
+  }
+
+  .horariosgrupo-cell-2dig {
+    width: 22px;
+    min-width: 22px;
+    font-size: 0.72rem;
+  }
+
+  .horariosgrupo-cell-estado {
+    width: 44px;
+    font-size: 0.7rem;
+  }
+
+  .horariosgrupo-modal {
+    max-width: 100%;
+    border-radius: 16px;
+  }
+
+  .horariosgrupo-modal-textarea {
+    font-size: 0.75rem;
+  }
+}

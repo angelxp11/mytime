@@ -49,6 +49,7 @@ const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal
       <div className={`navbar-menu ${isOpen ? 'is-open' : ''}`}>
         <button type="button" className="navbar-item" onClick={() => handleNavClick('home')}>Inicio</button>
         <button type="button" className="navbar-item" onClick={() => handleNavClick('trabajos')}>Mis Trabajos</button>
+        <button type="button" className="navbar-item" onClick={() => handleNavClick('grupos')}>Grupos</button>
         <button type="button" className="navbar-item" onClick={() => handleNavClick('calendar')}>Ver Calendario</button>
         <button type="button" className="navbar-item" onClick={() => handleNavClick('horarios')}>Horarios</button>
         <button type="button" className="navbar-item" onClick={() => handleNavClick('pago')}>Consultar Pago</button>
