@@ -22,22 +22,7 @@ const Grupos = ({ user }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [expandedParticipants, setExpandedParticipants] = useState({});
   const [viewingGroupSchedule, setViewingGroupSchedule] = useState(null);
-  const cleanSchedules = (groupData.schedules || []).map(schedule => ({
-  day: schedule.day || '',
-  start: schedule.start || '',
-  end: schedule.end || '',
-}));
 
-if (activeGroup && activeGroup.id) {
-  const groupDoc = doc(db, 'grupos', activeGroup.id);
-  await updateDoc(groupDoc, {
-    groupName: groupData.groupName,
-    participants: groupData.participants,
-    participantEmails,
-    participantIds,
-    schedules: cleanSchedules,
-  });
-}
 
   useEffect(() => {
     if (!user) return;
@@ -113,18 +98,11 @@ if (activeGroup && activeGroup.id) {
     .map((participant) => participant.uid)
     .filter(Boolean);
 
-  // DEBUG
-  console.log('===== GROUP DATA =====');
-  console.log(groupData);
-
-  console.log('===== SCHEDULES =====');
-  console.log(groupData.schedules);
-
-  console.log('===== SCHEDULES JSON =====');
-  console.log(JSON.stringify(groupData.schedules, null, 2));
-
-  console.log('===== PARTICIPANTS =====');
-  console.log(groupData.participants);
+  const cleanSchedules = (groupData.schedules || []).map(schedule => ({
+    day: schedule.day || '',
+    start: schedule.start || '',
+    end: schedule.end || '',
+  }));
 
   try {
     if (activeGroup && activeGroup.id) {
@@ -135,7 +113,7 @@ if (activeGroup && activeGroup.id) {
         participants: groupData.participants,
         participantEmails,
         participantIds,
-        schedules: groupData.schedules,
+        schedules: cleanSchedules,
       });
 
     } else {
@@ -145,7 +123,7 @@ if (activeGroup && activeGroup.id) {
         participants: groupData.participants,
         participantEmails,
         participantIds,
-        schedules: groupData.schedules,
+        schedules: cleanSchedules,
         createdAt: serverTimestamp(),
       });
     }
@@ -155,15 +133,6 @@ if (activeGroup && activeGroup.id) {
   } catch (error) {
     console.error('===== ERROR COMPLETO =====');
     console.error(error);
-
-    console.log('Datos enviados a Firebase:', {
-      groupName: groupData.groupName,
-      participants: groupData.participants,
-      participantEmails,
-      participantIds,
-      schedules: groupData.schedules,
-    });
-
   } finally {
     setIsSaving(false);
   }

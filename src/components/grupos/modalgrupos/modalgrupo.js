@@ -80,7 +80,7 @@ const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
         name: selectedSearchResult.name,
         email: selectedSearchResult.email,
         uid: selectedSearchResult.id,
-        role: 'editor',
+        role: 'lector',
       },
     ]);
     setSelectedSearchResult(null);
@@ -204,8 +204,9 @@ const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
                             value={participant.role || 'editor'}
                             onChange={(e) => handleChangeParticipantRole(index, e.target.value)}
                           >
-                            <option value="editor">Editor</option>
                             <option value="lector">Lector</option>
+                            <option value="editor">Editor</option>
+                        
                           </select>
                         </label>
                       </div>

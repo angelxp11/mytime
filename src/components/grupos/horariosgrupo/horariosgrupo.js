@@ -46,10 +46,14 @@ const formatWeekday = (date) =>
   new Intl.DateTimeFormat('es-ES', { weekday: 'short' }).format(date);
 
 // Solo horas enteras: diff = endH - startH
-const calcTotal = (startH, endH) => {
+const calcTotal = (startH, endH, descanso = 0) => {
   let diff = parseInt(endH || 0) - parseInt(startH || 0);
+
   if (diff < 0) diff += 24;
-  return Math.max(0, diff);
+
+  const breakTime = parseInt(descanso || 0);
+
+  return Math.max(0, diff - breakTime);
 };
 
 const createScheduleDays = (startOfWeek) =>
@@ -129,93 +133,96 @@ const LandscapePrompt = () => (
 // Tokens libres: "Libre" seguido de espacios vacíos (las celdas fusionadas de Excel
 // se exportan como columnas vacías — en total 5 tokens por día incluyendo el primero)
 const parseExcelPaste = (raw, numParticipants, numDays = 7) => {
-  // Normalizar: separar por tabulaciones o múltiples espacios
-  // Excel copia filas separadas por \n y columnas por \t
-  // Si viene todo en una línea (pegado como texto plano), usar split de espacios
   const lines = raw.trim().split(/\n/);
 
-  // Determinar si es formato tabular (con tabs) o texto plano (todo junto)
   const isTabular = lines.some((l) => l.includes('\t'));
 
   let rows = [];
 
   if (isTabular) {
-    // Cada línea es un participante, columnas separadas por \t
-    rows = lines.map((line) =>
-      line
-        .split('\t')
-        .map((t) => t.trim())
-    );
+    rows = lines
+      .map((line) =>
+        line
+          .split('\t')
+          .map((t) => t.trim())
+      )
+      // 🔥 eliminar filas basura (vacías reales)
+      .filter((row) =>
+        row.some((cell) => {
+          const v = (cell || '').toLowerCase();
+          return (
+            v === '-' ||
+            v === 'libre' ||
+            v === 'descanso' ||
+            v === 'day off' ||
+            v === 'free' ||
+            !isNaN(parseInt(v))
+          );
+        })
+      );
   } else {
-    // Formato plano: todos los tokens en una sola cadena (o varias líneas sin tabs)
-    // Juntamos todo y dividimos por whitespace
+    // texto plano (fallback)
     const allTokens = lines.join(' ').trim().split(/\s+/);
-
-    // Cada participante ocupa numDays * 5 tokens
     const tokensPerParticipant = numDays * 5;
+
     for (let p = 0; p < numParticipants; p++) {
-      rows.push(allTokens.slice(p * tokensPerParticipant, (p + 1) * tokensPerParticipant));
+      rows.push(
+        allTokens.slice(
+          p * tokensPerParticipant,
+          (p + 1) * tokensPerParticipant
+        )
+      );
     }
   }
 
-  // Construir mapa de horarios
+  // 🔥 asegurar cantidad correcta de participantes
+  rows = rows.slice(0, numParticipants);
+
   const newSchedules = {};
 
   rows.forEach((tokens, pIndex) => {
-    if (pIndex >= numParticipants) return;
-
     let tokenIdx = 0;
 
     for (let d = 0; d < numDays; d++) {
-  const key = `participant_${pIndex}_day_${d}`;
+      const key = `participant_${pIndex}_day_${d}`;
 
-  const tok0 = (tokens[tokenIdx] || '').toLowerCase(); // estado
-  const tok1 = tokens[tokenIdx + 1] || ''; // entrada
-  const tok2 = tokens[tokenIdx + 2] || ''; // salida
-  const tok3 = tokens[tokenIdx + 3] || ''; // 👈 descanso
+      const tok0 = (tokens[tokenIdx] || '').toLowerCase(); // estado
+      const tok1 = tokens[tokenIdx + 1] || ''; // entrada
+      const tok2 = tokens[tokenIdx + 2] || ''; // salida
+      const tok3 = tokens[tokenIdx + 3] || ''; // descanso
+      // tok4 = tokens[tokenIdx + 4] -> IGNORADO (horas)
 
-  const isLibre =
-    tok0 === 'libre' ||
-    tok0 === 'descanso' ||
-    tok0 === 'day off' ||
-    tok0 === 'free';
+      const isLibre =
+        tok0 === 'libre' ||
+        tok0 === 'descanso' ||
+        tok0 === 'day off' ||
+        tok0 === 'free';
 
-  if (isLibre) {
-    newSchedules[key] = {
-      estado: 'libre',
-      startH: '00',
-      endH: '00',
-      descanso: '00',
-      horas: '00',
-    };
+      if (isLibre) {
+        newSchedules[key] = {
+          estado: 'libre',
+          startH: '00',
+          endH: '00',
+          descanso: '00',
+          horas: '00',
+        };
+      } else {
+        const startH = String(parseInt(tok1) || 0).padStart(2, '0');
+        const endH = String(parseInt(tok2) || 0).padStart(2, '0');
+        const descanso = String(parseInt(tok3) || 0).padStart(2, '0');
 
-    // 🔥 avanzar correctamente incluso si Excel mete celdas vacías
-    tokenIdx += 1;
+        newSchedules[key] = {
+          estado: '-',
+          startH,
+          endH,
+          descanso,
+          horas: String(calcTotal(startH, endH, descanso)).padStart(2, '0'),
+        };
+      }
 
-    let skip = 0;
-    while ((tokens[tokenIdx] === '' || tokens[tokenIdx] === undefined) && skip < 4) {
-      tokenIdx++;
-      skip++;
+      // 🔥 CLAVE: avanzar SIEMPRE 5 columnas por día
+      tokenIdx += 5;
     }
-
-  } else {
-    const startH = String(parseInt(tok1) || 0).padStart(2, '0');
-    const endH = String(parseInt(tok2) || 0).padStart(2, '0');
-    const descanso = tok3 !== '' ? String(parseInt(tok3) || 0).padStart(2, '0') : '00';
-    const horas = String(calcTotal(startH, endH)).padStart(2, '0');
-
-    newSchedules[key] = {
-      estado: '-',
-      startH,
-      endH,
-      descanso,
-      horas,
-    };
-
-    // avanzar columnas normales
-    tokenIdx += 5;
-  }
-}
   });
 
   return newSchedules;
@@ -348,13 +355,15 @@ const HorariosGrupo = ({ group, user, onBack }) => {
       startH,
       endH,
       descanso: '00',
-      horas: isDescanso ? '00' : String(calcTotal(startH, endH)).padStart(2, '0'),
+      horas: isDescanso
+  ? '00'
+  : String(calcTotal(startH, endH, 0)).padStart(2, '0'),
     };
   };
 
-  const buildDefaultSchedule = () => {
+  const buildDefaultSchedule = (numParticipants = participants.length) => {
     const schedule = {};
-    for (let pIndex = 0; pIndex < participants.length; pIndex++) {
+    for (let pIndex = 0; pIndex < numParticipants; pIndex++) {
       for (let d = 0; d < 7; d++) {
         const key = `participant_${pIndex}_day_${d}`;
         schedule[key] = {
@@ -383,34 +392,70 @@ const HorariosGrupo = ({ group, user, onBack }) => {
         const data = docSnap.exists() ? docSnap.data() : null;
         const savedWeek = data?.semanas?.[weekStartDate];
 
+        // 🔥 0. Inicializar orderedParticipants (disponible en ambas ramas)
+        let orderedParticipants = group.participants || [];
+
         if (savedWeek?.groupSchedules) {
-          const schedules = {};
-          if (Array.isArray(savedWeek.groupSchedules)) {
-            savedWeek.groupSchedules.forEach((participantEntry) => {
-              const participantIndex = Number(participantEntry.participantIndex ?? 0);
-              participantEntry.days?.forEach((day, dayIndex) => {
-                const key = `participant_${participantIndex}_day_${dayIndex}`;
-                schedules[key] = formatGroupCellFromSavedDay(day);
-              });
-            });
-          } else {
-            Object.entries(savedWeek.groupSchedules).forEach(([key, value]) => {
-              schedules[key] = {
-                estado: value.estado || '-',
-                startH: String(value.startH || '00').padStart(2, '0'),
-                endH: String(value.endH || '00').padStart(2, '0'),
-                descanso: String(value.descanso || '00').padStart(2, '0'),
-                horas: String(value.horas || calcTotal(value.startH, value.endH)).padStart(2, '0'),
-              };
-            });
-          }
-          setGroupSchedules({ ...buildDefaultSchedule(), ...schedules });
-          setScheduleLoaded(true);
-          setLastUpdated(savedWeek.updatedAt);
-        } else {
-          const schedules = buildDefaultSchedule();
-          for (let pIndex = 0; pIndex < participants.length; pIndex++) {
-            const participant = participants[pIndex];
+  const schedules = {};
+
+  // 🔥 1. Restaurar participantes manteniendo TODOS del grupo actual
+  // Usa participantes del grupo como fuente de verdad, pero respeta el orden guardado
+  if (savedWeek.participants && Array.isArray(savedWeek.participants)) {
+    // Crear un set de emails de participantes guardados
+    const savedParticipantEmails = new Set(
+      savedWeek.participants.map(p => p.email?.toLowerCase())
+    );
+    
+    // Reordenar: primero los guardados (en su orden), luego los nuevos
+    orderedParticipants = [
+      ...savedWeek.participants.filter(p => 
+        group.participants?.some(gp => gp.email?.toLowerCase() === p.email?.toLowerCase())
+      ),
+      ...(group.participants || []).filter(gp =>
+        !savedParticipantEmails.has(gp.email?.toLowerCase())
+      ),
+    ];
+  }
+  
+  setParticipants(orderedParticipants);
+
+  // 🔥 2. Reconstruir horarios
+  if (Array.isArray(savedWeek.groupSchedules)) {
+    savedWeek.groupSchedules.forEach((participantEntry) => {
+      const participantIndex = Number(participantEntry.participantIndex ?? 0);
+
+      participantEntry.days?.forEach((day, dayIndex) => {
+        const key = `participant_${participantIndex}_day_${dayIndex}`;
+
+        schedules[key] = formatGroupCellFromSavedDay(day);
+      });
+    });
+  } else {
+    Object.entries(savedWeek.groupSchedules).forEach(([key, value]) => {
+      schedules[key] = {
+        estado: value.estado || '-',
+        startH: String(value.startH || '00').padStart(2, '0'),
+        endH: String(value.endH || '00').padStart(2, '0'),
+        descanso: String(value.descanso || '00').padStart(2, '0'),
+        horas: String(
+          value.horas || calcTotal(value.startH, value.endH)
+        ).padStart(2, '0'),
+      };
+    });
+  }
+
+  // 🔥 3. Aplicar horarios (usa la cantidad correcta de participantes)
+  setGroupSchedules({
+    ...buildDefaultSchedule(orderedParticipants.length),
+    ...schedules,
+  });
+
+  setScheduleLoaded(true);
+  setLastUpdated(savedWeek.updatedAt);
+} else {
+          const schedules = buildDefaultSchedule(orderedParticipants.length);
+          for (let pIndex = 0; pIndex < orderedParticipants.length; pIndex++) {
+            const participant = orderedParticipants[pIndex];
             let participantId = participant.uid;
             if (!participantId && participant.email) {
               participantId = await findUserIdByEmail(participant.email);
@@ -434,6 +479,7 @@ const HorariosGrupo = ({ group, user, onBack }) => {
             }
           }
           setGroupSchedules(schedules);
+          setParticipants(orderedParticipants);
           setScheduleLoaded(false);
           setLastUpdated(null);
         }
@@ -447,7 +493,7 @@ const HorariosGrupo = ({ group, user, onBack }) => {
       }
     };
     loadGroupSchedules();
-  }, [currentWeekStart, user, group.id]);
+  }, [currentWeekStart, user, group.id, group.participants?.length]);
 
   const handleWeekChange = (e) => {
     setSelectedWeekOffset(Number(e.target.value));
@@ -540,15 +586,22 @@ const HorariosGrupo = ({ group, user, onBack }) => {
       });
 
       const schedulePayload = {
-        semana: weekStartDate,
-        weekNumber: getISOWeekNumber(currentWeekStart),
-        startDate: weekStartDate,
-        endDate: weekEndDate,
-        ownerId: group.ownerId || group.id,
-        participants,
-        groupSchedules: groupSchedulesArray,
-        updatedAt: new Date().toISOString(),
-      };
+  semana: weekStartDate,
+  weekNumber: getISOWeekNumber(currentWeekStart),
+  startDate: weekStartDate,
+  endDate: weekEndDate,
+  ownerId: group.ownerId || group.id,
+
+  participants, // 👈 ORDEN REAL
+  participantOrder: participants.map((p, index) => ({
+    uid: p.uid || '',
+    email: p.email || '',
+    index,
+  })),
+
+  groupSchedules: groupSchedulesArray,
+  updatedAt: new Date().toISOString(),
+};
 
       await setDoc(
         doc(db, 'HORARIOS_GRUPOS', `${group.ownerId || group.id}_${group.id}`),
@@ -570,7 +623,7 @@ const HorariosGrupo = ({ group, user, onBack }) => {
           );
 
           await setDoc(
-            doc(db, 'HORARIOS', participantId),
+            doc(db, 'HORARIOS_aa', participantId),
             { semanas: { [weekStartDate]: individualPayload } },
             { merge: true }
           );
@@ -599,7 +652,7 @@ const HorariosGrupo = ({ group, user, onBack }) => {
       const key = `participant_${pIndex}_day_${dayIndex}`;
       const cell = groupSchedules?.[key] || {};
       if (cell.estado !== 'libre') {
-        total += calcTotal(cell.startH, cell.endH);
+        total += calcTotal(cell.startH, cell.endH, cell.descanso);
       }
     });
     return total;
@@ -729,7 +782,9 @@ const HorariosGrupo = ({ group, user, onBack }) => {
                     const libre = estado === 'libre';
                     const startH = cell.startH || '00';
                     const endH = cell.endH || '00';
-                    const dayTotal = libre ? 0 : calcTotal(startH, endH);
+                    const dayTotal = libre
+  ? 0
+  : calcTotal(startH, endH, cell.descanso);
 
                     if (libre) {
                       return (
