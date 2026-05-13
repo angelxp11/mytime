@@ -7,7 +7,7 @@ const PlanModal = ({ isOpen, onClose, user, userPlan, onRequestCreated }) => {
   const [months, setMonths] = useState(1);
   const [selectedPlan, setSelectedPlan] = useState('premium');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const pricePerMonth = 4000; // Precio fijo por mes
+  const pricePerMonth = 1000; // Precio fijo por mes
   const totalPrice = pricePerMonth * months;
 
   const formatCurrency = (value) => {

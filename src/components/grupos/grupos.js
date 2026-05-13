@@ -22,6 +22,22 @@ const Grupos = ({ user }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [expandedParticipants, setExpandedParticipants] = useState({});
   const [viewingGroupSchedule, setViewingGroupSchedule] = useState(null);
+  const cleanSchedules = (groupData.schedules || []).map(schedule => ({
+  day: schedule.day || '',
+  start: schedule.start || '',
+  end: schedule.end || '',
+}));
+
+if (activeGroup && activeGroup.id) {
+  const groupDoc = doc(db, 'grupos', activeGroup.id);
+  await updateDoc(groupDoc, {
+    groupName: groupData.groupName,
+    participants: groupData.participants,
+    participantEmails,
+    participantIds,
+    schedules: cleanSchedules,
+  });
+}
 
   useEffect(() => {
     if (!user) return;
@@ -80,51 +96,78 @@ const Grupos = ({ user }) => {
   };
 
   const handleSaveGroup = async (groupData) => {
-    if (!user) return;
+  if (!user) return;
 
-    if (!activeGroup && groups.length > 0) {
-      alert('Ya tienes un grupo creado.');
-      return;
+  if (!activeGroup && groups.length > 0) {
+    alert('Ya tienes un grupo creado.');
+    return;
+  }
+
+  setIsSaving(true);
+
+  const participantEmails = groupData.participants
+    .map((participant) => participant.email?.toLowerCase())
+    .filter(Boolean);
+
+  const participantIds = groupData.participants
+    .map((participant) => participant.uid)
+    .filter(Boolean);
+
+  // DEBUG
+  console.log('===== GROUP DATA =====');
+  console.log(groupData);
+
+  console.log('===== SCHEDULES =====');
+  console.log(groupData.schedules);
+
+  console.log('===== SCHEDULES JSON =====');
+  console.log(JSON.stringify(groupData.schedules, null, 2));
+
+  console.log('===== PARTICIPANTS =====');
+  console.log(groupData.participants);
+
+  try {
+    if (activeGroup && activeGroup.id) {
+      const groupDoc = doc(db, 'grupos', activeGroup.id);
+
+      await updateDoc(groupDoc, {
+        groupName: groupData.groupName,
+        participants: groupData.participants,
+        participantEmails,
+        participantIds,
+        schedules: groupData.schedules,
+      });
+
+    } else {
+      await setDoc(doc(db, 'grupos', user.uid), {
+        ownerId: user.uid,
+        groupName: groupData.groupName,
+        participants: groupData.participants,
+        participantEmails,
+        participantIds,
+        schedules: groupData.schedules,
+        createdAt: serverTimestamp(),
+      });
     }
 
-    setIsSaving(true);
+    closeModal();
 
-    const participantEmails = groupData.participants
-      .map((participant) => participant.email?.toLowerCase())
-      .filter(Boolean);
-    const participantIds = groupData.participants
-      .map((participant) => participant.uid)
-      .filter(Boolean);
+  } catch (error) {
+    console.error('===== ERROR COMPLETO =====');
+    console.error(error);
 
-    try {
-      if (activeGroup && activeGroup.id) {
-        const groupDoc = doc(db, 'grupos', activeGroup.id);
-        await updateDoc(groupDoc, {
-          groupName: groupData.groupName,
-          participants: groupData.participants,
-          participantEmails,
-          participantIds,
-          schedules: groupData.schedules,
-        });
-      } else {
-        await setDoc(doc(db, 'grupos', user.uid), {
-          ownerId: user.uid,
-          groupName: groupData.groupName,
-          participants: groupData.participants,
-          participantEmails,
-          participantIds,
-          schedules: groupData.schedules,
-          createdAt: serverTimestamp(),
-        });
-      }
+    console.log('Datos enviados a Firebase:', {
+      groupName: groupData.groupName,
+      participants: groupData.participants,
+      participantEmails,
+      participantIds,
+      schedules: groupData.schedules,
+    });
 
-      closeModal();
-    } catch (error) {
-      console.error('Error guardando grupo:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   if (viewingGroupSchedule) {
     return (
