@@ -319,8 +319,7 @@ select:focus {
 }
 
 @media (max-width: 520px) {
-  .participant-input-row,
-  .schedule-row {
+  .participant-input-row {
     grid-template-columns: 1fr;
   }
 
