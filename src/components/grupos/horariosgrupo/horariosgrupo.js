@@ -390,33 +390,38 @@ const HorariosGrupo = ({ group, user, onBack }) => {
         const docRef = doc(db, 'HORARIOS_GRUPOS', `${ownerId}_${group.id}`);
         const docSnap = await getDoc(docRef);
         const data = docSnap.exists() ? docSnap.data() : null;
-        const savedWeek = data?.semanas?.[weekStartDate];
-
-        // 🔥 0. Inicializar orderedParticipants (disponible en ambas ramas)
         let orderedParticipants = group.participants || [];
+
+// 🔥 aplicar orden global si existe
+if (data?.participantOrderGlobal) {
+  const orderMap = new Map(
+    data.participantOrderGlobal.map(p => [p.email?.toLowerCase(), p.index])
+  );
+
+  orderedParticipants = [...orderedParticipants].sort((a, b) => {
+    const ia = orderMap.get(a.email?.toLowerCase()) ?? 999;
+    const ib = orderMap.get(b.email?.toLowerCase()) ?? 999;
+    return ia - ib;
+  });
+}
+        const savedWeek = data?.semanas?.[weekStartDate];
 
         if (savedWeek?.groupSchedules) {
   const schedules = {};
 
   // 🔥 1. Restaurar participantes manteniendo TODOS del grupo actual
-  // Usa participantes del grupo como fuente de verdad, pero respeta el orden guardado
-  if (savedWeek.participants && Array.isArray(savedWeek.participants)) {
-    // Crear un set de emails de participantes guardados
+  // Si hay participantOrderGlobal, ese orden prevalece en todas las semanas.
+  if (!data?.participantOrderGlobal && savedWeek.participants && Array.isArray(savedWeek.participants)) {
     const savedParticipantEmails = new Set(
       savedWeek.participants.map(p => p.email?.toLowerCase())
     );
-    
-    // Reordenar: primero los guardados (en su orden), luego los nuevos
+
     orderedParticipants = [
-      ...savedWeek.participants.filter(p => 
-        group.participants?.some(gp => gp.email?.toLowerCase() === p.email?.toLowerCase())
-      ),
-      ...(group.participants || []).filter(gp =>
-        !savedParticipantEmails.has(gp.email?.toLowerCase())
-      ),
+      ...orderedParticipants.filter((p) => savedParticipantEmails.has(p.email?.toLowerCase())),
+      ...orderedParticipants.filter((p) => !savedParticipantEmails.has(p.email?.toLowerCase())),
     ];
   }
-  
+
   setParticipants(orderedParticipants);
 
   // 🔥 2. Reconstruir horarios
@@ -550,6 +555,30 @@ const HorariosGrupo = ({ group, user, onBack }) => {
       [key]: { ...prev[key], [field]: value },
     }));
   };
+  const handleSaveParticipantOrder = async () => {
+  try {
+    const ownerId = group.ownerId || group.id;
+
+    const orderPayload = participants.map((p, index) => ({
+      uid: p.uid || '',
+      email: p.email || '',
+      index,
+    }));
+
+    await setDoc(
+      doc(db, 'HORARIOS_GRUPOS', `${ownerId}_${group.id}`),
+      {
+        participantOrderGlobal: orderPayload,
+      },
+      { merge: true }
+    );
+
+    showToast('Orden de participantes guardado correctamente.', 'success');
+  } catch (error) {
+    console.error(error);
+    showToast('Error guardando el orden.', 'error');
+  }
+};
 
   const handleSaveSchedules = async () => {
     if (!user) { showToast('No se encontró usuario activo.', 'error'); return; }
@@ -623,7 +652,7 @@ const HorariosGrupo = ({ group, user, onBack }) => {
           );
 
           await setDoc(
-            doc(db, 'HORARIOS_aa', participantId),
+            doc(db, 'HORARIOS', participantId),
             { semanas: { [weekStartDate]: individualPayload } },
             { merge: true }
           );
@@ -871,6 +900,13 @@ const HorariosGrupo = ({ group, user, onBack }) => {
             <button type="button" className="horariosgrupo-save-button" onClick={handleSaveSchedules}>
               Guardar horarios
             </button>
+            <button
+  type="button"
+  className="horariosgrupo-save-button"
+  onClick={handleSaveParticipantOrder}
+>
+  💾 Guardar orden
+</button>
           </>
         )}
         {userRole === 'lector' && (
