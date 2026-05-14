@@ -228,6 +228,31 @@ const parseExcelPaste = (raw, numParticipants, numDays = 7) => {
   return newSchedules;
 };
 
+// ─── FUNCIÓN PARA GENERAR MENSAJE DE CAMBIOS ────────────────────────────────
+const getChangeMessage = (prev, current) => {
+  if (!prev || !current) return '';
+
+  const cambios = [];
+
+  if (prev.estado !== current.estado) {
+    cambios.push(`Est: ${prev.estado} → ${current.estado}`);
+  }
+
+  if (prev.startH !== current.startH) {
+    cambios.push(`Ent: ${prev.startH} → ${current.startH}`);
+  }
+
+  if (prev.endH !== current.endH) {
+    cambios.push(`Sal: ${prev.endH} → ${current.endH}`);
+  }
+
+  if (prev.descanso !== current.descanso) {
+    cambios.push(`Desc: ${prev.descanso} → ${current.descanso}`);
+  }
+
+  return cambios.length ? cambios : [];
+};
+
 // ─── MODAL PEGAR EXCEL ───────────────────────────────────────────────────────
 const PasteModal = ({ numParticipants, onApply, onClose }) => {
   const [text, setText] = useState('');
@@ -303,6 +328,9 @@ const HorariosGrupo = ({ group, user, onBack }) => {
   const [validManualDate, setValidManualDate] = useState(formatDateInput(currentMonday));
   const [dateError, setDateError] = useState('');
   const [groupSchedules, setGroupSchedules] = useState({});
+  const [previousGroupSchedules, setPreviousGroupSchedules] = useState({});
+  const [changedCells, setChangedCells] = useState(new Set());
+  const [hoverCell, setHoverCell] = useState(null);
   const [loading, setLoading] = useState(false);
   const [scheduleLoaded, setScheduleLoaded] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -450,10 +478,13 @@ if (data?.participantOrderGlobal) {
   }
 
   // 🔥 3. Aplicar horarios (usa la cantidad correcta de participantes)
-  setGroupSchedules({
+  const finalSchedules = {
     ...buildDefaultSchedule(orderedParticipants.length),
     ...schedules,
-  });
+  };
+  setPreviousGroupSchedules(finalSchedules);
+  setGroupSchedules(finalSchedules);
+  setChangedCells(new Set());
 
   setScheduleLoaded(true);
   setLastUpdated(savedWeek.updatedAt);
@@ -483,14 +514,19 @@ if (data?.participantOrderGlobal) {
               console.error('Error loading individual schedule for', participant.email, err);
             }
           }
+          setPreviousGroupSchedules(schedules);
           setGroupSchedules(schedules);
+          setChangedCells(new Set());
           setParticipants(orderedParticipants);
           setScheduleLoaded(false);
           setLastUpdated(null);
         }
       } catch (error) {
         console.error('Error cargando horarios del grupo:', error);
-        setGroupSchedules(buildDefaultSchedule());
+        const defaultSchedule = buildDefaultSchedule();
+        setPreviousGroupSchedules(defaultSchedule);
+        setGroupSchedules(defaultSchedule);
+        setChangedCells(new Set());
         setScheduleLoaded(false);
         setLastUpdated(null);
       } finally {
@@ -529,18 +565,25 @@ if (data?.participantOrderGlobal) {
     const from = draggedIndex;
     const to = targetIndex;
 
+    // Reordenar participantes: remover y insertar en nueva posición
     const newParticipants = [...participants];
-    [newParticipants[from], newParticipants[to]] = [newParticipants[to], newParticipants[from]];
+    const [draggedItem] = newParticipants.splice(from, 1);
+    newParticipants.splice(to, 0, draggedItem);
 
-    const newSchedules = { ...groupSchedules };
-    for (let d = 0; d < 7; d++) {
-      const kFrom = `participant_${from}_day_${d}`;
-      const kTo = `participant_${to}_day_${d}`;
-      const tmp = newSchedules[kFrom];
-      newSchedules[kFrom] = newSchedules[kTo];
-      newSchedules[kTo] = tmp;
-      if (newSchedules[kFrom] === undefined) delete newSchedules[kFrom];
-      if (newSchedules[kTo] === undefined) delete newSchedules[kTo];
+    // Mapear índices viejos a nuevos para reorganizar horarios
+    const oldIndices = Array.from({ length: participants.length }, (_, i) => i);
+    const [draggedOldIdx] = oldIndices.splice(from, 1);
+    oldIndices.splice(to, 0, draggedOldIdx);
+
+    // Reorganizar horarios según el nuevo orden
+    const newSchedules = {};
+    for (let newIdx = 0; newIdx < newParticipants.length; newIdx++) {
+      const oldIdx = oldIndices[newIdx];
+      for (let d = 0; d < 7; d++) {
+        const oldKey = `participant_${oldIdx}_day_${d}`;
+        const newKey = `participant_${newIdx}_day_${d}`;
+        newSchedules[newKey] = groupSchedules[oldKey];
+      }
     }
 
     setParticipants(newParticipants);
@@ -670,7 +713,20 @@ if (data?.participantOrderGlobal) {
 
   // Aplica horarios pegados desde el modal
   const handleApplyPaste = (parsedSchedules) => {
-    setGroupSchedules((prev) => ({ ...prev, ...parsedSchedules }));
+    const newSchedules = { ...groupSchedules, ...parsedSchedules };
+    setGroupSchedules(newSchedules);
+    
+    // Detectar celdas que cambiaron
+    const changed = new Set();
+    Object.keys(parsedSchedules).forEach((key) => {
+      const oldValue = JSON.stringify(groupSchedules[key] || {});
+      const newValue = JSON.stringify(parsedSchedules[key] || {});
+      if (oldValue !== newValue) {
+        changed.add(key);
+      }
+    });
+    
+    setChangedCells(changed);
     showToast('Horarios cargados correctamente desde Excel.', 'success');
   };
 
@@ -685,6 +741,58 @@ if (data?.participantOrderGlobal) {
       }
     });
     return total;
+  };
+
+  const handleCopyMatrix = async () => {
+    try {
+      const days = createScheduleDays(currentWeekStart);
+      let matrixText = '';
+
+      // Encabezados
+      let headerRow = 'Participante';
+      days.forEach((day) => {
+        const dayLabel = formatDayLabel(day.date);
+        headerRow += `\t${dayLabel}\t\t\t\t`;
+      });
+      headerRow += '\tTotal horas';
+      matrixText += headerRow + '\n';
+
+      // Subencabezados (Est, Entr, Sal, Desc, Tot para cada día)
+      let subHeaderRow = '';
+      days.forEach(() => {
+        subHeaderRow += '\tEst\tEntr\tSal\tDesc\tTot';
+      });
+      subHeaderRow += '\t';
+      matrixText += subHeaderRow + '\n';
+
+      // Filas de participantes
+      participants.forEach((participant, pIndex) => {
+        let row = participant.name || 'Sin nombre';
+        const rowTotal = calcRowTotal(pIndex, days);
+
+        days.forEach((_, dayIndex) => {
+          const key = `participant_${pIndex}_day_${dayIndex}`;
+          const cell = groupSchedules?.[key] || {};
+          const estado = cell.estado === 'libre' ? 'Libre' : '-';
+          const startH = cell.startH || '00';
+          const endH = cell.endH || '00';
+          const descanso = cell.descanso || '00';
+          const dayTotal = cell.estado === 'libre' ? 0 : calcTotal(startH, endH, descanso);
+
+          row += `\t${estado}\t${startH}\t${endH}\t${descanso}\t${dayTotal}`;
+        });
+
+        row += `\t${rowTotal}`;
+        matrixText += row + '\n';
+      });
+
+      // Copiar al portapapeles
+      await navigator.clipboard.writeText(matrixText);
+      showToast('Matriz copiada al portapapeles. ¡Listo para pegar en Excel!', 'success');
+    } catch (error) {
+      console.error('Error copiando matriz:', error);
+      showToast('Error al copiar la matriz.', 'error');
+    }
   };
 
   if (loading) return <Loading text="Cargando horarios del grupo..." />;
@@ -836,7 +944,11 @@ if (data?.participantOrderGlobal) {
 
                     return (
                       <React.Fragment key={dayIndex}>
-                        <td className="horariosgrupo-td horariosgrupo-td-estado">
+                        <td 
+                          className={`horariosgrupo-td horariosgrupo-td-estado ${changedCells.has(key) ? 'changed' : ''}`}
+                          onMouseEnter={() => changedCells.has(key) && setHoverCell(key)}
+                          onMouseLeave={() => setHoverCell(null)}
+                        >
                           <select
                             className="horariosgrupo-cell-estado"
                             value={estado}
@@ -846,22 +958,41 @@ if (data?.participantOrderGlobal) {
                             <option value="-">-</option>
                             <option value="libre">libre</option>
                           </select>
+                          {hoverCell === key && previousGroupSchedules[key] && (
+                            <div className="horariosgrupo-tooltip">
+                              {getChangeMessage(previousGroupSchedules[key], cell).map((msg, idx) => (
+                                <div key={idx}>{msg}</div>
+                              ))}
+                            </div>
+                          )}
                         </td>
-                        <td className="horariosgrupo-td">
+                        <td 
+                          className={`horariosgrupo-td ${changedCells.has(key) ? 'changed' : ''}`}
+                          onMouseEnter={() => changedCells.has(key) && setHoverCell(key)}
+                          onMouseLeave={() => setHoverCell(null)}
+                        >
                           <TwoDigitInput
                             value={startH}
                             disabled={userRole === 'lector'}
                             onChange={(v) => updateCell(pIndex, dayIndex, 'startH', v)}
                           />
                         </td>
-                        <td className="horariosgrupo-td">
+                        <td 
+                          className={`horariosgrupo-td ${changedCells.has(key) ? 'changed' : ''}`}
+                          onMouseEnter={() => changedCells.has(key) && setHoverCell(key)}
+                          onMouseLeave={() => setHoverCell(null)}
+                        >
                           <TwoDigitInput
                             value={endH}
                             disabled={userRole === 'lector'}
                             onChange={(v) => updateCell(pIndex, dayIndex, 'endH', v)}
                           />
                         </td>
-                        <td className="horariosgrupo-td">
+                        <td 
+                          className={`horariosgrupo-td ${changedCells.has(key) ? 'changed' : ''}`}
+                          onMouseEnter={() => changedCells.has(key) && setHoverCell(key)}
+                          onMouseLeave={() => setHoverCell(null)}
+                        >
                           <TwoDigitInput
                             value={cell.descanso || '00'}
                             disabled={userRole === 'lector'}
@@ -901,12 +1032,19 @@ if (data?.participantOrderGlobal) {
               Guardar horarios
             </button>
             <button
-  type="button"
-  className="horariosgrupo-save-button"
-  onClick={handleSaveParticipantOrder}
->
-  💾 Guardar orden
-</button>
+              type="button"
+              className="horariosgrupo-save-button"
+              onClick={handleSaveParticipantOrder}
+            >
+              💾 Guardar orden
+            </button>
+            <button
+              type="button"
+              className="horariosgrupo-copy-button"
+              onClick={handleCopyMatrix}
+            >
+              📋 Copiar matriz
+            </button>
           </>
         )}
         {userRole === 'lector' && (
