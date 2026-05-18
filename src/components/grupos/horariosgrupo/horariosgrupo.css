@@ -345,6 +345,49 @@
   background: rgba(15, 23, 42, 0.98);
   border-right: 1px solid rgba(56, 189, 248, 0.2);
 }
+.horariosgrupo-td-name {
+  background: rgba(15, 23, 42, 0.95);
+  color: #1f2937;
+  border-left: 6px solid transparent;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.horariosgrupo-td-name.cargo-level-1 {
+  border-left-color: #ffff99;
+}
+
+.horariosgrupo-td-name.cargo-level-2 {
+  border-left-color: #f59e0b;
+}
+
+.horariosgrupo-td-name.cargo-level-3 {
+  border-left-color: #009300;
+}
+
+.horariosgrupo-td-name.cargo-level-4 {
+  border-left-color: #ff0000;
+}
+
+.horariosgrupo-td-name.cargo-level-5 {
+  border-left-color: #ffff00;
+}
+
+.horariosgrupo-td-name.cargo-level-6 {
+  border-left-color: #ff0080;
+}
+
+.horariosgrupo-td-name.cargo-level-7 {
+  border-left-color: #9d00ff;
+}
+
+.horariosgrupo-td-name:hover {
+  transform: translateX(2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
 
 .horariosgrupo-drag-handle {
   color: #64748b;
@@ -383,9 +426,9 @@
 
 /* Celda DESCANSO */
 .horariosgrupo-td-descanso {
-  background: rgba(248, 113, 113, 0.08);
-  border: 1px solid rgba(248, 113, 113, 0.2);
-  color: #fca5a5;
+  background: rgba(176, 223, 246, 0.12);
+  border:#B0DFF6;
+  color: #B0DFF6;
   font-weight: 700;
   font-size: 0.75rem;
   letter-spacing: 0.06em;
@@ -775,4 +818,84 @@
   border-width: 6px;
   border-style: solid;
   border-color: rgba(251, 191, 36, 0.6) transparent transparent transparent;
+}
+
+/* ─── ESTILOS POR ESTADO ─── */
+
+/* LIBRE */
+.horariosgrupo-descanso-libre {
+  background: rgba(176, 223, 246, 0.12);
+  color: #B0DFF6;
+}
+
+/* INC (Incapacidad) - f4b084 */
+.horariosgrupo-descanso-INC {
+  background: rgba(244, 176, 132, 0.25);
+  color: #f4b084;
+  font-weight: 700;
+  border-left: 3px solid #f4b084;
+}
+
+.horariosgrupo-estado-INC {
+  background: rgba(244, 176, 132, 0.15);
+}
+
+/* LIC (Licencia) - ed7d31 */
+.horariosgrupo-descanso-LIC {
+  background: rgba(237, 125, 49, 0.25);
+  color: #ed7d31;
+  font-weight: 700;
+  border-left: 3px solid #ed7d31;
+}
+
+.horariosgrupo-estado-LIC {
+  background: rgba(237, 125, 49, 0.15);
+}
+
+/* VAC (Vacaciones) - 4472c4 */
+.horariosgrupo-descanso-VAC {
+  background: rgba(68, 114, 196, 0.25);
+  color: #4472c4;
+  font-weight: 700;
+  border-left: 3px solid #4472c4;
+}
+
+.horariosgrupo-estado-VAC {
+  background: rgba(68, 114, 196, 0.15);
+}
+
+/* SAN (Sancionado) - ff0000 */
+.horariosgrupo-descanso-SAN {
+  background: rgba(255, 0, 0, 0.25);
+  color: #ff0000;
+  font-weight: 700;
+  border-left: 3px solid #ff0000;
+}
+
+.horariosgrupo-estado-SAN {
+  background: rgba(255, 0, 0, 0.15);
+}
+
+/* CAP (Capacitación) - ffd966 */
+.horariosgrupo-descanso-CAP {
+  background: rgba(255, 217, 102, 0.25);
+  color: #ffd966;
+  font-weight: 700;
+  border-left: 3px solid #ffd966;
+}
+
+.horariosgrupo-estado-CAP {
+  background: rgba(255, 217, 102, 0.15);
+}
+
+/* CEO (CEO) - fff2cc */
+.horariosgrupo-descanso-CEO {
+  background: rgba(255, 242, 204, 0.25);
+  color: #333333;
+  font-weight: 700;
+  border-left: 3px solid #fff2cc;
+}
+
+.horariosgrupo-estado-CEO {
+  background: rgba(255, 242, 204, 0.15);
 }

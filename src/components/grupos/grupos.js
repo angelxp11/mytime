@@ -1,18 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import {
   collection,
-  query,
-  where,
   onSnapshot,
   doc,
   setDoc,
   updateDoc,
   serverTimestamp,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '../server/api';
 import ModalGrupo from './modalgrupos/modalgrupo';
 import HorariosGrupo from './horariosgrupo/horariosgrupo';
 import './grupos.css';
+
+const formatDateTimeDisplay = (value) => {
+  if (!value) return '';
+
+  const date = value?.toDate ? value.toDate() : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const dateStr = new Intl.DateTimeFormat('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
+
+  const timeStr = new Intl.DateTimeFormat('es-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
+
+  return `${dateStr} · ${timeStr}`;
+};
 
 const Grupos = ({ user }) => {
   const [groups, setGroups] = useState([]);
@@ -22,6 +42,7 @@ const Grupos = ({ user }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [expandedParticipants, setExpandedParticipants] = useState({});
   const [viewingGroupSchedule, setViewingGroupSchedule] = useState(null);
+  const [groupsLastUpdated, setGroupsLastUpdated] = useState({});
 
 
   useEffect(() => {
@@ -58,6 +79,38 @@ const Grupos = ({ user }) => {
     return () => unsubscribe();
   }, [user]);
 
+  // Cargar última actualización de horarios para cada grupo
+  useEffect(() => {
+    if (groups.length === 0) return;
+
+    const loadLastUpdated = async () => {
+      const updates = {};
+      for (const group of groups) {
+        try {
+          const ownerId = group.ownerId || group.id;
+          const horariosRef = doc(db, 'HORARIOS_GRUPOS', `${ownerId}_${group.id}`);
+          const horariosSnap = await getDoc(horariosRef);
+          if (horariosSnap.exists()) {
+            const data = horariosSnap.data();
+            const semanas = data?.semanas || {};
+            // Obtener la semana más reciente con horarios guardados
+            const semanasArray = Object.entries(semanas)
+              .map(([key, value]) => ({ key, ...value }))
+              .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+            if (semanasArray.length > 0) {
+              updates[group.id] = semanasArray[0].updatedAt;
+            }
+          }
+        } catch (error) {
+          console.error(`Error cargando última actualización del grupo ${group.id}:`, error);
+        }
+      }
+      setGroupsLastUpdated(updates);
+    };
+
+    loadLastUpdated();
+  }, [groups]);
+
   const openCreateModal = () => {
     setActiveGroup(null);
     setIsModalOpen(true);
@@ -79,6 +132,26 @@ const Grupos = ({ user }) => {
       [groupId]: !prev[groupId],
     }));
   };
+
+  const toggleCargoGroup = (groupId, cargoId) => {
+    const key = `${groupId}-${cargoId}`;
+    setExpandedParticipants((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const isCargoExpanded = (groupId, cargoId) =>
+    expandedParticipants[`${groupId}-${cargoId}`];
+
+  const sortCargosByLevel = (cargos = []) =>
+    [...cargos].sort((a, b) => (a.nivel || 0) - (b.nivel || 0));
+
+  const getParticipantsByCargo = (participants = [], cargoId) =>
+    participants.filter((participant) => participant.cargo === cargoId);
+
+  const getUnassignedParticipants = (participants = []) =>
+    participants.filter((participant) => !participant.cargo);
 
   const handleSaveGroup = async (groupData) => {
   if (!user) return;
@@ -114,6 +187,7 @@ const Grupos = ({ user }) => {
         participantEmails,
         participantIds,
         schedules: cleanSchedules,
+        cargos: groupData.cargos || [],
       });
 
     } else {
@@ -124,6 +198,7 @@ const Grupos = ({ user }) => {
         participantEmails,
         participantIds,
         schedules: cleanSchedules,
+        cargos: groupData.cargos || [],
         createdAt: serverTimestamp(),
       });
     }
@@ -202,17 +277,99 @@ const Grupos = ({ user }) => {
                     </button>
                     {expandedParticipants[group.id] && (
                       <div className="grupo-participants-list">
-                        {group.participants.map((participant, index) => (
-                          <div key={`${participant.email}-${index}`} className="grupo-participant">
-                            <div>
-                              <strong>{participant.name}</strong>
-                              <span>{participant.email}</span>
+                        {group.cargos?.length > 0 ? (
+                          <>
+                            {sortCargosByLevel(group.cargos).map((cargo) => {
+                              const cargoMembers = getParticipantsByCargo(group.participants, cargo.id);
+                              return (
+                                <div key={cargo.id} className="cargo-group">
+                                  <button
+                                    type="button"
+                                    className="cargo-header-button"
+                                    onClick={() => toggleCargoGroup(group.id, cargo.id)}
+                                  >
+                                    <div className="cargo-header-title">
+                                      <strong>{cargo.nombre}</strong>
+                                      <span className="cargo-level">Nivel {cargo.nivel}</span>
+                                    </div>
+                                    <div className="cargo-header-meta">
+                                      <span>{cargoMembers.length} participante{cargoMembers.length === 1 ? '' : 's'}</span>
+                                      <span className="cargo-toggle-icon">
+                                        {isCargoExpanded(group.id, cargo.id) ? '▼' : '▶'}
+                                      </span>
+                                    </div>
+                                  </button>
+                                  {isCargoExpanded(group.id, cargo.id) && (
+                                    <div className="cargo-members">
+                                      {cargoMembers.length > 0 ? (
+                                        cargoMembers.map((participant, index) => (
+                                          <div key={`${participant.email}-${index}`} className="cargo-participant">
+                                            <div>
+                                              <strong>{participant.name}</strong>
+                                              <span>{participant.email}</span>
+                                            </div>
+                                            <span className="group-participant-role">
+                                              {participant.role === 'lector' ? 'Lector' : 'Editor'}
+                                            </span>
+                                          </div>
+                                        ))
+                                      ) : (
+                                        <p className="cargo-empty">No hay participantes en este cargo.</p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+
+                            {getUnassignedParticipants(group.participants).length > 0 && (
+                              <div className="cargo-group unassigned-group">
+                                <button
+                                  type="button"
+                                  className="cargo-header-button"
+                                  onClick={() => toggleCargoGroup(group.id, 'sin-cargo')}
+                                >
+                                  <div className="cargo-header-title">
+                                    <strong>Sin cargo</strong>
+                                  </div>
+                                  <div className="cargo-header-meta">
+                                    <span>{getUnassignedParticipants(group.participants).length} participante{getUnassignedParticipants(group.participants).length === 1 ? '' : 's'}</span>
+                                    <span className="cargo-toggle-icon">
+                                      {isCargoExpanded(group.id, 'sin-cargo') ? '▼' : '▶'}
+                                    </span>
+                                  </div>
+                                </button>
+                                {isCargoExpanded(group.id, 'sin-cargo') && (
+                                  <div className="cargo-members">
+                                    {getUnassignedParticipants(group.participants).map((participant, index) => (
+                                      <div key={`${participant.email}-sin-cargo-${index}`} className="cargo-participant">
+                                        <div>
+                                          <strong>{participant.name}</strong>
+                                          <span>{participant.email}</span>
+                                        </div>
+                                        <span className="group-participant-role">
+                                          {participant.role === 'lector' ? 'Lector' : 'Editor'}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          group.participants.map((participant, index) => (
+                            <div key={`${participant.email}-${index}`} className="grupo-participant">
+                              <div>
+                                <strong>{participant.name}</strong>
+                                <span>{participant.email}</span>
+                              </div>
+                              <span className="group-participant-role">
+                                {participant.role === 'lector' ? 'Lector' : 'Editor'}
+                              </span>
                             </div>
-                            <span className="group-participant-role">
-                              {participant.role === 'lector' ? 'Lector' : 'Editor'}
-                            </span>
-                          </div>
-                        ))}
+                          ))
+                        )}
                       </div>
                     )}
                   </div>
@@ -231,6 +388,10 @@ const Grupos = ({ user }) => {
                       </div>
                     ))}
                   </div>
+                ) : groupsLastUpdated[group.id] ? (
+                  <p className="grupo-empty">
+                    📅 Horarios cargados: {formatDateTimeDisplay(groupsLastUpdated[group.id])}
+                  </p>
                 ) : (
                   <p className="grupo-empty">No hay horarios definidos.</p>
                 )}

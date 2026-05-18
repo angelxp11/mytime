@@ -45,6 +45,20 @@ const formatDayLabel = (date) =>
 const formatWeekday = (date) =>
   new Intl.DateTimeFormat('es-ES', { weekday: 'short' }).format(date);
 
+// Mapeo de estados a descripciones
+const estadoDescriptions = {
+  '-': 'DESCANSO',
+  'libre': 'DESCANSO',
+  'INC': 'INCAPACIDAD',
+  'LIC': 'LICENCIA',
+  'VAC': 'VACACIONES',
+  'SAN': 'SANCIONADO',
+  'CAP': 'CAPACITACIÓN',
+  'CEO': 'CEO',
+};
+
+const getEstadoDescription = (estado) => estadoDescriptions[estado] || estado;
+
 // Solo horas enteras: diff = endH - startH
 const calcTotal = (startH, endH, descanso = 0) => {
   let diff = parseInt(endH || 0) - parseInt(startH || 0);
@@ -156,6 +170,12 @@ const parseExcelPaste = (raw, numParticipants, numDays = 7) => {
             v === 'descanso' ||
             v === 'day off' ||
             v === 'free' ||
+            v === 'inc' ||
+            v === 'lic' ||
+            v === 'vac' ||
+            v === 'san' ||
+            v === 'cap' ||
+            v === 'ceo' ||
             !isNaN(parseInt(v))
           );
         })
@@ -192,15 +212,33 @@ const parseExcelPaste = (raw, numParticipants, numDays = 7) => {
       const tok3 = tokens[tokenIdx + 3] || ''; // descanso
       // tok4 = tokens[tokenIdx + 4] -> IGNORADO (horas)
 
-      const isLibre =
+      const isNonWorkingDay =
         tok0 === 'libre' ||
         tok0 === 'descanso' ||
         tok0 === 'day off' ||
-        tok0 === 'free';
+        tok0 === 'free' ||
+        tok0 === 'inc' ||
+        tok0 === 'lic' ||
+        tok0 === 'vac' ||
+        tok0 === 'san' ||
+        tok0 === 'cap' ||
+        tok0 === 'ceo';
 
-      if (isLibre) {
+      if (isNonWorkingDay) {
+        const estadoMap = {
+          'libre': 'libre',
+          'descanso': 'libre',
+          'day off': 'libre',
+          'free': 'libre',
+          'inc': 'INC',
+          'lic': 'LIC',
+          'vac': 'VAC',
+          'san': 'SAN',
+          'cap': 'CAP',
+          'ceo': 'CEO',
+        };
         newSchedules[key] = {
-          estado: 'libre',
+          estado: estadoMap[tok0] || 'libre',
           startH: '00',
           endH: '00',
           descanso: '00',
@@ -291,7 +329,7 @@ const PasteModal = ({ numParticipants, onApply, onClose }) => {
           <p className="horariosgrupo-modal-hint">
             Copia las celdas directamente desde Excel y pégalas aquí.<br />
             Formato por día: <code>Estado · Entrada · Salida · Descanso · Horas</code><br />
-            El estado <strong>"Libre"</strong> marcará ese día como descanso.
+            Estados disponibles: <strong>-</strong> (trabajado), <strong>Libre</strong>, <strong>INC</strong> (Incapacidad), <strong>LIC</strong> (Licencia), <strong>VAC</strong> (Vacaciones), <strong>SAN</strong> (Sancionado), <strong>CAP</strong> (Capacitación), <strong>CEO</strong>.
           </p>
           <p className="horariosgrupo-modal-hint horariosgrupo-modal-hint--sub">
             Se detectarán automáticamente <strong>{numParticipants} participante{numParticipants !== 1 ? 's' : ''}</strong>.
@@ -350,6 +388,16 @@ const HorariosGrupo = ({ group, user, onBack }) => {
     // Si es participante pero no tiene rol definido, por defecto es 'editor'
     return found?.role || 'editor';
   }, [group, userEmail, user?.uid]);
+
+  const getCargoLevelById = React.useCallback((cargoId) => {
+    const cargo = group.cargos?.find((item) => item.id === cargoId);
+    return cargo?.nivel ?? null;
+  }, [group.cargos]);
+
+  const getCargoLevelClass = (participant) => {
+    const nivel = getCargoLevelById(participant?.cargo);
+    return nivel ? `cargo-level-${nivel}` : '';
+  };
 
   useEffect(() => {
     const check = () => setIsPortrait(window.innerHeight > window.innerWidth);
@@ -427,9 +475,22 @@ if (data?.participantOrderGlobal) {
   );
 
   orderedParticipants = [...orderedParticipants].sort((a, b) => {
-    const ia = orderMap.get(a.email?.toLowerCase()) ?? 999;
-    const ib = orderMap.get(b.email?.toLowerCase()) ?? 999;
-    return ia - ib;
+    const emailA = a.email?.toLowerCase();
+    const emailB = b.email?.toLowerCase();
+    const hasA = orderMap.has(emailA);
+    const hasB = orderMap.has(emailB);
+    const indexA = orderMap.get(emailA);
+    const indexB = orderMap.get(emailB);
+    const levelA = getCargoLevelById(a.cargo) ?? 999;
+    const levelB = getCargoLevelById(b.cargo) ?? 999;
+
+    if (levelA !== levelB) return levelA - levelB;
+
+    if (hasA && hasB) return indexA - indexB;
+    if (hasA && !hasB) return -1;
+    if (!hasA && hasB) return 1;
+
+    return (a.name || '').localeCompare(b.name || '');
   });
 }
         const savedWeek = data?.semanas?.[weekStartDate];
@@ -534,7 +595,7 @@ if (data?.participantOrderGlobal) {
       }
     };
     loadGroupSchedules();
-  }, [currentWeekStart, user, group.id, group.participants?.length]);
+  }, [currentWeekStart, user, group.id, group.participants?.length, getCargoLevelById]);
 
   const handleWeekChange = (e) => {
     setSelectedWeekOffset(Number(e.target.value));
@@ -736,7 +797,11 @@ if (data?.participantOrderGlobal) {
     days.forEach((_, dayIndex) => {
       const key = `participant_${pIndex}_day_${dayIndex}`;
       const cell = groupSchedules?.[key] || {};
-      if (cell.estado !== 'libre') {
+      const estado = cell.estado || '-';
+      
+      if (estado === 'CEO' || estado === 'CAP') {
+        total += 8;
+      } else if (!['libre', 'INC', 'LIC', 'VAC', 'SAN'].includes(estado)) {
         total += calcTotal(cell.startH, cell.endH, cell.descanso);
       }
     });
@@ -907,7 +972,7 @@ if (data?.participantOrderGlobal) {
                   onDragOver={handleDragOver}
                   onDrop={() => handleDrop(pIndex)}
                 >
-                  <td className="horariosgrupo-td horariosgrupo-td-name">
+                  <td className={`horariosgrupo-td horariosgrupo-td-name ${getCargoLevelClass(participant)}`}>
                     <span className="horariosgrupo-drag-handle">⋮⋮</span>
                     <strong className="horariosgrupo-participant-name">{participant.name}</strong>
                   </td>
@@ -916,27 +981,35 @@ if (data?.participantOrderGlobal) {
                     const key = `participant_${pIndex}_day_${dayIndex}`;
                     const cell = groupSchedules?.[key] || {};
                     const estado = cell.estado || '-';
-                    const libre = estado === 'libre';
+                    const isNonWorkingDay = ['libre', 'INC', 'LIC', 'VAC', 'SAN', 'CAP', 'CEO'].includes(estado);
                     const startH = cell.startH || '00';
                     const endH = cell.endH || '00';
-                    const dayTotal = libre
-  ? 0
+                    const dayTotal = isNonWorkingDay
+  ? (estado === 'CEO' || estado === 'CAP' ? 8 : 0)
   : calcTotal(startH, endH, cell.descanso);
 
-                    if (libre) {
+                    if (isNonWorkingDay) {
                       return (
                         <React.Fragment key={dayIndex}>
-                          <td className="horariosgrupo-td horariosgrupo-td-estado">
+                          <td className={`horariosgrupo-td horariosgrupo-td-estado horariosgrupo-estado-${estado}`}>
                             <select
                               className="horariosgrupo-cell-estado"
-                              value={estado}                            disabled={userRole === 'lector'}                              onChange={(e) => updateCell(pIndex, dayIndex, 'estado', e.target.value)}
+                              value={estado}
+                              disabled={userRole === 'lector'}
+                              onChange={(e) => updateCell(pIndex, dayIndex, 'estado', e.target.value)}
                             >
                               <option value="-">-</option>
-                              <option value="libre">libre</option>
+                              <option value="libre">Libre</option>
+                              <option value="INC">INC</option>
+                              <option value="LIC">LIC</option>
+                              <option value="VAC">VAC</option>
+                              <option value="SAN">SAN</option>
+                              <option value="CAP">CAP</option>
+                              <option value="CEO">CEO</option>
                             </select>
                           </td>
-                          <td className="horariosgrupo-td horariosgrupo-td-descanso" colSpan={4}>
-                            DESCANSO
+                          <td className={`horariosgrupo-td horariosgrupo-td-descanso horariosgrupo-descanso-${estado}`} colSpan={4}>
+                            {getEstadoDescription(estado)}
                           </td>
                         </React.Fragment>
                       );
@@ -956,7 +1029,13 @@ if (data?.participantOrderGlobal) {
                             onChange={(e) => updateCell(pIndex, dayIndex, 'estado', e.target.value)}
                           >
                             <option value="-">-</option>
-                            <option value="libre">libre</option>
+                            <option value="libre">Libre</option>
+                            <option value="INC">INC</option>
+                            <option value="LIC">LIC</option>
+                            <option value="VAC">VAC</option>
+                            <option value="SAN">SAN</option>
+                            <option value="CAP">CAP</option>
+                            <option value="CEO">CEO</option>
                           </select>
                           {hoverCell === key && previousGroupSchedules[key] && (
                             <div className="horariosgrupo-tooltip">
