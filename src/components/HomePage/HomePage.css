@@ -174,7 +174,7 @@
 
 /* Cada celda */
 .schedule-row span {
-  background: rgba(2, 6, 23, 0.9);
+  background: rgba(2, 6, 23, 0);
   border: 1px solid rgba(6, 182, 212, 0.2);
   border-radius: 12px;
   padding: 10px 12px;
@@ -188,7 +188,7 @@
 /* Celda fusionada (LIBRE o NO REGISTRADO) */
 .merged-cell {
   grid-column: 2 / 4 !important;
-  background: rgba(2, 6, 23, 0.9);
+  background: rgba(2, 6, 23, 0);
   border: 1px solid rgba(6, 182, 212, 0.2);
   border-radius: 12px;
   padding: 10px 12px;
@@ -435,5 +435,121 @@
   .home-shared-schedules {
     max-width: 100%;
  
+  }
+}
+
+/* ─── ESTILOS POR ESTADO ─── */
+
+/* LIBRE (Descanso normal) */
+.schedule-row.state-libre {
+  background: rgba(176, 223, 246, 0.12) !important;
+  border-left: 4px solid #B0DFF6 !important;
+}
+
+.schedule-row.state-libre .merged-cell {
+  color: #B0DFF6;
+  font-weight: 700;
+}
+
+/* INC (Incapacidad) - f4b084 */
+.schedule-row.state-inc {
+  background: rgba(244, 176, 132, 0.15) !important;
+  border-left: 4px solid #f4b084 !important;
+}
+
+.schedule-row.state-inc .merged-cell {
+  color: #f4b084;
+  font-weight: 700;
+}
+
+/* LIC (Licencia) - ed7d31 */
+.schedule-row.state-lic {
+  background: rgba(237, 125, 49, 0.15) !important;
+  border-left: 4px solid #ed7d31 !important;
+}
+
+.schedule-row.state-lic .merged-cell {
+  color: #ed7d31;
+  font-weight: 700;
+}
+
+/* VAC (Vacaciones) - 4472c4 */
+.schedule-row.state-vac {
+  background: rgba(68, 114, 196, 0.15) !important;
+  border-left: 4px solid #4472c4 !important;
+}
+
+.schedule-row.state-vac .merged-cell {
+  color: #4472c4;
+  font-weight: 700;
+}
+
+/* SAN (Sancionado) - ff0000 */
+.schedule-row.state-san {
+  background: rgba(255, 0, 0, 0.15) !important;
+  border-left: 4px solid #ff0000 !important;
+}
+
+.schedule-row.state-san .merged-cell {
+  color: #ff0000;
+  font-weight: 700;
+}
+
+/* CAP (Capacitación) - ffd966 */
+.schedule-row.state-cap {
+  background: rgba(255, 217, 102, 0.15) !important;
+  border-left: 4px solid #ffd966 !important;
+}
+
+.schedule-row.state-cap .merged-cell {
+  color: #ffd966;
+  font-weight: 700;
+}
+
+/* CEO - fff2cc */
+.schedule-row.state-ceo {
+  background: rgba(255, 242, 204, 0.15) !important;
+  border-left: 4px solid #fff2cc !important;
+}
+
+.schedule-row.state-ceo .merged-cell {
+  color: #333333;
+  font-weight: 700;
+}
+
+/* ─── ANIMACIÓN DE NOMBRES DUPLICADOS ─── */
+.animated-name {
+  display: inline-block;
+  position: relative;
+  min-width: 100%;
+}
+
+.name-text {
+  display: inline-block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  animation: fadeNameInOut 4s infinite;
+}
+
+.name-primary {
+  animation-name: fadeNameInOut;
+  animation-direction: normal;
+}
+
+.name-secondary {
+  animation-name: fadeNameInOut;
+  animation-direction: reverse;
+}
+
+@keyframes fadeNameInOut {
+  0%, 49% {
+    opacity: 1;
+    visibility: visible;
+  }
+  50%, 100% {
+    opacity: 0;
+    visibility: hidden;
   }
 }

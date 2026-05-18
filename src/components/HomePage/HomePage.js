@@ -63,6 +63,19 @@ const isTimeRangeOverlap = (startA, endA, startB, endB) => {
   return startA < endB && endA > startB;
 };
 
+// Mapeo de estados a descripciones
+const estadoDescriptions = {
+  'libre': 'DESCANSO',
+  'INC': 'INCAPACIDAD',
+  'LIC': 'LICENCIA',
+  'VAC': 'VACACIONES',
+  'SAN': 'SANCIONADO',
+  'CAP': 'CAPACITACIÓN',
+  'CEO': 'CEO',
+};
+
+const getEstadoDescription = (estado) => estadoDescriptions[estado] || estado;
+
 const markOverlappingSchedules = (schedules) => {
   if (schedules.length === 0) return schedules;
 
@@ -73,13 +86,19 @@ const markOverlappingSchedules = (schedules) => {
 
   const markedSchedules = schedules.map((item, index) => {
     let overlap = false;
-    let category = 0; // 0: overlap, 1: no-overlap con horario, 2: descanso, 3: no registrado
+    let category = 0; // 0: overlap, 1: no-overlap con horario, 2: descanso, 3: no registrado, 4+: estados especiales
     
-    // Determinar si la celda debe fusionarse (LIBRE o NO REGISTRADO)
+    // Determinar si la celda debe fusionarse (ESTADO ESPECIAL, LIBRE o NO REGISTRADO)
     let merged = false;
     let mergedText = '';
+    let estado = item.estado || null;
     
-    if (item.ingreso === 'LI' && item.salida === 'BRE') {
+    // Revisar estados especiales primero
+    if (estado && ['INC', 'LIC', 'VAC', 'SAN', 'CAP', 'CEO'].includes(estado)) {
+      merged = true;
+      mergedText = getEstadoDescription(estado);
+      category = 4; // Estados especiales
+    } else if (item.ingreso === 'LI' && item.salida === 'BRE') {
       merged = true;
       mergedText = 'DESCANSO';
       category = 2; // Descanso
@@ -105,7 +124,7 @@ const markOverlappingSchedules = (schedules) => {
       }
     }
     
-    return { ...item, overlap, merged, mergedText, category };
+    return { ...item, overlap, merged, mergedText, category, estado };
   });
 
   // Mantener el usuario en posición 0, ordenar el resto por categoría
@@ -141,38 +160,50 @@ const disambiguateNames = (schedules) => {
     nameGroups[firstName].push(index);
   });
   
-  // Crear array de nombres a mostrar (inicialmente igual al nombre)
-  const displayNames = schedules.map((schedule) => schedule.name);
+  // Crear array de información de nombres
+  const displayNames = schedules.map((schedule, index) => ({
+    display: schedule.name,
+    isDuplicate: false,
+  }));
   
-  // Para grupos con duplicados, agregar apellidos
+  // Para grupos con duplicados, usar el siguiente nombre disponible
   Object.keys(nameGroups).forEach((firstName) => {
     const indices = nameGroups[firstName];
     
     // Si solo hay uno, no hace falta cambiar
     if (indices.length === 1) return;
     
-    // Hay duplicados, necesitamos diferenciarlos
-    // Extraer apellidos
-    const lastNames = indices.map((idx) => {
+    // Hay duplicados del mismo primer nombre
+    // Extraer todos los nombres de cada persona para encontrar diferenciadores
+    const allNames = indices.map((idx) => {
       const fullName = schedules[idx].fullName || schedules[idx].name;
-      const parts = fullName.split(' ');
-      return parts.slice(1).join(' '); // Resto del nombre (apellidos)
+      return fullName.split(/\s+/); // Array de palabras
     });
     
-    // Encontrar el mínimo número de caracteres que diferencia cada uno
-    for (let charCount = 1; charCount <= 50; charCount++) {
-      const suffixes = lastNames.map((lastName) => lastName.substring(0, charCount));
-      
-      // Verificar si todos los suffixes son únicos
-      const uniqueSuffixes = new Set(suffixes);
-      if (uniqueSuffixes.size === suffixes.length) {
-        // Todos son únicos, actualizar displayNames
-        indices.forEach((idx, i) => {
-          displayNames[idx] = `${firstName} ${suffixes[i]}`;
-        });
-        break;
-      }
+    // Intentar usar el segundo nombre (si existe)
+    const secondNames = allNames.map((names) => names[1] || '');
+    
+    // Si todos los segundos nombres son diferentes, usarlos
+    const uniqueSecondNames = new Set(secondNames.filter(Boolean));
+    if (uniqueSecondNames.size === secondNames.length && secondNames.every(n => n)) {
+      indices.forEach((idx, i) => {
+        displayNames[idx].display = secondNames[i];
+        displayNames[idx].isDuplicate = true;
+      });
+      return;
     }
+    
+    // Si los segundos nombres también son iguales, concatenar segundo + tercero
+    const combinedNames = allNames.map((names) => {
+      const part2 = names[1] || '';
+      const part3 = names[2] || '';
+      return (part2 + ' ' + part3).trim();
+    });
+    
+    indices.forEach((idx, i) => {
+      displayNames[idx].display = combinedNames[i] || firstName;
+      displayNames[idx].isDuplicate = true;
+    });
   });
   
   return displayNames;
@@ -323,6 +354,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
             ingreso: 'NO',
             salida: 'REGISTRO',
             email: email,
+            estado: null,
           };
 
           if (horariosSnap.exists()) {
@@ -337,14 +369,17 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                 ingreso: selectedSchedule.startTime || '00:00',
                 salida: selectedSchedule.endTime || '00:00',
                 email: email,
+                estado: selectedSchedule.estado || null,
               };
             } else if (selectedSchedule && selectedSchedule.tipo !== 'trabajado') {
+              // Día de descanso o estado especial
               schedule = {
                 name: firstName,
                 fullName: fullName,
                 ingreso: 'LI',
                 salida: 'BRE',
                 email: email,
+                estado: selectedSchedule.estado || 'libre',
               };
             }
           }
@@ -388,14 +423,16 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
           ingreso: selectedSchedule.startTime || '00:00',
           salida: selectedSchedule.endTime || '00:00',
           email: user.email, // Usuario actual
+          estado: selectedSchedule.estado || null,
         });
       } else if (selectedSchedule && selectedSchedule.tipo !== 'trabajado') {
-        // Día de descanso
+        // Día de descanso o estado especial
         allSchedules.push({
           name: firstNameUser,
           ingreso: 'LI',
           salida: 'BRE',
           email: user.email,
+          estado: selectedSchedule.estado || 'libre',
         });
       } else {
         // No ha registrado
@@ -404,6 +441,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
           ingreso: 'NO',
           salida: 'REGISTRO',
           email: user.email,
+          estado: null,
         });
       }
     } else {
@@ -416,6 +454,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
         ingreso: 'NO',
         salida: 'REGISTRO',
         email: user.email,
+        estado: null,
       });
       setSharedWith([]);
     }
@@ -448,15 +487,17 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                 ingreso: selectedScheduleShared.startTime || '00:00',
                 salida: selectedScheduleShared.endTime || '00:00',
                 email: email,
+                estado: selectedScheduleShared.estado || null,
               });
             } else if (selectedScheduleShared && selectedScheduleShared.tipo !== 'trabajado') {
-              // Día de descanso
+              // Día de descanso o estado especial
               allSchedules.push({
                 name: firstName,
                 fullName: fullName,
                 ingreso: 'LI',
                 salida: 'BRE',
                 email: email,
+                estado: selectedScheduleShared.estado || 'libre',
               });
             } else {
               // No ha registrado
@@ -466,6 +507,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                 ingreso: 'NO',
                 salida: 'REGISTRO',
                 email: email,
+                estado: null,
               });
             }
           }
@@ -572,19 +614,32 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
         <div className="schedule-table">
           {(() => {
             const displayNames = disambiguateNames(todaySchedules);
-            return todaySchedules.map((item, index) => (
-              <div className={`schedule-row category-${item.category}`} key={index}>
-                <span>{displayNames[index]}</span>
-                {item.merged ? (
-                  <span className="merged-cell">{item.mergedText}</span>
-                ) : (
-                  <>
-                    <span>{item.ingreso}</span>
-                    <span>{item.salida}</span>
-                  </>
-                )}
-              </div>
-            ));
+            return todaySchedules.map((item, index) => {
+              const nameInfo = displayNames[index];
+              // Determinar clase de estado
+              let stateClass = '';
+              if (item.estado && ['INC', 'LIC', 'VAC', 'SAN', 'CAP', 'CEO'].includes(item.estado)) {
+                stateClass = `state-${item.estado.toLowerCase()}`;
+              } else if (item.estado === 'libre' || (item.ingreso === 'LI' && item.salida === 'BRE')) {
+                stateClass = 'state-libre';
+              }
+              
+              return (
+                <div className={`schedule-row category-${item.category} ${stateClass}`} key={index}>
+                  <span className={nameInfo.isDuplicate ? 'name-differentiator' : ''}>
+                    {nameInfo.display}
+                  </span>
+                  {item.merged ? (
+                    <span className="merged-cell">{item.mergedText}</span>
+                  ) : (
+                    <>
+                      <span>{item.ingreso}</span>
+                      <span>{item.salida}</span>
+                    </>
+                  )}
+                </div>
+              );
+            });
           })()}
         </div>
       </div>

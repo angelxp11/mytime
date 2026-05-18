@@ -91,6 +91,7 @@ const findUserIdByEmail = async (email) => {
 
 const buildIndividualSchedulePayload = (currentWeekStart, groupSchedules, weekStartDate, participantIndex) => {
   const weekEndDate = formatDateInput(new Date(currentWeekStart.getTime() + 6 * 86400000));
+  const nonWorkingStates = ['libre', 'INC', 'LIC', 'VAC', 'SAN', 'CAP', 'CEO'];
   return {
     semana: weekStartDate,
     weekNumber: getISOWeekNumber(currentWeekStart),
@@ -99,13 +100,17 @@ const buildIndividualSchedulePayload = (currentWeekStart, groupSchedules, weekSt
     days: createScheduleDays(currentWeekStart).map((day, dayIndex) => {
       const key = `participant_${participantIndex}_day_${dayIndex}`;
       const cell = groupSchedules[key] || {};
-      const tipo = cell.estado === 'libre' ? 'descanso' : 'trabajado';
+      const tipo = nonWorkingStates.includes(cell.estado) ? 'descanso' : 'trabajado';
       const mappedDay = {
         date: formatDateInput(day.date),
         label: formatDayLabel(day.date),
         tipo,
       };
-      if (tipo === 'trabajado') {
+      if (cell.estado && cell.estado !== '-') {
+        // Incluir el estado especial (VAC, INC, LIC, SAN, CAP, CEO, etc.)
+        mappedDay.estado = cell.estado;
+      }
+      if (cell.estado === '-') {
         mappedDay.startTime = `${String(cell.startH || '00').padStart(2, '0')}:00`;
         mappedDay.endTime = `${String(cell.endH || '00').padStart(2, '0')}:00`;
       }
@@ -427,7 +432,7 @@ const HorariosGrupo = ({ group, user, onBack }) => {
     const startH = isDescanso ? '00' : String(day?.startTime?.split(':')[0] || '00').padStart(2, '0');
     const endH = isDescanso ? '00' : String(day?.endTime?.split(':')[0] || '00').padStart(2, '0');
     return {
-      estado: isDescanso ? 'libre' : '-',
+      estado: day?.estado || (isDescanso ? 'libre' : '-'),
       startH,
       endH,
       descanso: '00',
@@ -691,17 +696,23 @@ if (data?.participantOrderGlobal) {
       const weekStartDate = formatDateInput(currentWeekStart);
       const weekEndDate = formatDateInput(new Date(currentWeekStart.getTime() + 6 * 86400000));
       const groupSchedulesArray = participants.map((participant, pIndex) => {
+        const nonWorkingStates = ['libre', 'INC', 'LIC', 'VAC', 'SAN', 'CAP', 'CEO'];
         const participantDays = createScheduleDays(currentWeekStart).map((day, dayIndex) => {
           const key = `participant_${pIndex}_day_${dayIndex}`;
           const cell = groupSchedules[key] || {};
-          const tipo = cell.estado === 'libre' ? 'descanso' : 'trabajado';
+          const tipo = nonWorkingStates.includes(cell.estado) ? 'descanso' : 'trabajado';
           const mappedDay = {
             date: formatDateInput(day.date),
             label: formatDayLabel(day.date),
             tipo,
           };
 
-          if (tipo === 'trabajado') {
+          if (cell.estado && cell.estado !== '-') {
+            // Incluir el estado especial (VAC, INC, LIC, SAN, CAP, CEO, etc.)
+            mappedDay.estado = cell.estado;
+          }
+
+          if (cell.estado === '-') {
             mappedDay.startTime = `${String(cell.startH || '00').padStart(2, '0')}:00`;
             mappedDay.endTime = `${String(cell.endH || '00').padStart(2, '0')}:00`;
           }
