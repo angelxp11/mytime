@@ -161,48 +161,39 @@ const disambiguateNames = (schedules) => {
   });
   
   // Crear array de información de nombres
-  const displayNames = schedules.map((schedule, index) => ({
+  const displayNames = schedules.map((schedule) => ({
     display: schedule.name,
     isDuplicate: false,
   }));
   
-  // Para grupos con duplicados, usar el siguiente nombre disponible
-  Object.keys(nameGroups).forEach((firstName) => {
-    const indices = nameGroups[firstName];
-    
-    // Si solo hay uno, no hace falta cambiar
-    if (indices.length === 1) return;
-    
-    // Hay duplicados del mismo primer nombre
-    // Extraer todos los nombres de cada persona para encontrar diferenciadores
-    const allNames = indices.map((idx) => {
+  // Para grupos con duplicados, todos los miembros usan una forma desambiguada
+  Object.values(nameGroups).forEach((indices) => {
+    if (indices.length <= 1) return;
+
+    const usedDisplays = new Set();
+    indices.forEach((idx) => {
       const fullName = schedules[idx].fullName || schedules[idx].name;
-      return fullName.split(/\s+/); // Array de palabras
-    });
-    
-    // Intentar usar el segundo nombre (si existe)
-    const secondNames = allNames.map((names) => names[1] || '');
-    
-    // Si todos los segundos nombres son diferentes, usarlos
-    const uniqueSecondNames = new Set(secondNames.filter(Boolean));
-    if (uniqueSecondNames.size === secondNames.length && secondNames.every(n => n)) {
-      indices.forEach((idx, i) => {
-        displayNames[idx].display = secondNames[i];
-        displayNames[idx].isDuplicate = true;
-      });
-      return;
-    }
-    
-    // Si los segundos nombres también son iguales, concatenar segundo + tercero
-    const combinedNames = allNames.map((names) => {
-      const part2 = names[1] || '';
-      const part3 = names[2] || '';
-      return (part2 + ' ' + part3).trim();
-    });
-    
-    indices.forEach((idx, i) => {
-      displayNames[idx].display = combinedNames[i] || firstName;
+      const parts = fullName.split(/\s+/).filter(Boolean);
+      let display = parts[0];
+
+      if (parts.length >= 2) {
+        display = `${parts[0]} ${parts[1]}`;
+      }
+
+      // Si el primer+segundo nombre sigue colisionando, agregar más partes
+      let partIndex = 2;
+      while (usedDisplays.has(display) && partIndex < parts.length) {
+        display = `${display} ${parts[partIndex]}`;
+        partIndex += 1;
+      }
+
+      if (usedDisplays.has(display)) {
+        display = fullName;
+      }
+
+      displayNames[idx].display = display;
       displayNames[idx].isDuplicate = true;
+      usedDisplays.add(display);
     });
   });
   

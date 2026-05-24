@@ -101,18 +101,24 @@ const buildIndividualSchedulePayload = (currentWeekStart, groupSchedules, weekSt
       const key = `participant_${participantIndex}_day_${dayIndex}`;
       const cell = groupSchedules[key] || {};
       const tipo = nonWorkingStates.includes(cell.estado) ? 'descanso' : 'trabajado';
+      const descanso = String(parseInt(cell.descanso || 0, 10)).padStart(2, '0');
+      const startH = String(cell.startH || '00').padStart(2, '0');
+      const endH = String(cell.endH || '00').padStart(2, '0');
       const mappedDay = {
         date: formatDateInput(day.date),
         label: formatDayLabel(day.date),
         tipo,
+        descanso,
       };
       if (cell.estado && cell.estado !== '-') {
         // Incluir el estado especial (VAC, INC, LIC, SAN, CAP, CEO, etc.)
         mappedDay.estado = cell.estado;
+        mappedDay.hours = '00';
       }
       if (cell.estado === '-') {
-        mappedDay.startTime = `${String(cell.startH || '00').padStart(2, '0')}:00`;
-        mappedDay.endTime = `${String(cell.endH || '00').padStart(2, '0')}:00`;
+        mappedDay.startTime = `${startH}:00`;
+        mappedDay.endTime = `${endH}:00`;
+        mappedDay.hours = String(calcTotal(startH, endH, descanso)).padStart(2, '0');
       }
       return mappedDay;
     }),
@@ -431,14 +437,15 @@ const HorariosGrupo = ({ group, user, onBack }) => {
     const isDescanso = tipo === 'descanso';
     const startH = isDescanso ? '00' : String(day?.startTime?.split(':')[0] || '00').padStart(2, '0');
     const endH = isDescanso ? '00' : String(day?.endTime?.split(':')[0] || '00').padStart(2, '0');
+    const descanso = String(parseInt(day?.descanso || 0, 10)).padStart(2, '0');
     return {
       estado: day?.estado || (isDescanso ? 'libre' : '-'),
       startH,
       endH,
-      descanso: '00',
+      descanso,
       horas: isDescanso
-  ? '00'
-  : String(calcTotal(startH, endH, 0)).padStart(2, '0'),
+        ? '00'
+        : String(calcTotal(startH, endH, descanso)).padStart(2, '0'),
     };
   };
 
@@ -701,20 +708,26 @@ if (data?.participantOrderGlobal) {
           const key = `participant_${pIndex}_day_${dayIndex}`;
           const cell = groupSchedules[key] || {};
           const tipo = nonWorkingStates.includes(cell.estado) ? 'descanso' : 'trabajado';
+          const descanso = String(parseInt(cell.descanso || 0, 10)).padStart(2, '0');
+          const startH = String(cell.startH || '00').padStart(2, '0');
+          const endH = String(cell.endH || '00').padStart(2, '0');
           const mappedDay = {
             date: formatDateInput(day.date),
             label: formatDayLabel(day.date),
             tipo,
+            descanso,
           };
 
           if (cell.estado && cell.estado !== '-') {
             // Incluir el estado especial (VAC, INC, LIC, SAN, CAP, CEO, etc.)
             mappedDay.estado = cell.estado;
+            mappedDay.hours = '00';
           }
 
           if (cell.estado === '-') {
-            mappedDay.startTime = `${String(cell.startH || '00').padStart(2, '0')}:00`;
-            mappedDay.endTime = `${String(cell.endH || '00').padStart(2, '0')}:00`;
+            mappedDay.startTime = `${startH}:00`;
+            mappedDay.endTime = `${endH}:00`;
+            mappedDay.hours = String(calcTotal(startH, endH, descanso)).padStart(2, '0');
           }
 
           return mappedDay;
