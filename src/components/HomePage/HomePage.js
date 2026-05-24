@@ -147,6 +147,13 @@ const getFriendlyDayLabel = (date) => {
   return selected.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase();
 };
 
+const formatDescBadge = (desc) => {
+  if (desc == null) return '';
+  const n = parseInt(String(desc), 10);
+  if (Number.isNaN(n)) return String(desc);
+  return `${n}h`;
+};
+
 // ─── FUNCIÓN PARA DIFERENCIAR NOMBRES DUPLICADOS ────────────────────────────
 const disambiguateNames = (schedules) => {
   // Agrupar por nombre (primer nombre)
@@ -346,6 +353,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
             salida: 'REGISTRO',
             email: email,
             estado: null,
+            descanso: '00',
           };
 
           if (horariosSnap.exists()) {
@@ -361,6 +369,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                 salida: selectedSchedule.endTime || '00:00',
                 email: email,
                 estado: selectedSchedule.estado || null,
+                descanso: selectedSchedule.descanso || '00',
               };
             } else if (selectedSchedule && selectedSchedule.tipo !== 'trabajado') {
               // Día de descanso o estado especial
@@ -371,6 +380,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                 salida: 'BRE',
                 email: email,
                 estado: selectedSchedule.estado || 'libre',
+                descanso: selectedSchedule.descanso || '00',
               };
             }
           }
@@ -415,6 +425,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
           salida: selectedSchedule.endTime || '00:00',
           email: user.email, // Usuario actual
           estado: selectedSchedule.estado || null,
+          descanso: selectedSchedule.descanso || '00',
         });
       } else if (selectedSchedule && selectedSchedule.tipo !== 'trabajado') {
         // Día de descanso o estado especial
@@ -424,6 +435,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
           salida: 'BRE',
           email: user.email,
           estado: selectedSchedule.estado || 'libre',
+          descanso: selectedSchedule.descanso || '00',
         });
       } else {
         // No ha registrado
@@ -433,6 +445,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
           salida: 'REGISTRO',
           email: user.email,
           estado: null,
+          descanso: '00',
         });
       }
     } else {
@@ -446,6 +459,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
         salida: 'REGISTRO',
         email: user.email,
         estado: null,
+        descanso: '00',
       });
       setSharedWith([]);
     }
@@ -479,6 +493,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                 salida: selectedScheduleShared.endTime || '00:00',
                 email: email,
                 estado: selectedScheduleShared.estado || null,
+                descanso: selectedScheduleShared.descanso || '00',
               });
             } else if (selectedScheduleShared && selectedScheduleShared.tipo !== 'trabajado') {
               // Día de descanso o estado especial
@@ -489,6 +504,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                 salida: 'BRE',
                 email: email,
                 estado: selectedScheduleShared.estado || 'libre',
+                descanso: selectedScheduleShared.descanso || '00',
               });
             } else {
               // No ha registrado
@@ -499,6 +515,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                 salida: 'REGISTRO',
                 email: email,
                 estado: null,
+                descanso: '00',
               });
             }
           }
@@ -628,6 +645,15 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                       <span>{item.salida}</span>
                     </>
                   )}
+                  {item.category === 0 &&
+  item.descanso &&
+  String(item.descanso) !== '00' && (
+                <div
+                  className="break-badge"
+                  data-break={formatDescBadge(item.descanso).replace('h', '')}
+                  aria-hidden="true"
+                />
+)}
                 </div>
               );
             });

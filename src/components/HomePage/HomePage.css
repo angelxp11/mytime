@@ -118,6 +118,7 @@
   grid-template-columns: 1fr 1fr 1fr;
   gap: 10px;
   align-items: stretch;
+  position: relative;
 }
 
 /* Categoría 0: Coinciden (Verde) */
@@ -205,6 +206,21 @@
   border-color: rgba(0, 212, 255, 0.5);
   box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
   transform: translateY(-1px);
+}
+
+/* Remove hover/extra effects for the name differentiator */
+.name-differentiator {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  padding: 0 !important;
+  color: inherit !important;
+}
+.name-differentiator:hover {
+  border-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 .home-shared-schedules {
@@ -552,4 +568,39 @@
     opacity: 0;
     visibility: hidden;
   }
+}
+
+/* ─────────────────────────────────────────────
+   BREAK BADGE - SIMPLE BUBBLE (top-right)
+   Only a small red bubble is shown so it doesn't cover schedule content.
+───────────────────────────────────────────── */
+
+.schedule-row {
+  position: relative;
+}
+
+.break-badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  pointer-events: none;
+  z-index: 60;
+}
+
+.break-badge::before {
+  content: attr(data-break);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #ff4d4d, #dc2626);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.95rem;
+  font-weight: 900;
+  border: 2px solid rgba(255,255,255,0.15);
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.35);
 }
