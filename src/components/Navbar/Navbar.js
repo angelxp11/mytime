@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import '../../colors.css';
 import './Navbar.css';
 
-const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal, setShowPlanModal }) => {
+const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal, setShowPlanModal, setShowComentariosModal, pendingCommentsCount }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   // Bloquear scroll del body cuando el menú está abierto
@@ -120,13 +120,25 @@ const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal
           </button>
 
           {user && user.email === 'jocheangel728@gmail.com' && (
-            <button
-              type="button"
-              className="navbar-item"
-              onClick={() => { setShowSubsModal(true); closeMenu(); }}
-            >
-              Usuarios
-            </button>
+            <>
+              <button
+                type="button"
+                className="navbar-item requests-btn"
+                onClick={() => { setShowComentariosModal(true); closeMenu(); }}
+              >
+                Solicitudes
+                {pendingCommentsCount > 0 && (
+                  <span className="navbar-badge">{pendingCommentsCount}</span>
+                )}
+              </button>
+              <button
+                type="button"
+                className="navbar-item"
+                onClick={() => { setShowSubsModal(true); closeMenu(); }}
+              >
+                Usuarios
+              </button>
+            </>
           )}
 
           <button type="button" className="navbar-item logout" onClick={onLogout}>

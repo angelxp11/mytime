@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, query, updateDoc } from 'firebase/firestore';
 import { auth, db } from './components/server/api';
 import Navbar from './components/Navbar/Navbar';
 import PlanModal from './funtions/plan';
@@ -19,6 +19,7 @@ import RegisterHours from './components/registerhours/RegisterHours';
 import ToastContainer from './components/ToastContainer';
 import CopiModal from './funtions/copi';
 import SubsModal from './funtions/subs';
+import ComentariosModal from './funtions/comentarios';
 import Footer from './components/footer/footer';
 
 function App() {
@@ -28,6 +29,8 @@ function App() {
   const [showCopiModal, setShowCopiModal] = useState(false);
   const [showSubsModal, setShowSubsModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [showComentariosModal, setShowComentariosModal] = useState(false);
+  const [pendingCommentsCount, setPendingCommentsCount] = useState(0);
   const [userPlan, setUserPlan] = useState(null);
 
   useEffect(() => {
@@ -84,6 +87,31 @@ function App() {
     };
 
     loadUserPlan();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setPendingCommentsCount(0);
+      return;
+    }
+
+    const commentsQuery = query(collection(db, 'COMENTARIOS'));
+    const unsubscribe = onSnapshot(
+      commentsQuery,
+      (snapshot) => {
+        const pending = snapshot.docs.reduce((count, docItem) => {
+          const data = docItem.data();
+          return data.status === 'finalizado' ? count : count + 1;
+        }, 0);
+        setPendingCommentsCount(pending);
+      },
+      (error) => {
+        console.error('Error escuchando comentarios:', error);
+        setPendingCommentsCount(0);
+      }
+    );
+
+    return unsubscribe;
   }, [user]);
 
   const handleLogout = async () => {
@@ -146,6 +174,8 @@ function App() {
         handleLogout={handleLogout}
         setShowSubsModal={setShowSubsModal}
         setShowPlanModal={setShowPlanModal}
+        setShowComentariosModal={setShowComentariosModal}
+        pendingCommentsCount={pendingCommentsCount}
       />
       <main style={{ minHeight: 'calc(100vh - 60px)' }}>
         {renderView()}
@@ -161,6 +191,7 @@ function App() {
       />
       <CopiModal isOpen={showCopiModal} onClose={() => setShowCopiModal(false)} user={user} />
       <SubsModal isOpen={showSubsModal} onClose={() => setShowSubsModal(false)} user={user} />
+      <ComentariosModal isOpen={showComentariosModal} onClose={() => setShowComentariosModal(false)} user={user} />
     </div>
   );
 }
