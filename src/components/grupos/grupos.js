@@ -34,6 +34,22 @@ const formatDateTimeDisplay = (value) => {
   return `${dateStr} · ${timeStr}`;
 };
 
+const getMondayOfWeek = (date) => {
+  const result = new Date(date);
+  const day = result.getDay();
+  const diff = (day + 6) % 7;
+  result.setDate(result.getDate() - diff);
+  result.setHours(0, 0, 0, 0);
+  return result;
+};
+
+const formatDateInput = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const Grupos = ({ user }) => {
   const [groups, setGroups] = useState([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
@@ -85,6 +101,8 @@ const Grupos = ({ user }) => {
 
     const loadLastUpdated = async () => {
       const updates = {};
+      const currentWeekKey = formatDateInput(getMondayOfWeek(new Date()));
+
       for (const group of groups) {
         try {
           const ownerId = group.ownerId || group.id;
@@ -92,13 +110,9 @@ const Grupos = ({ user }) => {
           const horariosSnap = await getDoc(horariosRef);
           if (horariosSnap.exists()) {
             const data = horariosSnap.data();
-            const semanas = data?.semanas || {};
-            // Obtener la semana más reciente con horarios guardados
-            const semanasArray = Object.entries(semanas)
-              .map(([key, value]) => ({ key, ...value }))
-              .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
-            if (semanasArray.length > 0) {
-              updates[group.id] = semanasArray[0].updatedAt;
+            const currentWeek = data?.semanas?.[currentWeekKey];
+            if (currentWeek?.updatedAt) {
+              updates[group.id] = currentWeek.updatedAt;
             }
           }
         } catch (error) {

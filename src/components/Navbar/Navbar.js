@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaBars, FaTimes, FaSignOutAlt } from 'react-icons/fa';
+import { FiClock } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import '../../colors.css';
 import './Navbar.css';
@@ -7,9 +8,18 @@ import './Navbar.css';
 const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal, setShowPlanModal }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
+  // Bloquear scroll del body cuando el menú está abierto
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
+  const toggleMenu = () => setIsOpen((prev) => !prev);
+  const closeMenu  = () => setIsOpen(false);
 
   const isSubscriptionExpired = () => {
     if (!userPlan) return true;
@@ -18,52 +28,125 @@ const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal
     return new Date(userPlan.expirationDate) < new Date();
   };
 
+  const canRegisterHours = () =>
+    userPlan?.plan === 'premium' && !isSubscriptionExpired();
+
   const handleNavClick = (view) => {
     if (view === 'pago' && isSubscriptionExpired()) {
       setShowPlanModal(true);
     } else {
       setCurrentView(view);
     }
-    setIsOpen(false); // Close menu on mobile after click
+    closeMenu();
+  };
+
+  const handleRegisterClick = () => {
+    if (canRegisterHours()) {
+      setCurrentView('registerhours');
+    } else {
+      setShowPlanModal(true);
+    }
+    closeMenu();
   };
 
   const onLogout = () => {
     handleLogout();
     toast.info('Sesión cerrada');
+    closeMenu();
   };
 
   return (
-    <nav className="navbar">
-      <div className="navbar-left">
-        <div className="navbar-brand">MyTime</div>
-        {userPlan && (
+    <>
+      <nav className="navbar">
+        <div className="navbar-left">
+          <div
+            className="navbar-brand"
+            role="button"
+            tabIndex={0}
+            onClick={() => handleNavClick('home')}
+            onKeyPress={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                handleNavClick('home');
+              }
+            }}
+          >
+            MyTime
+          </div>
+          {userPlan && (
+            <button
+              type="button"
+              className={`navbar-item navbar-plan-button ${userPlan.plan === 'premium' ? 'premium' : 'free'}`}
+              onClick={() => userPlan.plan === 'free' && setShowPlanModal(true)}
+            >
+              {userPlan.plan === 'premium' ? 'Premium' : 'Free'}
+            </button>
+          )}
+        </div>
+
+        {/* Overlay oscuro al abrir el menú */}
+        <div
+          className={`navbar-overlay ${isOpen ? 'is-open' : ''}`}
+          onClick={closeMenu}
+          aria-hidden="true"
+        />
+
+        <div className={`navbar-menu ${isOpen ? 'is-open' : ''}`}>
           <button
             type="button"
-            className={`navbar-item navbar-plan-button ${userPlan.plan === 'premium' ? 'premium' : 'free'}`}
-            onClick={() => userPlan.plan === 'free' && setShowPlanModal(true)}
+            className="navbar-item register-btn"
+            onClick={handleRegisterClick}
           >
-            {userPlan.plan === 'premium' ? 'Premium' : 'Free'}
+            <FiClock size={15} />
+            Registrar Hora
           </button>
-        )}
-      </div>
-      <div className={`navbar-menu ${isOpen ? 'is-open' : ''}`}>
-        <button type="button" className="navbar-item" onClick={() => handleNavClick('home')}>Inicio</button>
-        <button type="button" className="navbar-item" onClick={() => handleNavClick('trabajos')}>Mis Trabajos</button>
-        <button type="button" className="navbar-item" onClick={() => handleNavClick('grupos')}>Grupos</button>
-        <button type="button" className="navbar-item" onClick={() => handleNavClick('calendar')}>Ver Calendario</button>
-        <button type="button" className="navbar-item" onClick={() => handleNavClick('horarios')}>Horarios</button>
-        <button type="button" className="navbar-item" onClick={() => handleNavClick('pago')}>Consultar Pago</button>
-        {user && user.email === 'jocheangel728@gmail.com' && (
-          <button type="button" className="navbar-item" onClick={() => setShowSubsModal(true)}>Usuarios</button>
-        )}
-        <button type="button" className="navbar-item logout" onClick={onLogout}>
-          <FaSignOutAlt /> Cerrar Sesión
+
+          <button type="button" className="navbar-item" onClick={() => handleNavClick('home')}>
+            Inicio
+          </button>
+          <button type="button" className="navbar-item" onClick={() => handleNavClick('trabajos')}>
+            Mis Trabajos
+          </button>
+          <button type="button" className="navbar-item" onClick={() => handleNavClick('grupos')}>
+            Grupos
+          </button>
+          <button type="button" className="navbar-item" onClick={() => handleNavClick('calendar')}>
+            Calendario
+          </button>
+          <button type="button" className="navbar-item" onClick={() => handleNavClick('horarios')}>
+            Horarios
+          </button>
+          <button type="button" className="navbar-item" onClick={() => handleNavClick('pago')}>
+            Consultar Pago
+          </button>
+
+          {user && user.email === 'jocheangel728@gmail.com' && (
+            <button
+              type="button"
+              className="navbar-item"
+              onClick={() => { setShowSubsModal(true); closeMenu(); }}
+            >
+              Usuarios
+            </button>
+          )}
+
+          <button type="button" className="navbar-item logout" onClick={onLogout}>
+            <FaSignOutAlt size={13} /> Cerrar Sesión
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className="navbar-burger"
+          onClick={toggleMenu}
+          aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
+        >
+          {isOpen ? <FaTimes /> : <FaBars />}
         </button>
-      </div>
-      <div className="navbar-burger" onClick={toggleMenu}>
-        {isOpen ? <FaTimes /> : <FaBars />}
-      </div>
-    </nav>
+      </nav>
+
+      {/* Espaciador para que el contenido no quede bajo el navbar fijo */}
+      <div className="navbar-spacer" />
+    </>
   );
 };
 

@@ -1,3 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+/* ─── BASE ─── */
+* {
+  box-sizing: border-box;
+}
+
 /* Contenedor principal */
 .home-container {
   min-height: calc(100vh - 65px);
@@ -6,209 +13,247 @@
   justify-content: center;
   align-items: center;
   text-align: center;
-  padding: 20px;
-  background: linear-gradient(135deg, #0f172a, #020617);
+  padding: 28px 20px 40px;
+  background: #060d1a;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 180, 255, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(34, 197, 94, 0.05) 0%, transparent 60%);
   color: #e5e7eb;
+  font-family: 'Outfit', system-ui, sans-serif;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Título */
+/* Grano sutil de fondo */
+.home-container::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+.home-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── TÍTULO ─── */
 .home-container h1 {
-  font-size: 2.5rem;
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
   font-weight: 700;
-  margin-bottom: 10px;
-  animation: fadeInDown 0.6s ease;
+  line-height: 1.25;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+  animation: fadeInDown 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  max-width: 680px;
 }
 
 .home-container h1.registered {
-  background: linear-gradient(135deg, #22c55e, #16a34a60);
+  background: linear-gradient(135deg, #4ade80 10%, #22c55e 50%, #86efac 90%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .home-container h1.not-registered {
-  background: linear-gradient(135deg, #ef4444, #dc262651);
+  background: linear-gradient(135deg, #f87171 10%, #ef4444 50%, #fca5a5 90%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-/* Descripción */
-.home-container p {
-  font-size: 1.1rem;
-  color: #9ca3af;
-  margin-bottom: 30px;
-  max-width: 500px;
-  animation: fadeInDown 0.8s ease;
+/* ─── DESCRIPCIÓN ─── */
+.home-container > p {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin-bottom: 28px;
+  max-width: 420px;
+  animation: fadeInDown 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
+  letter-spacing: 0.01em;
 }
 
+/* ─── CONTENEDOR HORARIO HOY ─── */
 .home-today-schedule {
   display: grid;
   gap: 10px;
-  margin: 20px auto 24px;
-  max-width: 680px;
+  margin: 6px auto 22px;
+  width: 100%;
+  max-width: 660px;
   text-align: center;
-  animation: fadeInDown 0.8s ease;
+  animation: fadeInDown 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }
 
 .home-today-schedule span {
   color: #94a3b8;
-  font-size: 1.05rem;
-  letter-spacing: 0.03em;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
 }
 
+/* ─── HEADER DE FECHA ─── */
 .schedule-header {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 14px;
+  margin-bottom: 10px;
 }
 
 .date-nav {
-  background: rgba(15, 23, 42, 0.95);
-  border: 1px solid rgba(56, 189, 248, 0.22);
-  color: #e2e8f0;
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  color: #94a3b8;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
 }
 
 .date-nav:hover {
-  border-color: rgba(34, 197, 94, 0.8);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.07);
   transform: translateY(-1px);
+}
+
+.date-nav:active {
+  transform: translateY(0) scale(0.95);
 }
 
 .selected-day-label {
   display: flex;
   flex-direction: column;
   text-align: center;
-  color: #f8fafc;
+  gap: 2px;
 }
 
 .selected-day-label strong {
-  font-size: 1rem;
-  letter-spacing: 0.1em;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #d1fae5;
 }
 
 .selected-day-label span {
-  font-size: 0.9rem;
-  color: #94a3b8;
+  font-size: 0.8rem;
+  color: #475569;
+  letter-spacing: 0.04em;
 }
 
+/* ─── TABLA DE HORARIOS ─── */
 .home-today-schedule .schedule-table {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(56, 189, 248, 0.18);
+  gap: 8px;
+  background: rgba(10, 18, 36, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.12);
   border-radius: 22px;
-  padding: 18px;
-  box-shadow: 0 18px 40px rgba(0, 212, 255, 0.12);
+  padding: 16px;
+  backdrop-filter: blur(16px);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.3),
+    0 20px 48px rgba(0, 0, 0, 0.4),
+    0 0 60px rgba(0, 180, 255, 0.04) inset;
 }
 
-/* Cada fila */
+/* ─── FILA DEL HORARIO ─── */
 .schedule-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
   align-items: stretch;
+  justify-items: center;
   position: relative;
+  border-radius: 14px;
+  padding: 5px;
+  transition: transform 0.15s ease;
+}
+
+.schedule-row:hover {
+  transform: translateY(-1px);
 }
 
 /* Categoría 0: Coinciden (Verde) */
 .schedule-row.category-0 {
-  background: rgba(34, 197, 94, 0.12);
-  border-left: 4px solid #22c55e;
-  border-radius: 16px;
-  padding: 6px;
+  background: rgba(34, 197, 94, 0.08);
+  border-left: 3px solid #22c55e;
 }
-
-.schedule-row.category-0 span {
-  background: transparent;
-  border-color: transparent;
-}
+.schedule-row.category-0 span { background: transparent; border-color: transparent; }
 
 /* Categoría 1: No coinciden pero tienen horario (Rojo) */
 .schedule-row.category-1 {
-  background: rgba(239, 68, 68, 0.12);
-  border-left: 4px solid #ef4444;
-  border-radius: 16px;
-  padding: 6px;
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #ef4444;
 }
+.schedule-row.category-1 span { background: transparent; border-color: transparent; }
 
-.schedule-row.category-1 span {
-  background: transparent;
-  border-color: transparent;
-}
-
-/* Categoría 2: Descanso (Celeste #B0DFF6) */
+/* Categoría 2: Descanso (Celeste) */
 .schedule-row.category-2 {
-  background: rgba(176, 223, 246, 0.12);
-  border-left: 4px solid #B0DFF6;
-  border-radius: 16px;
-  padding: 6px;
+  background: rgba(176, 223, 246, 0.08);
+  border-left: 3px solid #B0DFF6;
 }
+.schedule-row.category-2 span { background: transparent; border-color: transparent; }
 
-.schedule-row.category-2 span {
-  background: transparent;
-  border-color: transparent;
-}
-
-/* Categoría 3: No registrado (Amarillo #FDD212) */
+/* Categoría 3: No registrado (Amarillo) */
 .schedule-row.category-3 {
-  background: rgba(253, 210, 18, 0.12);
-  border-left: 4px solid #FDD212;
-  border-radius: 16px;
-  padding: 6px;
+  background: rgba(253, 210, 18, 0.07);
+  border-left: 3px solid #FDD212;
 }
+.schedule-row.category-3 span { background: transparent; border-color: transparent; }
 
-.schedule-row.category-3 span {
-  background: transparent;
-  border-color: transparent;
-}
-
-/* Cada celda */
+/* ─── CELDAS ─── */
 .schedule-row span {
-  background: rgba(2, 6, 23, 0);
-  border: 1px solid rgba(6, 182, 212, 0.2);
-  border-radius: 12px;
-  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 10px 10px;
   text-align: center;
-  font-size: 0.95rem;
-  color: #e5e7eb;
+  font-size: 0.9rem;
+  color: #cbd5e1;
   font-weight: 500;
-  transition: all 0.2s ease;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 0.01em;
+  transition: all 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Celda fusionada (LIBRE o NO REGISTRADO) */
+/* Primera celda (nombre) */
+.schedule-row span:first-child {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.schedule-row span:hover {
+  border-color: rgba(0, 212, 255, 0.2);
+  color: #f1f5f9;
+}
+
+/* Celda fusionada */
 .merged-cell {
   grid-column: 2 / 4 !important;
-  background: rgba(2, 6, 23, 0);
-  border: 1px solid rgba(6, 182, 212, 0.2);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 10px;
   padding: 10px 12px;
   text-align: center;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   color: #e5e7eb;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
 }
 
-/* Hover sutil tipo app moderna */
-.schedule-row span:hover {
-  border-color: rgba(0, 212, 255, 0.5);
-  box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-/* Remove hover/extra effects for the name differentiator */
+/* Name differentiator */
 .name-differentiator {
   background: transparent !important;
   border: none !important;
@@ -223,370 +268,67 @@
   transform: none !important;
 }
 
-.home-shared-schedules {
-  margin: 30px auto;
-  max-width: 680px;
-  animation: fadeInDown 0.8s ease;
-  display: none;
-}
-
-.home-shared-schedules h3 {
-  font-size: 1.2rem;
-  color: #cbd5e1;
-  margin: 0 0 16px 0;
-  text-align: center;
-  font-weight: 600;
-}
-
-.home-shared-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.home-shared-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 20px;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(6, 182, 212, 0.25);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.1);
-}
-
-.home-shared-name {
-  font-weight: 600;
-  color: #00d4ff;
-  font-size: 1rem;
-}
-
-.home-shared-schedule {
-  color: #cbd5e1;
-  font-size: 0.95rem;
-}
-
-/* Banner de subscripción vencida */
-.subscription-expired-banner {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(135deg, rgba(30, 58, 138, 0.98), rgba(74, 222, 128, 0.95));
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 22px;
-  padding: 24px 26px;
-  margin: 24px auto 0;
-  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.24);
-  animation: fadeInDown 0.6s ease;
-  max-width: 760px;
-  width: 100%;
-}
-
-.expired-message {
-  display: grid;
-  gap: 10px;
-  align-items: flex-start;
-  text-align: left;
-  flex: 1;
-}
-
-.expired-text {
-  color: #ffffff;
-  font-size: 1.35rem;
-  font-weight: 700;
-}
-
-.expired-description {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 1rem;
-  line-height: 1.55;
-  max-width: 560px;
-}
-
-.renew-button {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  padding: 14px 24px;
-  border-radius: 14px;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease;
-  white-space: nowrap;
-}
-
-.renew-button:hover {
-  background: rgba(255, 255, 255, 0.22);
-  transform: translateY(-2px);
-}
-
-.expired-icon {
-  font-size: 1.5rem;
-  animation: pulse 2s infinite;
-}
-
-.expired-text {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-.renew-button {
-  background: linear-gradient(135deg, #16a34a, #15803d);
-  color: #ffffff;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
-}
-
-.renew-button:hover {
-  background: linear-gradient(135deg, #15803d, #166534);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
-}
-
-.renew-button:active {
-  transform: translateY(0);
-}
-
-/* Animación de pulso para el icono */
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
-}
-
-/* Contenedor de botones */
-.home-buttons {
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-  justify-content: center;
-  animation: fadeInUp 1s ease;
-}
-
-/* Botones */
-.home-button {
-  background: linear-gradient(135deg, #00d4ff, #007cf0);
-  border: none;
-  padding: 12px 22px;
-  border-radius: 25px;
-  color: white;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: 0 5px 15px rgba(0, 212, 255, 0.2);
-}
-
-/* Hover */
-.home-button:hover {
-  transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 10px 25px rgba(0, 212, 255, 0.35);
-}
-
-/* Click */
-.home-button:active {
-  transform: scale(0.97);
-}
-
-/* Animaciones */
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* RESPONSIVE */
-@media (max-width: 600px) {
-  .home-container h1 {
-    font-size: 2rem;
-  }
-
-  .home-container p {
-    font-size: 1rem;
-  }
-
-  .home-button {
-    width: 100%;
-    max-width: 250px;
-  }
-
-  .home-shared-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .home-shared-schedules {
-    max-width: 100%;
- 
-  }
-}
-
-/* ─── ESTILOS POR ESTADO ─── */
-
-/* LIBRE (Descanso normal) */
+/* ─── ESTADOS ESPECIALES ─── */
 .schedule-row.state-libre {
-  background: rgba(176, 223, 246, 0.12) !important;
-  border-left: 4px solid #B0DFF6 !important;
+  background: rgba(176, 223, 246, 0.08) !important;
+  border-left: 3px solid #B0DFF6 !important;
 }
+.schedule-row.state-libre .merged-cell { color: #B0DFF6; font-weight: 700; }
 
-.schedule-row.state-libre .merged-cell {
-  color: #B0DFF6;
-  font-weight: 700;
-}
-
-/* INC (Incapacidad) - f4b084 */
 .schedule-row.state-inc {
-  background: rgba(244, 176, 132, 0.15) !important;
-  border-left: 4px solid #f4b084 !important;
+  background: rgba(244, 176, 132, 0.1) !important;
+  border-left: 3px solid #f4b084 !important;
 }
+.schedule-row.state-inc .merged-cell { color: #f4b084; font-weight: 700; }
 
-.schedule-row.state-inc .merged-cell {
-  color: #f4b084;
-  font-weight: 700;
-}
-
-/* LIC (Licencia) - ed7d31 */
 .schedule-row.state-lic {
-  background: rgba(237, 125, 49, 0.15) !important;
-  border-left: 4px solid #ed7d31 !important;
+  background: rgba(237, 125, 49, 0.1) !important;
+  border-left: 3px solid #ed7d31 !important;
 }
+.schedule-row.state-lic .merged-cell { color: #ed7d31; font-weight: 700; }
 
-.schedule-row.state-lic .merged-cell {
-  color: #ed7d31;
-  font-weight: 700;
-}
-
-/* VAC (Vacaciones) - 4472c4 */
 .schedule-row.state-vac {
-  background: rgba(68, 114, 196, 0.15) !important;
-  border-left: 4px solid #4472c4 !important;
+  background: rgba(68, 114, 196, 0.1) !important;
+  border-left: 3px solid #4472c4 !important;
 }
+.schedule-row.state-vac .merged-cell { color: #7ba4e8; font-weight: 700; }
 
-.schedule-row.state-vac .merged-cell {
-  color: #4472c4;
-  font-weight: 700;
-}
-
-/* SAN (Sancionado) - ff0000 */
 .schedule-row.state-san {
-  background: rgba(255, 0, 0, 0.15) !important;
-  border-left: 4px solid #ff0000 !important;
+  background: rgba(255, 0, 0, 0.08) !important;
+  border-left: 3px solid #ff4444 !important;
 }
+.schedule-row.state-san .merged-cell { color: #ff6b6b; font-weight: 700; }
 
-.schedule-row.state-san .merged-cell {
-  color: #ff0000;
-  font-weight: 700;
-}
-
-/* CAP (Capacitación) - ffd966 */
 .schedule-row.state-cap {
-  background: rgba(255, 217, 102, 0.15) !important;
-  border-left: 4px solid #ffd966 !important;
+  background: rgba(255, 217, 102, 0.08) !important;
+  border-left: 3px solid #ffd966 !important;
 }
+.schedule-row.state-cap .merged-cell { color: #ffd966; font-weight: 700; }
 
-.schedule-row.state-cap .merged-cell {
-  color: #ffd966;
-  font-weight: 700;
-}
-
-/* CEO - fff2cc */
 .schedule-row.state-ceo {
-  background: rgba(255, 242, 204, 0.15) !important;
-  border-left: 4px solid #fff2cc !important;
+  background: rgba(255, 242, 204, 0.08) !important;
+  border-left: 3px solid #fff2cc !important;
 }
+.schedule-row.state-ceo .merged-cell { color: #f0e68c; font-weight: 700; }
 
-.schedule-row.state-ceo .merged-cell {
-  color: #333333;
-  font-weight: 700;
-}
-
-/* ─── ANIMACIÓN DE NOMBRES DUPLICADOS ─── */
-.animated-name {
-  display: inline-block;
-  position: relative;
-  min-width: 100%;
-}
-
-.name-text {
-  display: inline-block;
-  position: absolute;
-  left: 0;
-  right: 0;
-  text-align: center;
-  animation: fadeNameInOut 4s infinite;
-}
-
-.name-primary {
-  animation-name: fadeNameInOut;
-  animation-direction: normal;
-}
-
-.name-secondary {
-  animation-name: fadeNameInOut;
-  animation-direction: reverse;
-}
-
-@keyframes fadeNameInOut {
-  0%, 49% {
-    opacity: 1;
-    visibility: visible;
-  }
-  50%, 100% {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
-
-/* ─────────────────────────────────────────────
-   BREAK BADGE - SIMPLE BUBBLE (top-right)
-   Only a small red bubble is shown so it doesn't cover schedule content.
-───────────────────────────────────────────── */
-
+/* ─── BREAK BADGE — NOTIFICACIÓN TIPO APP ─────────────────────────────────────
+   Flota en la esquina superior-derecha del span del nombre (primera columna).
+   La primera columna ocupa 33.33% del ancho de la fila.
+   left = 33.33% - mitad del badge, top negativo para que sobresalga.
+────────────────────────────────────────────────────────────────────────────── */
 .schedule-row {
   position: relative;
 }
 
 .break-badge {
   position: absolute;
-  top: 8px;
-  right: 10px;
-  width: 34px;
-  height: 34px;
+  top: -7px;
+  left: calc(33.33% - 13px);
+  width: 26px;
+  height: 26px;
   pointer-events: none;
   z-index: 60;
+  animation: badgePop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .break-badge::before {
@@ -596,11 +338,331 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #ff4d4d, #dc2626);
+  background: linear-gradient(135deg, #ff3b30, #c41a10);
   color: #fff;
   border-radius: 50%;
+  font-size: 0.68rem;
+  font-weight: 800;
+  font-family: 'Outfit', sans-serif;
+  /* Borde del color de fondo crea efecto "separado" como notif iOS */
+  border: 2.5px solid #060d1a;
+  box-shadow:
+    0 0 0 1px rgba(255, 59, 48, 0.35),
+    0 4px 14px rgba(255, 59, 48, 0.5);
+  letter-spacing: 0;
+}
+
+@keyframes badgePop {
+  from { transform: scale(0) rotate(-15deg); opacity: 0; }
+  65%  { transform: scale(1.18) rotate(4deg); }
+  to   { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* ─── SECCIÓN SHARED ─── */
+.home-shared-schedules {
+  margin: 24px auto;
+  max-width: 660px;
+  animation: fadeInDown 0.7s ease 0.15s both;
+  display: none;
+}
+
+.home-shared-schedules h3 {
+  font-size: 1.1rem;
+  color: #cbd5e1;
+  margin: 0 0 14px 0;
+  text-align: center;
+  font-weight: 600;
+}
+
+.home-shared-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.home-shared-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 18px;
+  background: rgba(10, 18, 36, 0.7);
+  border: 1px solid rgba(6, 182, 212, 0.18);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.home-shared-name {
+  font-weight: 600;
+  color: #38bdf8;
   font-size: 0.95rem;
-  font-weight: 900;
-  border: 2px solid rgba(255,255,255,0.15);
-  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.35);
+}
+
+.home-shared-schedule {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+/* ─── BANNER SUSCRIPCIÓN VENCIDA ─── */
+.subscription-expired-banner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(17, 34, 85, 0.98) 0%, rgba(22, 90, 50, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 22px 24px;
+  margin: 10px auto 4px;
+  max-width: 660px;
+  width: 100%;
+  animation: fadeInDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+}
+
+.expired-message {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  flex: 1;
+  min-width: 200px;
+}
+
+.expired-icon {
+  font-size: 1.3rem;
+  display: inline-block;
+  animation: pulse 2s infinite;
+  margin-right: 6px;
+}
+
+.expired-text {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.expired-description {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  max-width: 440px;
+}
+
+.renew-button {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #ffffff;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.35);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.renew-button:hover {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.4);
+}
+
+.renew-button:active {
+  transform: translateY(0) scale(0.97);
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.15); opacity: 0.8; }
+}
+
+/* ─── BOTONES DE ACCIÓN ─── */
+.home-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+  max-width: 660px;
+}
+
+.home-button {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  padding: 11px 20px;
+  border-radius: 12px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(8px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.home-button:hover {
+  background: rgba(0, 180, 255, 0.09);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #e2e8f0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 180, 255, 0.12);
+}
+
+.home-button:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: none;
+}
+
+/* ─── ANIMACIONES GLOBALES ─── */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── ANIMACIÓN NOMBRES DUPLICADOS ─── */
+.animated-name {
+  display: inline-block;
+  position: relative;
+  min-width: 100%;
+}
+
+.name-text {
+  display: inline-block;
+  position: absolute;
+  left: 0; right: 0;
+  text-align: center;
+  animation: fadeNameInOut 4s infinite;
+}
+
+.name-primary   { animation-name: fadeNameInOut; animation-direction: normal; }
+.name-secondary { animation-name: fadeNameInOut; animation-direction: reverse; }
+
+@keyframes fadeNameInOut {
+  0%, 49%   { opacity: 1; visibility: visible; }
+  50%, 100% { opacity: 0; visibility: hidden; }
+}
+
+/* ─── RESPONSIVE MÓVIL ─── */
+@media (max-width: 600px) {
+  .home-container {
+    padding: 20px 14px 36px;
+  }
+
+  .home-container h1 {
+    font-size: clamp(1.2rem, 5.5vw, 1.7rem);
+    line-height: 1.3;
+  }
+
+  .home-container > p {
+    font-size: 0.88rem;
+    margin-bottom: 16px;
+  }
+
+  .home-today-schedule {
+    margin: 4px auto 14px;
+  }
+
+  .home-today-schedule .schedule-table {
+    padding: 10px 9px;
+    border-radius: 18px;
+    gap: 7px;
+  }
+
+  .schedule-row {
+    gap: 5px;
+    padding: 4px;
+  }
+
+  .schedule-row span {
+    font-size: 0.8rem;
+    padding: 9px 5px;
+    border-radius: 9px;
+  }
+
+  .merged-cell {
+    font-size: 0.72rem;
+    letter-spacing: 0.07em;
+    padding: 9px 6px;
+  }
+
+  .date-nav {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .selected-day-label strong {
+    font-size: 0.76rem;
+  }
+
+  .home-buttons {
+    gap: 8px;
+  }
+
+  .home-button {
+    width: 100%;
+    max-width: 290px;
+    justify-content: center;
+    padding: 13px 20px;
+    font-size: 0.92rem;
+    border-radius: 14px;
+  }
+
+  .home-shared-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .home-shared-schedules {
+    max-width: 100%;
+  }
+
+  .subscription-expired-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .renew-button {
+    width: 100%;
+    text-align: center;
+    padding: 13px 20px;
+  }
+
+  .break-badge {
+    width: 22px;
+    height: 22px;
+    top: -5px;
+    left: calc(33.33% - 11px);
+  }
+
+  .break-badge::before {
+    font-size: 0.6rem;
+    border-width: 2px;
+  }
+}
+
+/* ─── TABLET ─── */
+@media (min-width: 601px) and (max-width: 860px) {
+  .home-today-schedule,
+  .home-buttons {
+    max-width: 95vw;
+  }
 }

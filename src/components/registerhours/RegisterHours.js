@@ -45,68 +45,64 @@ const parseTime = (value) => {
 const calculateWorked = (entryValue, exitValue) => {
   const entry = parseTime(entryValue);
   const exit = parseTime(exitValue);
-  if (!entry || !exit) {
-    return { hours: 0, minutes: 0, seconds: 0 };
-  }
+  if (!entry || !exit) return { hours: 0, minutes: 0, seconds: 0 };
 
-  let entrySeconds = entry.hour * 3600 + entry.minute * 60 + entry.second;
-  let exitSeconds = exit.hour * 3600 + exit.minute * 60 + exit.second;
-
-  if (exitSeconds <= entrySeconds) {
-    exitSeconds += 24 * 3600;
-  }
+  let entrySeconds = entry.hour * 3600 + entry.minute * 60;
+  let exitSeconds  = exit.hour  * 3600 + exit.minute  * 60;
+  if (exitSeconds <= entrySeconds) exitSeconds += 24 * 3600;
 
   const diff = exitSeconds - entrySeconds;
-  const hours = Math.floor(diff / 3600);
-  const minutes = Math.floor((diff % 3600) / 60);
-  const seconds = diff % 60;
-
-  return { hours, minutes, seconds };
+  return {
+    hours:   Math.floor(diff / 3600),
+    minutes: Math.floor((diff % 3600) / 60),
+    seconds: diff % 60,
+  };
 };
 
 const formatLongDate = (dateValue) => {
   if (!dateValue) return '';
   const date = new Date(`${dateValue}T00:00:00`);
   return date.toLocaleDateString('es-ES', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 };
 
 const RegisterHours = ({ user, setCurrentView }) => {
-  const [todayActive, setTodayActive] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(getTodayDateInput());
-  const [entryTime, setEntryTime] = useState('18:00');
-  const [exitTime, setExitTime] = useState('02:00');
-  const [tipo, setTipo] = useState('trabajado');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [todayActive, setTodayActive]             = useState(true);
+  const [selectedDate, setSelectedDate]           = useState(getTodayDateInput());
+  const [entryTime, setEntryTime]                 = useState('18:00');
+  const [exitTime, setExitTime]                   = useState('02:00');
+  const [tipo, setTipo]                           = useState('trabajado');
+  const [isSubmitting, setIsSubmitting]           = useState(false);
   const [missingDescansoDays, setMissingDescansoDays] = useState([]);
-  const [showDescansoPrompt, setShowDescansoPrompt] = useState(false);
+  const [showDescansoPrompt, setShowDescansoPrompt]   = useState(false);
+
+  // Bloquear scroll del body mientras el modal está abierto
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
 
   useEffect(() => {
-    if (todayActive) {
-      setSelectedDate(getTodayDateInput());
-    }
+    if (todayActive) setSelectedDate(getTodayDateInput());
   }, [todayActive]);
 
   useEffect(() => {
     const loadMissingDescansoDays = async () => {
       if (!user) return;
-
       const weekStart = getMondayOfWeek(new Date());
       const weekStartDate = formatDateInput(weekStart);
-
       try {
         const [horariosSnap, horasSnap] = await Promise.all([
           getDoc(doc(db, 'HORARIOS', user.uid)),
           getDoc(doc(db, 'horasTrabajadas', user.uid)),
         ]);
-
-        const registeredDates = horasSnap.exists() ? Object.keys(horasSnap.data()?.dias || {}) : [];
-        const savedWeek = horariosSnap.exists() ? horariosSnap.data()?.semanas?.[weekStartDate] : null;
-
+        const registeredDates = horasSnap.exists()
+          ? Object.keys(horasSnap.data()?.dias || {})
+          : [];
+        const savedWeek = horariosSnap.exists()
+          ? horariosSnap.data()?.semanas?.[weekStartDate]
+          : null;
         const missingDays = (savedWeek?.days || [])
           .filter((day) => day.tipo === 'descanso')
           .filter((day) => !registeredDates.includes(day.date));
@@ -114,15 +110,11 @@ const RegisterHours = ({ user, setCurrentView }) => {
         if (missingDays.length > 0) {
           setMissingDescansoDays(missingDays);
           setShowDescansoPrompt(true);
-        } else {
-          setMissingDescansoDays([]);
-          setShowDescansoPrompt(false);
         }
       } catch (error) {
         console.error('Error cargando días de descanso:', error);
       }
     };
-
     loadMissingDescansoDays();
   }, [user]);
 
@@ -141,31 +133,21 @@ const RegisterHours = ({ user, setCurrentView }) => {
 
     if (tipo === 'trabajado') {
       payload.entrada = entryTime;
-      payload.salida = exitTime;
-      payload.worked = {
-        hours: worked.hours,
-        minutes: worked.minutes,
-        seconds: worked.seconds,
-      };
+      payload.salida  = exitTime;
+      payload.worked  = { hours: worked.hours, minutes: worked.minutes, seconds: worked.seconds };
     }
 
     setIsSubmitting(true);
-
     try {
       await setDoc(
         doc(db, 'horasTrabajadas', user.uid),
-        {
-          dias: {
-            [fecha]: payload,
-          },
-        },
+        { dias: { [fecha]: payload } },
         { merge: true }
       );
       showToast('Registro guardado con éxito.', 'success');
       if (todayActive) {
         setCurrentView('home');
       } else {
-        // Limpiar campos cuando el switch está desactivado
         setEntryTime('18:00');
         setExitTime('02:00');
         setTipo('trabajado');
@@ -180,30 +162,21 @@ const RegisterHours = ({ user, setCurrentView }) => {
 
   const handleRegisterMissingDescansoDays = async () => {
     if (!user || missingDescansoDays.length === 0) return;
-
     const diasPayload = missingDescansoDays.reduce((acc, day) => {
       acc[day.date] = {
         tipo: 'descanso',
         registeredAt: new Date().toISOString(),
         date: day.date,
-        worked: {
-          hours: 0,
-          minutes: 0,
-          seconds: 0,
-        },
+        worked: { hours: 0, minutes: 0, seconds: 0 },
       };
       return acc;
     }, {});
-
     try {
       await setDoc(
         doc(db, 'horasTrabajadas', user.uid),
-        {
-          dias: diasPayload,
-        },
+        { dias: diasPayload },
         { merge: true }
       );
-
       showToast('Días de descanso registrados correctamente.', 'success');
       setShowDescansoPrompt(false);
       setMissingDescansoDays([]);
@@ -215,60 +188,69 @@ const RegisterHours = ({ user, setCurrentView }) => {
 
   const renderDescansoMessage = () => {
     if (!showDescansoPrompt || missingDescansoDays.length === 0) return null;
-
     const namesArray = missingDescansoDays.map((day) => getDayName(day.date));
     const names = namesArray.length > 1
       ? `${namesArray.slice(0, -1).join(', ')} y ${namesArray[namesArray.length - 1]}`
       : namesArray[0];
-
     return (
       <div className="register-hours-alert">
         <p>
-          Tienes días de descanso en la semana no registrados: <strong>{names}</strong>. ¿Deseas registrarlos como días de descanso?
+          Tienes días de descanso sin registrar esta semana: <strong>{names}</strong>.
+          ¿Deseas registrarlos ahora?
         </p>
         <div className="register-hours-alert-actions">
           <button type="button" className="register-hours-alert-yes" onClick={handleRegisterMissingDescansoDays}>
-            Sí
+            Sí, registrar
           </button>
           <button type="button" className="register-hours-alert-no" onClick={() => setShowDescansoPrompt(false)}>
-            No
+            Ahora no
           </button>
         </div>
       </div>
     );
   };
 
+  const isNightShift = exitTime <= entryTime;
+
   return (
-    <div className="register-hours-overlay">
+    <div className="register-hours-overlay" onClick={(e) => e.target === e.currentTarget && setCurrentView('home')}>
       <div className="register-hours-modal">
+
+        {/* Header */}
         <div className="register-hours-header">
           <div className="register-hours-title">
-            <FiClock size={24} />
+            <div className="register-hours-icon-wrap">
+              <FiClock size={22} />
+            </div>
             <div>
               <h2>Registrar mi tiempo</h2>
-              <p>Registra tu jornada de entrada y salida de forma rápida.</p>
+              <p>Registra tu jornada de entrada y salida.</p>
             </div>
           </div>
           <button
             type="button"
             className="register-hours-close"
             onClick={() => setCurrentView('home')}
-            aria-label="Cerrar modal"
+            aria-label="Cerrar"
           >
-            <FiX size={20} />
+            <FiX size={18} />
           </button>
         </div>
 
         <form className="register-hours-form" onSubmit={handleSubmit}>
+
+          {/* Nota informativa */}
           <div className="register-hours-note">
-            <FiCalendar />
-            <p>
-              Usa el switch para registrar el día de hoy o elegir una fecha pasada. Si el switch está activo, el registro se guardará en la fecha de hoy; si está inactivo, podrás escoger otra fecha.
-            </p>
+            <FiCalendar size={16} />
+            <span>
+              Activa el switch para registrar hoy, o desactívalo para elegir una fecha pasada.
+            </span>
           </div>
 
+          {/* Alerta días de descanso */}
           {renderDescansoMessage()}
 
+          {/* Switch "Hoy" */}
           <div className="register-hours-row">
             <label className="switch-label">
               <span>Registrar el día de hoy</span>
@@ -276,21 +258,22 @@ const RegisterHours = ({ user, setCurrentView }) => {
                 <input
                   type="checkbox"
                   checked={todayActive}
-                  onChange={(event) => setTodayActive(event.target.checked)}
+                  onChange={(e) => setTodayActive(e.target.checked)}
                 />
                 <span className="slider" />
               </label>
             </label>
           </div>
 
+          {/* Fecha */}
           <div className="register-hours-field">
             <label>Fecha</label>
             <div className="input-with-icon">
-              <FiCalendar />
+              <FiCalendar size={16} />
               <input
                 type="date"
                 value={selectedDate}
-                onChange={(event) => setSelectedDate(event.target.value)}
+                onChange={(e) => setSelectedDate(e.target.value)}
                 disabled={todayActive}
                 min="2000-01-01"
                 max={getTodayDateInput()}
@@ -298,6 +281,7 @@ const RegisterHours = ({ user, setCurrentView }) => {
             </div>
           </div>
 
+          {/* Tipo de día */}
           <div className="register-hours-field">
             <label>Tipo de día</label>
             <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
@@ -308,6 +292,7 @@ const RegisterHours = ({ user, setCurrentView }) => {
             </select>
           </div>
 
+          {/* Horas — solo si tipo === trabajado */}
           {tipo === 'trabajado' && (
             <>
               <div className="register-hours-row two-columns">
@@ -316,7 +301,7 @@ const RegisterHours = ({ user, setCurrentView }) => {
                   <input
                     type="time"
                     value={entryTime}
-                    onChange={(event) => setEntryTime(event.target.value)}
+                    onChange={(e) => setEntryTime(e.target.value)}
                     required
                   />
                 </div>
@@ -325,7 +310,7 @@ const RegisterHours = ({ user, setCurrentView }) => {
                   <input
                     type="time"
                     value={exitTime}
-                    onChange={(event) => setExitTime(event.target.value)}
+                    onChange={(e) => setExitTime(e.target.value)}
                     required
                   />
                 </div>
@@ -335,20 +320,14 @@ const RegisterHours = ({ user, setCurrentView }) => {
                 <label>Duración calculada</label>
                 <div className="duration-box">
                   <strong>{worked.hours}h {worked.minutes}m {worked.seconds}s</strong>
-                  <span>
-                    {exitTime <= entryTime
-                      ? 'Turno nocturno: salida al día siguiente'
-                      : 'Turno del mismo día'}
-                  </span>
+                  <span>{isNightShift ? '🌙 Turno nocturno' : '☀️ Turno diurno'}</span>
                 </div>
               </div>
             </>
           )}
 
+          {/* Acciones */}
           <div className="register-hours-actions">
-            <button type="submit" className="register-hours-submit" disabled={isSubmitting}>
-              <FiSave size={18} /> {isSubmitting ? 'Guardando...' : 'Guardar registro'}
-            </button>
             <button
               type="button"
               className="register-hours-secondary"
@@ -356,13 +335,20 @@ const RegisterHours = ({ user, setCurrentView }) => {
             >
               Cancelar
             </button>
+            <button type="submit" className="register-hours-submit" disabled={isSubmitting}>
+              <FiSave size={16} />
+              {isSubmitting ? 'Guardando...' : 'Guardar registro'}
+            </button>
           </div>
 
+          {/* Fecha seleccionada (cuando se cambia manualmente) */}
           {!todayActive && selectedDate && (
             <div className="register-hours-info">
-              Fecha seleccionada: <strong>{formatLongDate(selectedDate)}</strong>
+              <FiCalendar size={15} />
+              <span>Registrando para: <strong>{formatLongDate(selectedDate)}</strong></span>
             </div>
           )}
+
         </form>
       </div>
     </div>

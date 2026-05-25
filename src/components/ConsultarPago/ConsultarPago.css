@@ -1,49 +1,75 @@
-/* OVERLAY */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+/* ─── OVERLAY ─── */
 .consultar-pago-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(5, 12, 30, 0.82);
-  backdrop-filter: blur(7px);
+  background: rgba(4, 9, 22, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 20px;
   z-index: 9999;
+  animation: overlayFadeIn 0.25s ease both;
 }
 
-/* MODAL */
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─── MODAL ─── */
 .consultar-pago-modal {
   width: min(680px, 100%);
-  max-height: 90vh;
+  max-height: 92vh;
   overflow-y: auto;
-  background: #0b1220;
-  border-radius: 28px;
-  padding: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35);
+  background: #0a1120;
+  background-image:
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(0, 180, 255, 0.06) 0%, transparent 70%);
+  border-radius: 26px;
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 40px 90px rgba(0, 0, 0, 0.5),
+    0 0 60px rgba(0, 180, 255, 0.04) inset;
+  font-family: 'Outfit', system-ui, sans-serif;
+  animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .consultar-pago-modal::-webkit-scrollbar {
-  width: 10px;
+  width: 6px;
 }
 
 .consultar-pago-modal::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 999px;
+  background: transparent;
 }
 
 .consultar-pago-modal::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.3);
   border-radius: 999px;
 }
 
-/* HEADER */
+.consultar-pago-modal::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.5);
+}
+
+/* ─── HEADER ─── */
 .consultar-pago-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .consultar-pago-title {
@@ -55,47 +81,54 @@
 
 .consultar-pago-title h2 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: clamp(1.4rem, 3.5vw, 1.8rem);
+  font-weight: 700;
   letter-spacing: -0.03em;
+  color: #f1f5f9;
 }
 
 .consultar-pago-title p {
-  margin: 6px 0 0;
-  color: #cbd5e1;
-  font-size: 0.97rem;
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
 }
 
 .consultar-pago-close {
-  border: none;
-  background: rgba(255, 255, 255, 0.06);
-  color: #f8fafc;
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: all 0.2s ease;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .consultar-pago-close:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
   transform: scale(1.05);
-  background: rgba(255, 255, 255, 0.12);
 }
 
-/* FORMULARIO */
+/* ─── FORMULARIO ─── */
 .consultar-pago-form {
   display: grid;
-  gap: 24px;
+  gap: 22px;
 }
 
 .form-section {
   display: grid;
-  gap: 16px;
+  gap: 14px;
 }
 
 .form-group {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .form-group label {
@@ -103,142 +136,204 @@
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  color: #cbd5e1;
-  font-size: 0.95rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .form-group input,
 .form-group select {
-  padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
+  padding: 11px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
   color: #e2e8f0;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
+  font-family: 'Outfit', sans-serif;
   transition: all 0.2s ease;
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #00d4ff;
-  background: rgba(0, 212, 255, 0.08);
-  box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+  border-color: rgba(0, 212, 255, 0.5);
+  background: rgba(0, 212, 255, 0.05);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
 }
 
-/* ACCIONES */
+.form-group select option {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+/* ─── ACCIONES DEL FORMULARIO ─── */
 .consultar-pago-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .btn-calculate,
 .btn-cancel {
   padding: 12px 16px;
   border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.95rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  font-family: 'Outfit', sans-serif;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.22s ease;
+  letter-spacing: 0.02em;
 }
 
 .btn-calculate {
   background: linear-gradient(135deg, #00d4ff, #007cf0);
   color: white;
+  box-shadow: 0 4px 16px rgba(0, 180, 255, 0.25);
 }
 
 .btn-calculate:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(0, 212, 255, 0.3);
+  box-shadow: 0 10px 28px rgba(0, 212, 255, 0.35);
+}
+
+.btn-calculate:active {
+  transform: translateY(0) scale(0.97);
 }
 
 .btn-cancel {
-  background: rgba(255, 255, 255, 0.08);
-  color: #cbd5e1;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .btn-cancel:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #94a3b8;
 }
 
-/* SECCIÓN DE RESULTADOS */
+/* ─── SECCIÓN RESULTADOS ─── */
 .results-section {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .calculation-report {
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .calculation-report h3 {
   text-align: center;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
+  font-weight: 700;
   margin: 0 0 16px;
   color: #00d4ff;
+  letter-spacing: -0.01em;
 }
 
 .calculation-report h4 {
-  font-size: 1rem;
-  margin: 16px 0 8px;
-  color: #cbd5e1;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 18px 0 10px;
+  color: #475569;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 7px;
 }
 
+/* ─── CABECERA DEL REPORTE ─── */
 .report-header {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: 12px;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
   background: rgba(0, 212, 255, 0.05);
-  border-left: 3px solid #00d4ff;
-  border-radius: 8px;
+  border-left: 3px solid rgba(0, 212, 255, 0.5);
+  border-radius: 10px;
 }
 
 .report-header p {
-  margin: 4px 0;
-  font-size: 0.9rem;
+  margin: 3px 0;
+  font-size: 0.87rem;
+  color: #94a3b8;
 }
 
 .report-header strong {
-  color: #00d4ff;
+  color: #38bdf8;
+  font-weight: 600;
 }
 
+/* ─── RESUMEN ─── */
+.report-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.report-summary p {
+  margin: 0;
+  font-size: 0.87rem;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.report-summary strong {
+  color: #cbd5e1;
+  display: block;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 3px;
+}
+
+/* ─── SECTION WRAPPER ─── */
 .report-section {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
+/* ─── TABLA ─── */
 .report-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0 4px;
 }
 
-.report-table thead {
-  background: rgba(0, 212, 255, 0.1);
-  border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+.report-table thead tr {
+  background: transparent;
 }
 
 .report-table th {
-  padding: 10px 8px;
+  padding: 8px 10px;
   text-align: left;
   font-weight: 700;
-  color: #00d4ff;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.report-table th:last-child {
+  text-align: right;
 }
 
 .report-table tbody tr {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  transition: background 0.15s ease;
 }
 
 .report-table tbody tr:hover {
@@ -246,178 +341,181 @@
 }
 
 .report-table td {
-  padding: 8px;
-  text-align: left;
-  font-size: 0.9rem;
+  padding: 9px 10px;
+  font-size: 0.88rem;
+  color: #94a3b8;
 }
 
 .report-table td:first-child {
   font-weight: 600;
   color: #cbd5e1;
+  border-radius: 8px 0 0 8px;
 }
 
 .report-table td:last-child {
   text-align: right;
   color: #e2e8f0;
-  font-weight: 500;
+  font-weight: 600;
+  border-radius: 0 8px 8px 0;
 }
 
 .report-table .total-row {
-  background: rgba(0, 212, 255, 0.12);
-  border-top: 2px solid #00d4ff;
-  border-bottom: 2px solid #00d4ff;
-  font-size: 0.95rem;
+  background: rgba(0, 212, 255, 0.07) !important;
+  border-top: 1px solid rgba(0, 212, 255, 0.2);
 }
 
 .report-table .total-row td {
-  color: #00d4ff;
+  color: #38bdf8;
   font-weight: 700;
-  padding: 12px 8px;
+  font-size: 0.92rem;
+  padding: 12px 10px;
 }
 
-  .report-mode-switch {
-    margin-bottom: 16px;
-  }
+/* ─── SWITCH DE MODO (radio buttons) ─── */
+.report-mode-switch {
+  margin-bottom: 10px;
+}
 
-  .report-mode-switch .mydict div {
-    display: flex;
-    flex-wrap: wrap;
-    margin-top: 0.5rem;
-    justify-content: center;
-  }
+.report-mode-switch .mydict div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0;
+}
 
-  .report-mode-switch .mydict input[type="radio"] {
-    clip: rect(0 0 0 0);
-    clip-path: inset(100%);
-    height: 1px;
-    overflow: hidden;
-    position: absolute;
-    white-space: nowrap;
-    width: 1px;
-  }
+.report-mode-switch .mydict input[type="radio"] {
+  clip: rect(0 0 0 0);
+  clip-path: inset(100%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
 
-  .report-mode-switch .mydict input[type="radio"]:checked + span {
-    box-shadow: 0 0 0 0.0625em #0043ed;
-    background-color: #dee7ff;
-    z-index: 1;
-    color: #0043ed;
-  }
+.report-mode-switch .mydict input[type="radio"]:checked + span {
+  background: rgba(0, 212, 255, 0.15);
+  color: #00d4ff;
+  border-color: rgba(0, 212, 255, 0.4);
+  box-shadow: none;
+  font-weight: 700;
+}
 
-  .report-mode-switch label span {
-    display: block;
-    cursor: pointer;
-    background-color: #fff;
-    padding: 0.375em 0.75em;
-    position: relative;
-    margin-left: 0.0625em;
-    box-shadow: 0 0 0 0.0625em #b5bfd9;
-    letter-spacing: 0.05em;
-    color: #3e4963;
-    text-align: center;
-    transition: background-color 0.5s ease;
-  }
+.report-mode-switch label span {
+  display: block;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 20px;
+  position: relative;
+  margin-left: -1px;
+  color: #64748b;
+  font-size: 0.88rem;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.2s ease;
+}
 
-  .report-mode-switch label:first-child span {
-    border-radius: 0.375em 0 0 0.375em;
-  }
+.report-mode-switch label span:hover {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.07);
+}
 
-  .report-mode-switch label:last-child span {
-    border-radius: 0 0.375em 0.375em 0;
-  }
+.report-mode-switch label:first-child span {
+  border-radius: 10px 0 0 10px;
+}
 
-/* BOTONES DE ACCIÓN */
+.report-mode-switch label:last-child span {
+  border-radius: 0 10px 10px 0;
+}
+
+/* Nota del switch */
+.switch-note {
+  font-size: 0.8rem;
+  color: #475569;
+  text-align: center;
+  margin: 6px 0 14px;
+  font-style: italic;
+}
+
+/* ─── BOTONES DE ACCIÓN (resultados) ─── */
 .action-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
 .btn-download,
 .btn-new-calculation {
   padding: 12px 16px;
   border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.95rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  font-family: 'Outfit', sans-serif;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.22s ease;
+  letter-spacing: 0.02em;
 }
 
 .btn-download {
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
 }
 
 .btn-download:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 10px 28px rgba(16, 185, 129, 0.35);
+}
+
+.btn-download:active {
+  transform: translateY(0) scale(0.97);
 }
 
 .btn-new-calculation {
-  background: rgba(255, 255, 255, 0.08);
-  color: #cbd5e1;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .btn-new-calculation:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #94a3b8;
 }
 
-/* RESPONSIVE */
-@media (max-width: 640px) {
-  .consultar-pago-modal {
-    padding: 20px;
-  }
-
-  .form-section {
-    gap: 12px;
-  }
-
-  .report-header {
-    grid-template-columns: 1fr;
-  }
-
-  .consultar-pago-actions,
-  .action-buttons {
-    grid-template-columns: 1fr;
-  }
-
-  .report-table {
-    font-size: 0.85rem;
-  }
-
-  .report-table td {
-    padding: 6px;
-  }
-}
-
-/* CALENDARIO */
+/* ─── SECCIÓN CALENDARIO ─── */
 .calendar-section {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
-.calendar-section label {
-  font-weight: 600;
-  color: #cbd5e1;
-  font-size: 0.95rem;
+.calendar-section > label {
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
   text-align: center;
 }
 
+/* ─── MODO SELECCIÓN ─── */
 .select-mode {
   display: flex;
   justify-content: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .select-mode label {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.9rem;
-  color: #cbd5e1;
+  font-size: 0.88rem;
+  color: #64748b;
   cursor: pointer;
+  font-family: 'Outfit', sans-serif;
 }
 
 .select-mode input[type="checkbox"] {
@@ -425,28 +523,29 @@
   -webkit-appearance: none;
   width: 18px;
   height: 18px;
-  border: 2px solid #ff7605;
+  border: 2px solid rgba(255, 118, 5, 0.5);
   border-radius: 6px;
   cursor: pointer;
   position: relative;
   transition: all 0.2s ease;
-  background-color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+  flex-shrink: 0;
 }
 
 .select-mode input[type="checkbox"]:hover {
   border-color: #ff7605;
-  box-shadow: 0 0 0 3px rgba(255, 118, 5, 0.2);
+  box-shadow: 0 0 0 3px rgba(255, 118, 5, 0.15);
 }
 
 .select-mode input[type="checkbox"]:checked {
-  background-color: #ff7605;
+  background: #ff7605;
   border-color: #ff7605;
 }
 
 .select-mode input[type="checkbox"]:checked::after {
   content: "✔";
   color: white;
-  font-size: 12px;
+  font-size: 11px;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -454,45 +553,53 @@
 }
 
 .select-mode input[type="checkbox"]:active {
-  transform: scale(0.95);
+  transform: scale(0.93);
 }
 
+/* ─── MES ACTUAL (botón) ─── */
 .calendar-current-month {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 10px;
-  padding: 10px 16px;
-  border: 1px solid rgba(255,255,255,0.12);
+  margin: 0 auto 8px;
+  padding: 9px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  background: rgba(255,255,255,0.05);
-  color: #e5e7eb;
-  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  font-size: 0.92rem;
   font-weight: 700;
+  font-family: 'Outfit', sans-serif;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
+  letter-spacing: 0.04em;
 }
 
 .calendar-current-month:hover,
 .calendar-current-month:focus {
-  background: rgba(0,212,255,0.12);
-  color: #00d4ff;
+  background: rgba(0, 212, 255, 0.08);
+  border-color: rgba(0, 212, 255, 0.3);
+  color: #38bdf8;
+  outline: none;
 }
 
+/* ─── CONTENEDOR CALENDARIO ─── */
 .calendar-container {
   display: flex;
   justify-content: center;
 }
 
+/* ─── REACT-CALENDAR OVERRIDES ─── */
 .react-calendar {
   width: 100%;
   max-width: 400px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 18px;
   padding: 14px;
-  background: rgba(15, 23, 42, 0.92);
-  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.28);
+  background: rgba(8, 15, 32, 0.9);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
   color: #e5e7eb;
+  font-family: 'Outfit', sans-serif;
 }
 
 .react-calendar__navigation {
@@ -500,121 +607,119 @@
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.react-calendar__navigation__prev2-button,
+.react-calendar__navigation__next2-button {
+  display: none;
 }
 
 .react-calendar__navigation button {
-  background: none;
-  border: 1px solid rgba(255,255,255,0.12);
-  color: #e5e7eb;
-  font-weight: 700;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
   cursor: pointer;
-  font-size: 0.95rem;
-  border-radius: 12px;
-  padding: 8px 10px;
+  font-size: 0.88rem;
+  border-radius: 10px;
+  padding: 7px 10px;
   transition: all 0.2s ease;
-  min-width: 72px;
+  min-width: 60px;
   flex: 1 1 auto;
 }
 
 .react-calendar__navigation button:hover,
 .react-calendar__navigation button:focus {
-  background: rgba(0, 212, 255, 0.12);
-  color: #00d4ff;
+  background: rgba(0, 212, 255, 0.08);
+  border-color: rgba(0, 212, 255, 0.25);
+  color: #38bdf8;
+  outline: none;
 }
 
 .react-calendar__month-view__weekdays {
   text-align: center;
   font-weight: 700;
-  font-size: 0.82rem;
-  color: #94a3b8;
-  margin-bottom: 8px;
+  font-size: 0.75rem;
+  color: #334155;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.react-calendar__month-view__weekdays abbr {
+  text-decoration: none;
 }
 
 .react-calendar__tile {
-  min-height: 40px;
-  border-radius: 8px;
-  transition: background 0.2s ease;
-  background: rgba(255,255,255,0.08);
-  color: #e5e7eb;
-  border: 1px solid rgba(255,255,255,0.12);
+  min-height: 38px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 6px 8px;
+  padding: 5px 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+  font-family: 'Outfit', sans-serif;
 }
 
 .react-calendar__tile abbr {
   display: block;
   width: 100%;
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.85rem;
+  font-weight: 600;
   line-height: 1.2;
   color: inherit;
 }
 
 .react-calendar__tile:enabled:hover,
 .react-calendar__tile:enabled:focus {
-  background: inherit;
-  color: inherit;
+  background: rgba(255, 255, 255, 0.07);
+  color: #e2e8f0;
+  outline: none;
 }
 
-/* RANGO */
-.range-start {
-  background: #ff7605 !important;
-  color: white !important;
-  border-color: #ff7605;
-  animation: blink 1s infinite;
+/* ─── DÍA HOY ─── */
+.react-calendar__tile--now {
+  background: rgba(0, 212, 255, 0.1) !important;
+  border: 1px solid rgba(0, 212, 255, 0.3) !important;
+  color: #38bdf8 !important;
 }
 
+/* ─── RANGO SELECCIONADO ─── */
+.range-start,
 .range-end {
   background: #ff7605 !important;
   color: white !important;
-  border-color: #ff7605;
-  animation: blink 1s infinite;
+  border-color: #ff7605 !important;
+  animation: badgeBlink 1.2s ease infinite;
 }
 
 .range-middle {
-  background: rgba(255, 118, 5, 0.3) !important;
-  color: #e5e7eb !important;
-  border-color: rgba(255, 118, 5, 0.5);
-  animation: blink 1s infinite;
-}
-/* HOVER PARA RANGO (igual que trabajado: mantiene color pero baja opacidad) */
-.range-start:hover,
-.range-end:hover {
-  background: #ff7605 !important;
-  opacity: 0.8;
+  background: rgba(255, 118, 5, 0.22) !important;
+  color: #fbd38d !important;
+  border-color: rgba(255, 118, 5, 0.35) !important;
+  animation: badgeBlink 1.2s ease infinite;
 }
 
-.range-middle:hover {
-  background: rgba(255, 118, 5, 0.3) !important;
-  opacity: 0.8;
-}
-.range-start:hover,
-.range-end:hover {
-  filter: brightness(1.1);
-}
-
-.range-middle:hover {
-  filter: brightness(1.15);
-}
-/* 🔥 SOBRESCRIBIR HOVER DEL CALENDARIO PARA RANGO */
 .react-calendar__tile.range-start:enabled:hover,
 .react-calendar__tile.range-end:enabled:hover {
   background: #ff7605 !important;
   color: #fff !important;
-  opacity: 0.85;
+  filter: brightness(1.1);
 }
 
 .react-calendar__tile.range-middle:enabled:hover {
   background: rgba(255, 118, 5, 0.3) !important;
-  color: #e5e7eb !important;
-  opacity: 0.85;
+  color: #fbd38d !important;
+  filter: brightness(1.1);
 }
-/* CUANDO SE HACE CLICK (estado activo del calendar) */
+
 .react-calendar__tile.range-start:enabled:active,
 .react-calendar__tile.range-end:enabled:active,
 .react-calendar__tile--active.range-start,
@@ -625,59 +730,90 @@
 
 .react-calendar__tile.range-middle:enabled:active,
 .react-calendar__tile--active.range-middle {
-  background: rgba(255, 118, 5, 0.3) !important;
-  color: #e5e7eb !important;
+  background: rgba(255, 118, 5, 0.25) !important;
+  color: #fbd38d !important;
 }
 
-
-/* ANIMACIÓN INTERMITENTE */
-@keyframes blink {
-  0% { opacity: 1; }
-  50% { opacity: 0.6; }
-  100% { opacity: 1; }
+@keyframes badgeBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
 }
 
-/* TIPOS DE DÍAS (DIFERENTES A CALENDAR) */
+/* ─── TIPOS DE DÍA ─── */
 .trabajado {
-  background-color: #10b981 !important; /* Verde diferente */
-  color: #ffffff !important;
-  border-color: rgba(16, 185, 129, 0.4) !important;
+  background: rgba(16, 185, 129, 0.18) !important;
+  color: #6ee7b7 !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
 }
 
 .descanso {
-  background-color: #3b82f6 !important; /* Azul diferente */
-  color: #ffffff !important;
-  border-color: rgba(59, 130, 246, 0.4) !important;
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #93c5fd !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
 }
 
 .incapacidad_comun {
-  background-color: #f97316 !important; /* Naranja diferente */
-  color: #0f172a !important;
-  border-color: rgba(249, 115, 22, 0.4) !important;
+  background: rgba(249, 115, 22, 0.15) !important;
+  color: #fdba74 !important;
+  border-color: rgba(249, 115, 22, 0.3) !important;
 }
 
 .incapacidad_laboral {
-  background-color: #dc2626 !important; /* Rojo diferente */
-  color: #ffffff !important;
-  border-color: rgba(220, 38, 38, 0.4) !important;
+  background: rgba(220, 38, 38, 0.15) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(220, 38, 38, 0.3) !important;
 }
 
-.react-calendar__tile--now {
-  background: rgba(0, 212, 255, 0.16);
-  border: 2px solid #00d4ff;
-}
+/* ─── RESPONSIVE ─── */
+@media (max-width: 640px) {
+  .consultar-pago-modal {
+    padding: 18px 16px;
+    border-radius: 22px;
+  }
 
-@media (max-width: 480px) {
-  .react-calendar {
-    padding: 10px;
+  .consultar-pago-header {
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+  }
+
+  .consultar-pago-title h2 {
+    font-size: 1.35rem;
+  }
+
+  .form-section {
+    gap: 10px;
+  }
+
+  .report-header {
+    grid-template-columns: 1fr;
+  }
+
+  .report-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .consultar-pago-actions,
+  .action-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .report-table th,
+  .report-table td {
+    font-size: 0.8rem;
+    padding: 7px 8px;
   }
 
   .react-calendar__tile {
-    min-height: 35px;
-    padding: 4px;
+    min-height: 34px;
+    padding: 3px 2px;
   }
 
   .react-calendar__tile abbr {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
+  }
+
+  .react-calendar {
+    padding: 10px;
+    border-radius: 14px;
   }
 }

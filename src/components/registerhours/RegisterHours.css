@@ -1,166 +1,241 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+/* ─── OVERLAY ─── */
 .register-hours-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(5, 12, 30, 0.82);
-  backdrop-filter: blur(7px);
+  background: rgba(4, 9, 20, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
   z-index: 9999;
+  animation: overlayIn 0.22s ease both;
 }
 
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─── MODAL ─── */
 .register-hours-modal {
-  width: min(680px, 100%);
-  max-height: 90vh;
+  width: min(660px, 100%);
+  max-height: min(90vh, 860px);
   overflow-y: auto;
-  background: #0b1220;
+  overflow-x: hidden;
+
+  background: #080f1e;
   border-radius: 28px;
   padding: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(56, 189, 248, 0.1);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 32px 80px rgba(0, 0, 0, 0.55),
+    0 0 80px rgba(0, 180, 255, 0.04) inset;
   box-sizing: border-box;
+  position: relative;
+
+  animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.register-hours-modal::-webkit-scrollbar {
-  width: 10px;
-}
-
-.register-hours-modal::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.04);
+/* Acento superior en degradado */
+.register-hours-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 212, 255, 0.35) 40%,
+    rgba(56, 189, 248, 0.5) 50%,
+    rgba(0, 212, 255, 0.35) 60%,
+    transparent
+  );
   border-radius: 999px;
 }
 
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Scrollbar */
+.register-hours-modal::-webkit-scrollbar { width: 6px; }
+.register-hours-modal::-webkit-scrollbar-track { background: transparent; }
 .register-hours-modal::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.25);
   border-radius: 999px;
 }
+.register-hours-modal::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.45);
+}
 
+/* ─── HEADER ─── */
 .register-hours-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .register-hours-title {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   color: #e2e8f0;
+}
+
+/* Icono envuelto en círculo */
+.register-hours-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #00d4ff;
 }
 
 .register-hours-title h2 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.55rem;
+  font-weight: 700;
   letter-spacing: -0.03em;
+  font-family: 'Outfit', system-ui, sans-serif;
+  color: #f1f5f9;
 }
 
 .register-hours-title p {
-  margin: 6px 0 0;
-  color: #cbd5e1;
-  font-size: 0.97rem;
+  margin: 5px 0 0;
+  color: #475569;
+  font-size: 0.88rem;
+  font-family: 'Outfit', system-ui, sans-serif;
+  line-height: 1.4;
 }
 
 .register-hours-close {
   border: none;
-  background: rgba(255, 255, 255, 0.06);
-  color: #f8fafc;
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .register-hours-close:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
   transform: scale(1.05);
-  background: rgba(255, 255, 255, 0.12);
 }
 
+/* ─── FORM ─── */
 .register-hours-form {
   display: grid;
-  gap: 20px;
+  gap: 16px;
+  font-family: 'Outfit', system-ui, sans-serif;
 }
 
 .register-hours-row {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .register-hours-row.two-columns {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* ─── CAMPO ─── */
 .register-hours-field {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .register-hours-field label {
-  color: #cbd5e1;
-  font-size: 0.95rem;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
+/* ─── INPUTS BASE ─── */
 .register-hours-field input[type='time'],
-.register-hours-field input[type='date'] {
+.register-hours-field input[type='date'],
+.register-hours-field select {
   width: 100%;
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  border-radius: 16px;
-  padding: 14px 16px;
-  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  border-radius: 14px;
+  padding: 13px 16px;
+  background: rgba(15, 23, 42, 0.8);
   color: #e2e8f0;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-size: 0.93rem;
+  font-family: 'Outfit', system-ui, sans-serif;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .register-hours-field input[type='time']:focus,
-.register-hours-field input[type='date']:focus {
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
-  outline: none;
-}
-
-.register-hours-field select {
-  width: 100%;
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  border-radius: 16px;
-  padding: 14px 16px;
-  background: rgba(15, 23, 42, 0.92);
-  color: #e2e8f0;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  box-sizing: border-box;
-}
-
+.register-hours-field input[type='date']:focus,
 .register-hours-field select:focus {
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+  border-color: rgba(0, 212, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+  background: rgba(15, 23, 42, 1);
   outline: none;
+}
+
+.register-hours-field input:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
 }
 
 .register-hours-field select option {
-  background: #0b1220;
+  background: #0b1422;
   color: #e2e8f0;
 }
 
+/* ─── INPUT CON ÍCONO ─── */
 .input-with-icon {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: rgba(15, 23, 42, 0.92);
-  border: 1px solid rgba(148, 163, 184, 0.16);
+  padding: 13px 16px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(100, 116, 139, 0.2);
   color: #cbd5e1;
   width: 100%;
   box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-with-icon:focus-within {
+  border-color: rgba(0, 212, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
 }
 
 .input-with-icon svg {
   color: #38bdf8;
   flex-shrink: 0;
+  opacity: 0.7;
 }
 
 .input-with-icon input {
@@ -170,13 +245,37 @@
   width: 100%;
   box-sizing: border-box;
   padding: 0;
+  font-size: 0.93rem;
+  font-family: 'Outfit', system-ui, sans-serif;
+  outline: none;
+}
+
+/* ─── SWITCH ─── */
+.switch-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 18px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(100, 116, 139, 0.15);
+  color: #cbd5e1;
+  font-size: 0.93rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.switch-label:hover {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(56, 189, 248, 0.2);
 }
 
 .register-hours-switch {
   position: relative;
   display: inline-block;
-  width: 55px;
-  height: 30px;
+  width: 52px;
+  height: 28px;
+  flex-shrink: 0;
 }
 
 .register-hours-switch input {
@@ -189,171 +288,254 @@
   position: absolute;
   cursor: pointer;
   inset: 0;
-  background: rgba(148, 163, 184, 0.24);
+  background: rgba(100, 116, 139, 0.3);
   border-radius: 999px;
-  transition: background 0.2s ease;
+  transition: background 0.25s ease;
 }
 
 .slider::before {
   content: '';
   position: absolute;
-  left: 4px;
-  top: 4px;
+  left: 3px;
+  top: 3px;
   width: 22px;
   height: 22px;
-  background: white;
+  background: #94a3b8;
   border-radius: 50%;
-  transition: transform 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .register-hours-switch input:checked + .slider {
-  background: #38bdf8;
+  background: rgba(0, 212, 255, 0.25);
+  border: 1px solid rgba(0, 212, 255, 0.4);
 }
 
 .register-hours-switch input:checked + .slider::before {
-  transform: translateX(25px);
+  transform: translateX(24px);
+  background: #00d4ff;
+  box-shadow: 0 2px 8px rgba(0, 212, 255, 0.4);
 }
 
-.switch-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-radius: 18px;
-  background: rgba(148, 163, 184, 0.08);
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  color: #e2e8f0;
-}
-
+/* ─── NOTA / INFO ─── */
 .register-hours-note,
 .register-hours-info,
 .register-hours-status {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
-  padding: 16px 18px;
-  border-radius: 18px;
-  background: rgba(148, 163, 184, 0.06);
-  color: #cbd5e1;
-  border: 1px solid rgba(148, 163, 184, 0.14);
-}
-
-.register-hours-alert {
-  display: grid;
-  gap: 14px;
-  padding: 18px;
-  border-radius: 18px;
-  background: rgba(56, 189, 248, 0.08);
-  border: 1px solid rgba(56, 189, 248, 0.24);
-  color: #e0f2fe;
-}
-
-.register-hours-alert p {
-  margin: 0;
-  color: #e2e8f0;
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-.register-hours-alert-actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.register-hours-alert-yes,
-.register-hours-alert-no {
-  padding: 10px 18px;
+  padding: 14px 16px;
   border-radius: 14px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.register-hours-alert-yes {
-  background: #22c55e;
-  color: #0f172a;
-}
-
-.register-hours-alert-no {
-  background: rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
-  border: 1px solid rgba(148, 163, 184, 0.24);
-}
-
-.register-hours-alert-yes:hover {
-  background: #16a34a;
-}
-
-.register-hours-alert-no:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(56, 189, 248, 0.04);
+  color: #64748b;
+  border: 1px solid rgba(56, 189, 248, 0.1);
+  font-size: 0.87rem;
+  line-height: 1.55;
 }
 
 .register-hours-note svg,
 .register-hours-info svg {
   color: #38bdf8;
+  opacity: 0.7;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
-.duration-box {
-  padding: 18px 20px;
-  border-radius: 18px;
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  background: rgba(148, 163, 184, 0.06);
+.register-hours-info {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.register-hours-info strong {
   color: #e2e8f0;
 }
 
-.duration-box strong {
-  display: block;
-  font-size: 1.2rem;
-  margin-bottom: 6px;
+/* ─── ALERTA DÍAS DE DESCANSO ─── */
+.register-hours-alert {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.2);
 }
 
+.register-hours-alert p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.register-hours-alert p strong {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.register-hours-alert-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.register-hours-alert-yes,
+.register-hours-alert-no {
+  padding: 9px 18px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.88rem;
+  font-family: 'Outfit', system-ui, sans-serif;
+  transition: all 0.2s ease;
+}
+
+.register-hours-alert-yes {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #f0fdf4;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+}
+
+.register-hours-alert-yes:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.35);
+}
+
+.register-hours-alert-no {
+  background: rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+.register-hours-alert-no:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #94a3b8;
+}
+
+/* ─── CAJA DE DURACIÓN ─── */
+.duration-box {
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  background: rgba(0, 212, 255, 0.04);
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.duration-box strong {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #00d4ff;
+  font-family: 'Outfit', system-ui, sans-serif;
+}
+
+.duration-box span {
+  font-size: 0.82rem;
+  color: #475569;
+  font-family: 'Outfit', system-ui, sans-serif;
+}
+
+/* ─── ACCIONES ─── */
 .register-hours-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 12px;
   justify-content: flex-end;
   align-items: center;
+  padding-top: 4px;
 }
 
 .register-hours-submit,
 .register-hours-secondary {
   border: none;
-  border-radius: 18px;
-  padding: 14px 22px;
+  border-radius: 14px;
+  padding: 13px 24px;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease;
+  font-size: 0.93rem;
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.22s ease;
+  letter-spacing: 0.01em;
 }
 
 .register-hours-submit {
-  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-  color: #0f172a;
-  font-weight: 700;
+  background: linear-gradient(135deg, #00d4ff, #0ea5e9);
+  color: #031220;
+  box-shadow: 0 4px 18px rgba(0, 212, 255, 0.25);
 }
 
-.register-hours-submit:hover {
+.register-hours-submit:hover:not(:disabled) {
   transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0, 212, 255, 0.38);
+}
+
+.register-hours-submit:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.register-hours-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .register-hours-secondary {
-  background: rgba(255, 255, 255, 0.06);
-  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  border: 1px solid rgba(100, 116, 139, 0.15);
 }
 
 .register-hours-secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.09);
+  color: #94a3b8;
+  border-color: rgba(100, 116, 139, 0.28);
 }
 
+/* ─── RESPONSIVE MÓVIL ─── */
 @media (max-width: 720px) {
   .register-hours-overlay {
-    padding: 12px;
+    padding: 0;
+    align-items: flex-end;
   }
 
+  /* En móvil: sheet desde abajo, más natural */
   .register-hours-modal {
     width: 100%;
     max-width: 100%;
-    padding: 20px;
-    max-height: calc(100vh - 24px);
+    max-height: 94dvh;
+    border-radius: 28px 28px 0 0;
+    padding: 24px 20px 32px;
+    border-bottom: none;
+    animation: sheetUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Tirador visual arriba del sheet */
+  .register-hours-modal::after {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: rgba(100, 116, 139, 0.3);
+    border-radius: 999px;
+  }
+
+  .register-hours-modal::before {
+    display: none;
+  }
+
+  @keyframes sheetUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
   .register-hours-row.two-columns {
@@ -361,19 +543,46 @@
   }
 
   .register-hours-actions {
+    flex-direction: column-reverse;
     justify-content: stretch;
   }
 
   .register-hours-submit,
   .register-hours-secondary {
     width: 100%;
+    justify-content: center;
+    padding: 15px 24px;
   }
 
-  .register-hours-field input[type='time'],
-  .register-hours-field input[type='date'],
-  .register-hours-field select,
-  .input-with-icon {
-    width: 100%;
-    box-sizing: border-box;
+  .register-hours-title h2 {
+    font-size: 1.25rem;
+  }
+
+  .duration-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .duration-box strong {
+    font-size: 1.25rem;
+  }
+
+  .register-hours-icon-wrap {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+  }
+}
+
+/* ─── TABLET ─── */
+@media (min-width: 721px) and (max-width: 900px) {
+  .register-hours-overlay {
+    padding: 16px;
+    align-items: flex-end;
+  }
+
+  .register-hours-modal {
+    max-height: 88dvh;
   }
 }

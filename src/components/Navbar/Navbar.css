@@ -1,4 +1,4 @@
-/* Navbar base */
+/* ─── NAVBAR BASE ─── */
 .navbar {
   width: 100%;
   height: 65px;
@@ -7,131 +7,249 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 25px;
-  backdrop-filter: blur(12px);
-  background: rgba(15, 15, 25, 0.85);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 1000;
+  background: rgba(6, 13, 26, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
+/* Línea inferior en degradado que se desvanece en los extremos */
+.navbar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 180, 255, 0.1) 20%,
+    rgba(56, 189, 248, 0.18) 50%,
+    rgba(0, 180, 255, 0.1) 80%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* Sombra suave hacia abajo */
+.navbar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    0 12px 48px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+
+/* Espaciador para que el contenido no quede debajo del navbar fijo */
+.navbar-spacer {
+  height: 65px;
+  flex-shrink: 0;
+}
+
+/* ─── IZQUIERDA ─── */
 .navbar-left {
   display: flex;
   align-items: center;
   gap: 14px;
+  position: relative;
+  z-index: 1;
 }
 
-/* Marca */
+/* ─── MARCA ─── */
 .navbar-brand {
   font-size: 1.5rem;
   font-weight: 700;
   background: linear-gradient(135deg, #00d4ff, #007cf0);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
   cursor: pointer;
+  letter-spacing: -0.02em;
 }
 
+/* ─── BOTÓN PLAN ─── */
 .navbar-plan-button {
   border-radius: 999px;
-  padding: 8px 14px;
+  padding: 5px 14px;
   cursor: pointer;
   font-weight: 700;
-  letter-spacing: 0.03em;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
   transition: all 0.25s ease;
+  border: none;
+  font-family: inherit;
+  position: relative;
+  z-index: 1;
 }
 
 .navbar-plan-button.free {
-  background: rgba(148, 163, 184, 0.18);
-  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+  color: #64748b;
+  border: 1px solid rgba(148, 163, 184, 0.15);
 }
 
 .navbar-plan-button.free:hover {
-  background: rgba(148, 163, 184, 0.28);
+  background: rgba(148, 163, 184, 0.18);
+  color: #94a3b8;
 }
 
 .navbar-plan-button.premium {
   background: linear-gradient(135deg, #fbbf24, #f59e0b);
   color: #1f2937;
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.2);
 }
 
 .navbar-plan-button.premium:hover {
   transform: translateY(-1px);
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.38);
 }
 
-/* Menú */
+/* ─── MENÚ — DESKTOP ─── */
 .navbar-menu {
   display: flex;
-  gap: 12px;
+  gap: 4px;
   align-items: center;
-  transition: 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
-/* Botones */
+/* ─── BOTONES DE NAV ─── */
 .navbar-item {
   background: transparent;
   border: none;
-  color: #e4e4e7;
-  font-size: 0.95rem;
-  padding: 8px 14px;
-  border-radius: 12px;
+  color: #64748b;
+  font-size: 0.88rem;
+  font-family: 'Outfit', system-ui, sans-serif;
+  padding: 7px 13px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 6px;
+  letter-spacing: 0.01em;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-/* Hover elegante */
 .navbar-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #00d4ff;
-  transform: translateY(-1px);
+  background: rgba(0, 180, 255, 0.07);
+  color: #38bdf8;
 }
 
-/* Botón logout especial */
+/* ─── BOTÓN REGISTRAR HORA — destacado ─── */
+.navbar-item.register-btn {
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  color: #00d4ff;
+  font-weight: 600;
+  padding: 7px 15px;
+  border-radius: 10px;
+}
+
+.navbar-item.register-btn:hover {
+  background: rgba(0, 212, 255, 0.14);
+  border-color: rgba(0, 212, 255, 0.38);
+  color: #67e8f9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 212, 255, 0.14);
+}
+
+.navbar-item.register-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* ─── LOGOUT ─── */
 .navbar-item.logout {
-  background: rgba(255, 0, 0, 0.08);
-  color: #ff6b6b;
+  color: #475569;
 }
 
 .navbar-item.logout:hover {
-  background: rgba(255, 0, 0, 0.2);
-  color: #ff4d4d;
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
 }
 
-/* Burger */
+/* ─── BURGER ─── */
 .navbar-burger {
   display: none;
-  font-size: 1.6rem;
-  color: white;
+  font-size: 1.4rem;
+  color: #64748b;
   cursor: pointer;
-  transition: 0.3s;
+  transition: 0.22s ease;
+  padding: 6px 8px;
+  border-radius: 8px;
+  position: relative;
+  z-index: 1001; /* siempre encima del overlay */
+  background: transparent;
+  border: none;
+  align-items: center;
+  justify-content: center;
 }
 
 .navbar-burger:hover {
   color: #00d4ff;
-  transform: rotate(90deg);
+  background: rgba(0, 212, 255, 0.07);
 }
 
-/* RESPONSIVE */
+/* ─── OVERLAY OSCURO (móvil) ─── */
+.navbar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 13, 26, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 998;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.navbar-overlay.is-open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ─── RESPONSIVE ─── */
 @media (max-width: 768px) {
+  .navbar-overlay {
+    display: block;
+  }
+
   .navbar-menu {
-    position: absolute;
-    top: 65px;
+    /* Panel lateral fijo al viewport, sin depender del scroll */
+    position: fixed;
+    top: 0;
     right: 0;
-    width: 240px;
-    height: calc(100vh - 65px);
+    bottom: 0;
+    width: 260px;
+    height: 100dvh; /* usa dvh para respetar el área visible real */
     flex-direction: column;
-    align-items: flex-start;
-    padding: 20px;
-    background: rgba(15, 15, 25, 0.95);
-    backdrop-filter: blur(15px);
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-    
+    align-items: stretch;
+    padding: 80px 12px 24px; /* 80px = navbar height + respiro */
+    gap: 2px;
+    z-index: 999;
+
+    background: rgba(6, 13, 26, 0.97);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-left: 1px solid rgba(56, 189, 248, 0.08);
+    box-shadow: -20px 0 60px rgba(0, 0, 0, 0.55);
+
     transform: translateX(100%);
     opacity: 0;
     pointer-events: none;
-    order: 3;
+    transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.3s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .navbar-menu.is-open {
@@ -142,8 +260,37 @@
 
   .navbar-item {
     width: 100%;
-    padding: 12px;
-    font-size: 1rem;
+    padding: 12px 16px;
+    font-size: 0.93rem;
+    border-radius: 12px;
+    color: #64748b;
+    justify-content: flex-start;
+  }
+
+  .navbar-item:hover {
+    color: #38bdf8;
+  }
+
+  .navbar-item.register-btn {
+    width: 100%;
+    margin-bottom: 6px;
+    justify-content: flex-start;
+    padding: 13px 16px;
+    font-size: 0.95rem;
+  }
+
+  /* Logout pegado al fondo */
+  .navbar-item.logout {
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 16px;
+    width: 100%;
+    border-radius: 0;
+    padding-left: 16px;
+  }
+
+  .navbar-burger {
+    display: flex;
   }
 
   .navbar-plan-button {
@@ -155,20 +302,28 @@
   }
 
   .navbar-burger {
-    display: block;
     order: 2;
   }
 }
 
-/* Animación suave de entrada */
+/* ─── ANIMACIÓN DE ENTRADA ITEMS ─── */
 .navbar-menu.is-open .navbar-item {
-  animation: slideFade 0.3s ease forwards;
+  animation: slideNavItem 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@keyframes slideFade {
+.navbar-menu.is-open .navbar-item:nth-child(1) { animation-delay: 0.04s; }
+.navbar-menu.is-open .navbar-item:nth-child(2) { animation-delay: 0.08s; }
+.navbar-menu.is-open .navbar-item:nth-child(3) { animation-delay: 0.11s; }
+.navbar-menu.is-open .navbar-item:nth-child(4) { animation-delay: 0.14s; }
+.navbar-menu.is-open .navbar-item:nth-child(5) { animation-delay: 0.17s; }
+.navbar-menu.is-open .navbar-item:nth-child(6) { animation-delay: 0.20s; }
+.navbar-menu.is-open .navbar-item:nth-child(7) { animation-delay: 0.23s; }
+.navbar-menu.is-open .navbar-item:nth-child(8) { animation-delay: 0.26s; }
+
+@keyframes slideNavItem {
   from {
     opacity: 0;
-    transform: translateX(20px);
+    transform: translateX(18px);
   }
   to {
     opacity: 1;
