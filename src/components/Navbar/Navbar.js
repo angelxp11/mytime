@@ -7,6 +7,7 @@ import './Navbar.css';
 
 const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal, setShowPlanModal, setShowComentariosModal, pendingCommentsCount }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const ocultarFunciones = userPlan?.ocultarFunciones;
 
   // Bloquear scroll del body cuando el menú está abierto
   useEffect(() => {
@@ -72,7 +73,7 @@ const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal
           >
             MyTime
           </div>
-          {userPlan && (
+          {userPlan && !ocultarFunciones && (
             <button
               type="button"
               className={`navbar-item navbar-plan-button ${userPlan.plan === 'premium' ? 'premium' : 'free'}`}
@@ -91,32 +92,37 @@ const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal
         />
 
         <div className={`navbar-menu ${isOpen ? 'is-open' : ''}`}>
-          <button
-            type="button"
-            className="navbar-item register-btn"
-            onClick={handleRegisterClick}
-          >
-            <FiClock size={15} />
-            Registrar Hora
-          </button>
+          {!ocultarFunciones && (
+            <>
+              <button
+                type="button"
+                className="navbar-item register-btn"
+                onClick={handleRegisterClick}
+              >
+                <FiClock size={15} />
+                Registrar Hora
+              </button>
+
+              <button type="button" className="navbar-item" onClick={() => handleNavClick('trabajos')}>
+                Mis Trabajos
+              </button>
+              <button type="button" className="navbar-item" onClick={() => handleNavClick('calendar')}>
+                Calendario
+              </button>
+              <button type="button" className="navbar-item" onClick={() => handleNavClick('horarios')}>
+                Horarios
+              </button>
+              <button type="button" className="navbar-item" onClick={() => handleNavClick('pago')}>
+                Consultar Pago
+              </button>
+            </>
+          )}
 
           <button type="button" className="navbar-item" onClick={() => handleNavClick('home')}>
             Inicio
           </button>
-          <button type="button" className="navbar-item" onClick={() => handleNavClick('trabajos')}>
-            Mis Trabajos
-          </button>
           <button type="button" className="navbar-item" onClick={() => handleNavClick('grupos')}>
             Grupos
-          </button>
-          <button type="button" className="navbar-item" onClick={() => handleNavClick('calendar')}>
-            Calendario
-          </button>
-          <button type="button" className="navbar-item" onClick={() => handleNavClick('horarios')}>
-            Horarios
-          </button>
-          <button type="button" className="navbar-item" onClick={() => handleNavClick('pago')}>
-            Consultar Pago
           </button>
 
           {user && user.email === 'jocheangel728@gmail.com' && (

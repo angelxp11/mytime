@@ -80,6 +80,7 @@ function App() {
           plan,
           expirationDate: plan === 'free' ? null : expirationDate,
           planRequest: userData.planRequest || null,
+          ocultarFunciones: userData.ocultarFunciones || false,
         });
       } catch (error) {
         console.error('Error cargando plan de usuario:', error);
@@ -130,22 +131,31 @@ function App() {
       case 'home':
         return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
       case 'trabajos':
+        if (userPlan?.ocultarFunciones) {
+          return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+        }
         return <MisTrabajos user={user} />;
       case 'grupos':
         return <Grupos user={user} />;
       case 'calendar':
+        if (userPlan?.ocultarFunciones) {
+          return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+        }
         return <CalendarComponent user={user} />;
       case 'pago':
-        if (!userPlan || userPlan.plan !== 'premium') {
+        if (userPlan?.ocultarFunciones || !userPlan || userPlan.plan !== 'premium') {
           return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
         }
         return <ConsultarPago user={user} setCurrentView={setCurrentView} />;
       case 'registerhours':
-        if (!userPlan || userPlan.plan !== 'premium') {
+        if (userPlan?.ocultarFunciones || !userPlan || userPlan.plan !== 'premium') {
           return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
         }
         return <RegisterHours user={user} setCurrentView={setCurrentView} />;
       case 'horarios':
+        if (userPlan?.ocultarFunciones) {
+          return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+        }
         return <Horario user={user} setCurrentView={setCurrentView} />;
       default:
         return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;

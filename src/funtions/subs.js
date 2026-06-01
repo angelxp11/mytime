@@ -46,6 +46,13 @@ const SubsModal = ({ isOpen, onClose, user }) => {
     }));
   };
 
+  const handleHideFunctionsToggle = (userId, currentValue) => {
+    setEditingUsers((prev) => ({
+      ...prev,
+      [userId]: { ...prev[userId], ocultarFunciones: !currentValue },
+    }));
+  };
+
   const handleExpirationChange = (userId, newDate) => {
     setEditingUsers((prev) => ({
       ...prev,
@@ -190,6 +197,7 @@ const SubsModal = ({ isOpen, onClose, user }) => {
                     const hasPending    = planRequest?.status === 'pending';
                     const isPremium     = getPlanStatus(userData) === 'premium';
                     const membresiaVal  = getEditedValue(userData.id, 'membresia', userData.membresia);
+                    const ocultarFuncionesVal = getEditedValue(userData.id, 'ocultarFunciones', userData.ocultarFunciones || false);
                     const expVal        = getEditedValue(userData.id, 'fechaExpiracion', userData.fechaExpiracion);
                     const expDateInput  = expVal
                       ? new Date(expVal).toISOString().split('T')[0]
@@ -246,6 +254,19 @@ const SubsModal = ({ isOpen, onClose, user }) => {
                                 value={expDateInput}
                                 onChange={(e) => handleExpirationChange(userData.id, e.target.value || null)}
                               />
+                            </div>
+
+                            {/* Ocultar accesos */}
+                            <div className="hide-access-toggle">
+                              <span className="toggle-label">Ocultar Registro / Trabajos / Pago / Membresía</span>
+                              <label className="toggle-switch">
+                                <input
+                                  type="checkbox"
+                                  checked={ocultarFuncionesVal}
+                                  onChange={() => handleHideFunctionsToggle(userData.id, ocultarFuncionesVal)}
+                                />
+                                <span className="slider" />
+                              </label>
                             </div>
 
                             {/* Guardar cambios */}

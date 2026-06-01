@@ -525,26 +525,47 @@ if (data?.participantOrderGlobal) {
 
   setParticipants(orderedParticipants);
 
-  // 🔥 2. Reconstruir horarios
+  const findCurrentIndex = (entry) => {
+    if (!entry) return -1;
+    const uid = entry.uid || '';
+    const email = entry.email?.toLowerCase?.() || '';
+    return orderedParticipants.findIndex((participant) => {
+      const participantEmail = participant.email?.toLowerCase?.() || '';
+      return (participant.uid && participant.uid === uid) || (participantEmail && participantEmail === email);
+    });
+  };
+
+  const assignDay = (targetIndex, day, dayIndex) => {
+    if (targetIndex < 0 || targetIndex >= orderedParticipants.length) return;
+    const key = `participant_${targetIndex}_day_${dayIndex}`;
+    schedules[key] = formatGroupCellFromSavedDay(day);
+  };
+
+  // 🔥 2. Reconstruir horarios con mapeo por uid/email para los cambios de participantes
   if (Array.isArray(savedWeek.groupSchedules)) {
     savedWeek.groupSchedules.forEach((participantEntry) => {
-      const participantIndex = Number(participantEntry.participantIndex ?? 0);
-
+      const currentIndex = findCurrentIndex(participantEntry);
       participantEntry.days?.forEach((day, dayIndex) => {
-        const key = `participant_${participantIndex}_day_${dayIndex}`;
-
-        schedules[key] = formatGroupCellFromSavedDay(day);
+        assignDay(currentIndex, day, dayIndex);
       });
     });
   } else {
+    const savedParticipants = Array.isArray(savedWeek.participants) ? savedWeek.participants : [];
     Object.entries(savedWeek.groupSchedules).forEach(([key, value]) => {
-      schedules[key] = {
+      const match = key.match(/^participant_(\d+)_day_(\d+)$/);
+      if (!match) return;
+      const oldIndex = Number(match[1]);
+      const dayIndex = Number(match[2]);
+      const savedParticipant = savedParticipants[oldIndex];
+      const currentIndex = findCurrentIndex(savedParticipant);
+      const targetIndex = currentIndex >= 0 ? currentIndex : oldIndex;
+      schedules[`participant_${targetIndex}_day_${dayIndex}`] = {
         estado: value.estado || '-',
         startH: String(value.startH || '00').padStart(2, '0'),
         endH: String(value.endH || '00').padStart(2, '0'),
         descanso: String(value.descanso || '00').padStart(2, '0'),
         horas: String(
-          value.horas || calcTotal(value.startH, value.endH)
+          value.horas || calcTotal(value.startH, value.endH, value.descanso)
         ).padStart(2, '0'),
       };
     });

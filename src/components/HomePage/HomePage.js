@@ -556,18 +556,17 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
 
   const displayName = userName ? formatName(userName) : user.email;
 
+  const ocultarFunciones = userPlan?.ocultarFunciones;
+
   const isSubscriptionExpired = () => {
     if (!userPlan) return false;
-
-    if (userPlan.plan !== 'premium') return true;
+    if (userPlan.plan !== 'premium') return false;
     if (!userPlan.expirationDate) return false;
-
-    const now = new Date();
-    return userPlan.expirationDate < now;
+    return userPlan.expirationDate < new Date();
   };
 
   const canRegisterHours = () => {
-    return userPlan?.plan === 'premium' && !isSubscriptionExpired();
+    return !ocultarFunciones && userPlan?.plan === 'premium' && !isSubscriptionExpired();
   };
 
   const handleRegisterHoursClick = () => {
@@ -579,7 +578,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
   };
 
   const handleConsultarPagoClick = () => {
-    if (userPlan?.plan === 'premium' && !isSubscriptionExpired()) {
+    if (!ocultarFunciones && userPlan?.plan === 'premium' && !isSubscriptionExpired()) {
       setCurrentView('pago');
     } else {
       setShowPlanModal(true);
@@ -661,7 +660,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
         </div>
       </div>
 
-      {isSubscriptionExpired() && (
+      {isSubscriptionExpired() && !ocultarFunciones && (
         <div className="subscription-expired-banner">
           <div className="expired-message">
             <div>
@@ -681,16 +680,20 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
       <p>Tu plataforma para gestionar horas de trabajo y pagos.</p>
 
       <div className="home-buttons">
-        <button className="home-button" onClick={handleRegisterHoursClick}>
-          <FiClock size={18} style={{ marginRight: '10px' }} />
-          {canRegisterHours() ? 'Registrar Horas' : 'Actualizar a Premium'}
-        </button>
-        <button className="home-button" onClick={() => setCurrentView('trabajos')}>
-          Ver Mis Trabajos
-        </button>
-        <button className="home-button" onClick={handleConsultarPagoClick}>
-          {canRegisterHours() ? 'Consultar Pago' : 'Actualizar a Premium'}
-        </button>
+        {!ocultarFunciones && (
+          <>
+            <button className="home-button" onClick={handleRegisterHoursClick}>
+              <FiClock size={18} style={{ marginRight: '10px' }} />
+              {canRegisterHours() ? 'Registrar Horas' : 'Actualizar a Premium'}
+            </button>
+            <button className="home-button" onClick={() => setCurrentView('trabajos')}>
+              Ver Mis Trabajos
+            </button>
+            <button className="home-button" onClick={handleConsultarPagoClick}>
+              {canRegisterHours() ? 'Consultar Pago' : 'Actualizar a Premium'}
+            </button>
+          </>
+        )}
         <button className="home-button" onClick={() => setShowCopiModal(true)}>
           Recuperar Datos
         </button>
