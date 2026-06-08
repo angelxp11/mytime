@@ -235,15 +235,16 @@
   color: inherit;
 }
 
-/* SIN HOVER */
+/* HOVER — overlay muy sutil, casi transparente */
 .react-calendar__tile:enabled:hover,
 .react-calendar__tile:enabled:focus,
 .react-calendar__tile:enabled:focus-visible {
   transform: none !important;
-  background: rgba(255,255,255,0.08) !important;
   color: inherit !important;
+  box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.03) !important;
 }
 
+/* ── COLORES DE TIPO ── */
 .react-calendar__tile.trabajado {
   background: #04724D;
   color: #ffffff;
@@ -268,10 +269,12 @@
   border-color: rgba(239, 68, 68, 0.4);
 }
 
+/* Para tiles con color, el overlay es más sutil */
 .react-calendar__tile.trabajado:enabled:hover,
 .react-calendar__tile.trabajado:enabled:focus,
 .react-calendar__tile.trabajado:enabled:focus-visible {
   background: #04724D !important;
+  box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.04) !important;
   color: #ffffff !important;
 }
 
@@ -279,6 +282,7 @@
 .react-calendar__tile.descanso:enabled:focus,
 .react-calendar__tile.descanso:enabled:focus-visible {
   background: #84BCDA !important;
+  box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.04) !important;
   color: #ffffff !important;
 }
 
@@ -286,6 +290,7 @@
 .react-calendar__tile.incapacidad_comun:enabled:focus,
 .react-calendar__tile.incapacidad_comun:enabled:focus-visible {
   background: #f59e0b !important;
+  box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.04) !important;
   color: #0f172a !important;
 }
 
@@ -293,6 +298,7 @@
 .react-calendar__tile.incapacidad_laboral:enabled:focus,
 .react-calendar__tile.incapacidad_laboral:enabled:focus-visible {
   background: #ef4444 !important;
+  box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.04) !important;
   color: #ffffff !important;
 }
 
@@ -302,10 +308,138 @@
   border: 2px solid #00d4ff;
 }
 
+/* DÍA ACTUAL FESTIVO → dorado elegante, sin pulso genérico */
+.react-calendar__tile--now.festivo {
+  animation: pulse-gold-now 2.2s ease-in-out infinite !important;
+  border: 2px solid #ffd700 !important;
+  color: #1a0f00 !important;
+  font-weight: 700;
+}
+
+@keyframes pulse-gold-now {
+  0%, 100% {
+    background: linear-gradient(135deg, #b8860b, #d4a017);
+    box-shadow:
+      0 0 0 0 rgba(255, 215, 0, 0),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    border-color: #c9960c !important;
+  }
+  50% {
+    background: linear-gradient(135deg, #ffd700, #ffec6e);
+    box-shadow:
+      0 0 20px 6px rgba(255, 215, 0, 0.55),
+      0 0 40px 12px rgba(255, 180, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    border-color: #ffd700 !important;
+  }
+}
+
 /* DÍA SELECCIONADO */
 .react-calendar__tile--active {
   background: linear-gradient(135deg, #00d4ff, #007cf0);
   color: white;
+}
+
+/* ── ANIMACIONES DE FESTIVOS ── */
+
+/* Festivo sin registro → pulso dorado refinado */
+@keyframes pulse-gold {
+  0%, 100% {
+    background-color: #a07010;
+    box-shadow: 0 0 4px 1px rgba(255, 215, 0, 0.2);
+    border-color: rgba(255, 215, 0, 0.4);
+  }
+  50% {
+    background-color: #c9960c;
+    box-shadow: 0 0 14px 5px rgba(255, 200, 0, 0.5);
+    border-color: rgba(255, 215, 0, 0.75);
+  }
+}
+
+/* Festivo trabajado → pulso verde */
+@keyframes pulse-trabajado {
+  0%, 100% {
+    background-color: #04724D;
+    box-shadow: 0 0 6px 2px rgba(4, 114, 77, 0.4);
+  }
+  50% {
+    background-color: #05a870;
+    box-shadow: 0 0 18px 7px rgba(4, 114, 77, 0.8);
+  }
+}
+
+/* Festivo descanso → pulso azul */
+@keyframes pulse-descanso {
+  0%, 100% {
+    background-color: #5a9dbf;
+    box-shadow: 0 0 6px 2px rgba(132, 188, 218, 0.4);
+  }
+  50% {
+    background-color: #84BCDA;
+    box-shadow: 0 0 18px 7px rgba(132, 188, 218, 0.85);
+  }
+}
+
+/* Festivo incapacidad común → pulso ámbar */
+@keyframes pulse-incapacidad-comun {
+  0%, 100% {
+    background-color: #b07708;
+    box-shadow: 0 0 6px 2px rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    background-color: #f59e0b;
+    box-shadow: 0 0 18px 7px rgba(245, 158, 11, 0.85);
+  }
+}
+
+/* Festivo incapacidad laboral → pulso rojo */
+@keyframes pulse-incapacidad-laboral {
+  0%, 100% {
+    background-color: #b91c1c;
+    box-shadow: 0 0 6px 2px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    background-color: #ef4444;
+    box-shadow: 0 0 18px 7px rgba(239, 68, 68, 0.85);
+  }
+}
+
+/* DÍA FESTIVO sin registro → dorado pulsante */
+.react-calendar__tile.festivo {
+  animation: pulse-gold 1.8s ease-in-out infinite !important;
+  color: #0f172a !important;
+  border-color: rgba(255, 215, 0, 0.55) !important;
+  font-weight: 700;
+}
+
+.react-calendar__tile.festivo:enabled:hover,
+.react-calendar__tile.festivo:enabled:focus {
+  filter: brightness(1.1) !important;
+}
+
+/* Festivos CON registro — el color del tipo gana, animado */
+.react-calendar__tile.festivo.trabajado {
+  animation: pulse-trabajado 1.8s ease-in-out infinite !important;
+  color: #ffffff !important;
+  border-color: rgba(4, 114, 77, 0.5) !important;
+}
+
+.react-calendar__tile.festivo.descanso {
+  animation: pulse-descanso 1.8s ease-in-out infinite !important;
+  color: #ffffff !important;
+  border-color: rgba(132, 188, 218, 0.5) !important;
+}
+
+.react-calendar__tile.festivo.incapacidad_comun {
+  animation: pulse-incapacidad-comun 1.8s ease-in-out infinite !important;
+  color: #0f172a !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+}
+
+.react-calendar__tile.festivo.incapacidad_laboral {
+  animation: pulse-incapacidad-laboral 1.8s ease-in-out infinite !important;
+  color: #ffffff !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
 }
 
 /* DÍAS FUERA DEL MES */
@@ -444,6 +578,16 @@
   padding: 12px 14px;
   font-size: 0.95rem;
   box-sizing: border-box;
+}
+
+.calendar-modal-row select {
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+.calendar-modal-row select option {
+  background: #0f172a;
+  color: #e5e7eb;
 }
 
 .calendar-modal-actions {

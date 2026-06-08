@@ -7,6 +7,7 @@ import { showToast } from '../ToastContainer';
 import '../../colors.css';
 import './calendar.css';
 import Loading from '../loading/loading';
+  import { festivosText } from '../ConsultarPago/festivos';
 
 const parseTime = (value) => {
   if (!value) return null;
@@ -61,6 +62,19 @@ const getTipoLabel = (tipo) => {
     default:
       return 'Sin tipo';
   }
+};
+
+const getFestivos = () => {
+  const festivos = new Set();
+  const lines = festivosText.split('\n');
+  lines.forEach(line => {
+    const match = line.match(/\/\/ (\d{2})\/(\d{2})\/(\d{4}) -/);
+    if (match) {
+      const [, day, month, year] = match;
+      festivos.add(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+    }
+  });
+  return festivos;
 };
 
 const CalendarComponent = ({ user }) => {
@@ -130,10 +144,21 @@ const CalendarComponent = ({ user }) => {
   const getTileClassName = ({ date, view }) => {
     if (view === 'month') {
       const dateStr = date.toISOString().slice(0, 10);
+      const festivos = getFestivos();
+      const isFestivo = festivos.has(dateStr);
       const dayData = diasData[dateStr];
+      const tipo = dayData?.tipo || null;
 
-      if (dayData && dayData.tipo) {
-        return dayData.tipo;
+      if (isFestivo && tipo) {
+        // Festivo con registro: ambas clases → animación del color del tipo
+        return `festivo ${tipo}`;
+      }
+      if (isFestivo) {
+        // Festivo sin registro: solo dorado pulsante
+        return 'festivo';
+      }
+      if (tipo) {
+        return tipo;
       }
     }
     return null;
@@ -164,7 +189,17 @@ const CalendarComponent = ({ user }) => {
   const handleDayClick = (date) => {
     const dateStr = date.toISOString().slice(0, 10);
     const dayData = diasData[dateStr];
-    if (!dayData) return;
+    // Si no hay registro, abrir modal en modo edición para crear un nuevo día
+    if (!dayData) {
+      setSelectedDate(dateStr);
+      setSelectedDayData(null);
+      setDetailsOpen(true);
+      setEditMode(true);
+      setEditTipo('trabajado');
+      setEditEntryTime('18:00');
+      setEditExitTime('02:00');
+      return;
+    }
 
     setSelectedDate(dateStr);
     setSelectedDayData(dayData);
@@ -267,7 +302,7 @@ const CalendarComponent = ({ user }) => {
         />
       </div>
 
-      {detailsOpen && selectedDayData && (
+      {detailsOpen && (
         <div className="calendar-modal-overlay">
           <div className="calendar-modal">
             <div className="calendar-modal-header">
@@ -280,7 +315,7 @@ const CalendarComponent = ({ user }) => {
               </button>
             </div>
 
-            {!editMode ? (
+            {selectedDayData && !editMode ? (
               <div className="calendar-modal-content">
                 <div className="calendar-modal-row">
                   <span className="calendar-modal-label">Tipo de registro</span>
@@ -371,7 +406,7 @@ const CalendarComponent = ({ user }) => {
                   <button type="submit" className="calendar-modal-button" disabled={isSaving}>
                     {isSaving ? 'Guardando...' : 'Guardar cambios'}
                   </button>
-                  <button type="button" className="calendar-modal-secondary" onClick={() => setEditMode(false)} disabled={isSaving}>
+                  <button type="button" className="calendar-modal-secondary" onClick={closeDetails} disabled={isSaving}>
                     Cancelar
                   </button>
                 </div>

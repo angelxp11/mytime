@@ -6,6 +6,7 @@ import './ConsultarPago.css';
 import Loading from '../loading/loading';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
+import { festivosText } from './festivos';
 
 const formatLocalDate = (date) => {
   const year = date.getFullYear();
@@ -40,24 +41,6 @@ const formatHoras = (horas) => {
 };
 
 const getFestivos = () => {
-  const festivosText = `// 01/01/2026 - Año Nuevo
-// 12/01/2026 - Día de los Reyes Magos
-// 23/03/2026 - Día de San José
-// 02/04/2026 - Jueves Santo
-// 03/04/2026 - Viernes Santo
-// 01/05/2026 - Día del Trabajo
-// 18/05/2026 - Ascensión del Señor
-// 08/06/2026 - Corphus Christi
-// 15/06/2026 - Sagrado Corazón de Jesús
-// 29/06/2026 - San Pedro y San Pablo
-// 20/07/2026 - Día de la Independencia
-// 07/08/2026 - Batalla de Boyacá
-// 17/08/2026 - La Asunción de la Virgen
-// 12/10/2026 - Día de la Raza
-// 02/11/2026 - Todos los Santos
-// 16/11/2026 - Independencia de Cartagena
-// 08/12/2026 - Día de la Inmaculada Concepción
-// 25/12/2026 - Día de Navidad`;
   const festivos = new Set();
   const lines = festivosText.split('\n');
   lines.forEach(line => {
@@ -216,6 +199,7 @@ const ConsultarPago = ({ user, setCurrentView }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [view, setView] = useState('month');
   const [selectingMode, setSelectingMode] = useState('start'); // 'start' or 'end'
+  const [simulateSchedule, setSimulateSchedule] = useState(false);
 
   const formatMonthYear = (locale, date) => {
     const formatted = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(date);
@@ -297,9 +281,10 @@ const ConsultarPago = ({ user, setCurrentView }) => {
     }
   };
 
-  const calculatePayment = () => {
+  const calculatePayment = (simulateOverride) => {
     setLoading(true);
     try {
+      const simulate = typeof simulateOverride !== 'undefined' ? simulateOverride : simulateSchedule;
       const trabajo = trabajos.find((t) => t.id === selectedTrabajo);
       if (!trabajo) {
         setLoading(false);
@@ -337,80 +322,90 @@ const ConsultarPago = ({ user, setCurrentView }) => {
         const dayData = diasData[dateStr];
 
         if (dayData) {
-          if (dayData.tipo === 'trabajado' && dayData.entrada && dayData.salida) {
-            const [entryH, entryM] = dayData.entrada.split(':').map(Number);
-            const [exitH, exitM] = dayData.salida.split(':').map(Number);
-            const entryTime = entryH + entryM / 60;
-            const exitTime = exitH + exitM / 60;
+          if (dayData.tipo === 'trabajado') {
+            // Si está en modo simulación, usar el horario programado en vez de las horas registradas
+            const daySchedule = getHorarioForDay(dateStr, horariosData);
+            const useSchedule = simulate && daySchedule && daySchedule.startTime && daySchedule.endTime;
 
-            const [diurnalStartH, diurnalStartM] = (trabajo.diurnalStart || '06:00').split(':').map(Number);
-            const [diurnalEndH, diurnalEndM] = (trabajo.diurnalEnd || '19:00').split(':').map(Number);
-            const diurnalStartTime = diurnalStartH + diurnalStartM / 60;
-            const diurnalEndTime = diurnalEndH + diurnalEndM / 60;
+            const entradaStr = useSchedule ? daySchedule.startTime : dayData.entrada;
+            const salidaStr = useSchedule ? daySchedule.endTime : dayData.salida;
 
-            // Detectar si el turno cruza medianoche (salida < entrada)
-            const cruzaMedianoche = exitTime < entryTime;
+            if (entradaStr && salidaStr) {
+              const [entryH, entryM] = entradaStr.split(':').map(Number);
+              const [exitH, exitM] = salidaStr.split(':').map(Number);
+              const entryTime = entryH + entryM / 60;
+              const exitTime = exitH + exitM / 60;
 
-            if (cruzaMedianoche) {
-              // Primera parte: entrada hasta medianoche (mismo día)
-              const horasPrimeraDia = 24 - entryTime;
-              const isDominical1 = isDominicalDate(dateStr);
+              const [diurnalStartH, diurnalStartM] = (trabajo.diurnalStart || '06:00').split(':').map(Number);
+              const [diurnalEndH, diurnalEndM] = (trabajo.diurnalEnd || '19:00').split(':').map(Number);
+              const diurnalStartTime = diurnalStartH + diurnalStartM / 60;
+              const diurnalEndTime = diurnalEndH + diurnalEndM / 60;
 
-              const horasDiurnasParte1 = Math.max(0, Math.min(diurnalEndTime, 24) - entryTime);
-              const horasNocturnasParte1 = horasPrimeraDia - horasDiurnasParte1;
+              // Detectar si el turno cruza medianoche (salida < entrada)
+              const cruzaMedianoche = exitTime < entryTime;
 
-              if (isDominical1) {
-                horasDiurnaDominical += horasDiurnasParte1;
-                horasNocturnaDominical += horasNocturnasParte1;
+              if (cruzaMedianoche) {
+                // Primera parte: entrada hasta medianoche (mismo día)
+                const horasPrimeraDia = 24 - entryTime;
+                const isDominical1 = isDominicalDate(dateStr);
+
+                const horasDiurnasParte1 = Math.max(0, Math.min(diurnalEndTime, 24) - entryTime);
+                const horasNocturnasParte1 = horasPrimeraDia - horasDiurnasParte1;
+
+                if (isDominical1) {
+                  horasDiurnaDominical += horasDiurnasParte1;
+                  horasNocturnaDominical += horasNocturnasParte1;
+                } else {
+                  horasDiurnas += horasDiurnasParte1;
+                  horasNocturnas += horasNocturnasParte1;
+                }
+
+                // Segunda parte: medianoche hasta salida (día siguiente)
+                const nextDate = createDateFromString(dateStr);
+                nextDate.setDate(nextDate.getDate() + 1);
+                const nextDateStr = formatLocalDate(nextDate);
+                const isDominical2 = isDominicalDate(nextDateStr);
+
+                const horasSegundaDia = exitTime;
+                const horasDiurnasParte2 = Math.max(0, Math.min(exitTime, diurnalEndTime) - diurnalStartTime);
+                const horasNocturnasParte2 = horasSegundaDia - horasDiurnasParte2;
+
+                if (isDominical2) {
+                  horasDiurnaDominical += horasDiurnasParte2;
+                  horasNocturnaDominical += horasNocturnasParte2;
+                } else {
+                  horasDiurnas += horasDiurnasParte2;
+                  horasNocturnas += horasNocturnasParte2;
+                }
+
+                totalHoras += horasPrimeraDia + horasSegundaDia;
               } else {
-                horasDiurnas += horasDiurnasParte1;
-                horasNocturnas += horasNocturnasParte1;
+                // Turno dentro del mismo día (sin cruzar medianoche)
+                const horasTotal = exitTime - entryTime;
+                const isDominical = isDominicalDate(dateStr);
+
+                const horasDiurnasHoy = Math.max(0, Math.min(exitTime, diurnalEndTime) - Math.max(entryTime, diurnalStartTime));
+                const horasNoctuarnasHoy = horasTotal - horasDiurnasHoy;
+
+                if (isDominical) {
+                  horasDiurnaDominical += horasDiurnasHoy;
+                  horasNocturnaDominical += horasNoctuarnasHoy;
+                } else {
+                  horasDiurnas += horasDiurnasHoy;
+                  horasNocturnas += horasNoctuarnasHoy;
+                }
+
+                totalHoras += horasTotal;
               }
 
-              // Segunda parte: medianoche hasta salida (día siguiente)
-              const nextDate = createDateFromString(dateStr);
-              nextDate.setDate(nextDate.getDate() + 1);
-              const nextDateStr = formatLocalDate(nextDate);
-              const isDominical2 = isDominicalDate(nextDateStr);
-
-              const horasSegundaDia = exitTime;
-              const horasDiurnasParte2 = Math.max(0, Math.min(exitTime, diurnalEndTime) - diurnalStartTime);
-              const horasNocturnasParte2 = horasSegundaDia - horasDiurnasParte2;
-
-              if (isDominical2) {
-                horasDiurnaDominical += horasDiurnasParte2;
-                horasNocturnaDominical += horasNocturnasParte2;
-              } else {
-                horasDiurnas += horasDiurnasParte2;
-                horasNocturnas += horasNocturnasParte2;
-              }
-
-              totalHoras += horasPrimeraDia + horasSegundaDia;
-            } else {
-              // Turno dentro del mismo día (sin cruzar medianoche)
-              const horasTotal = exitTime - entryTime;
-              const isDominical = isDominicalDate(dateStr);
-
-              const horasDiurnasHoy = Math.max(0, Math.min(exitTime, diurnalEndTime) - Math.max(entryTime, diurnalStartTime));
-              const horasNoctuarnasHoy = horasTotal - horasDiurnasHoy;
-
-              if (isDominical) {
-                horasDiurnaDominical += horasDiurnasHoy;
-                horasNocturnaDominical += horasNoctuarnasHoy;
-              } else {
-                horasDiurnas += horasDiurnasHoy;
-                horasNocturnas += horasNoctuarnasHoy;
-              }
-
-              totalHoras += horasTotal;
+              diasLaborados.push({
+                fecha: dateStr,
+                horas: cruzaMedianoche ? 24 - entryTime + exitTime : exitTime - entryTime,
+                horaEntrada: entradaStr,
+                horaSalida: salidaStr,
+                simulated: useSchedule,
+              });
             }
-
-            diasLaborados.push({
-              fecha: dateStr,
-              horas: cruzaMedianoche ? 24 - entryTime + exitTime : exitTime - entryTime,
-              horaEntrada: dayData.entrada,
-              horaSalida: dayData.salida,
-            });
           } else if (dayData.tipo === 'descanso') {
             diasDescanso++;
           } else if (dayData.tipo === 'incapacidad_comun') {
@@ -1008,13 +1003,26 @@ const ConsultarPago = ({ user, setCurrentView }) => {
                       if (view === 'month') {
                         const dateStr = formatLocalDate(date);
                         let classes = [];
+                        const festivos = getFestivos();
+                        const isFestivo = festivos.has(dateStr);
+                        const dayData = diasData[dateStr];
+                        const tipo = dayData?.tipo || null;
+                        const today = formatLocalDate(new Date());
+                        const isToday = dateStr === today;
+                        
                         if (dateStr === startDate) classes.push('range-start');
                         if (dateStr === endDate) classes.push('range-end');
                         if (dateStr > startDate && dateStr < endDate) classes.push('range-middle');
-                        const dayData = diasData[dateStr];
-                        if (dayData && dayData.tipo && classes.length === 0) {
-                          classes.push(dayData.tipo);
+                        
+                        // Lógica de festivos
+                        if (isFestivo && tipo) {
+                          classes.push('festivo', tipo);
+                        } else if (isFestivo && !tipo) {
+                          classes.push('festivo');
+                        } else if (tipo && classes.length === 0) {
+                          classes.push(tipo);
                         }
+                        
                         return classes.length ? classes : null;
                       }
                       return null;
@@ -1045,6 +1053,7 @@ const ConsultarPago = ({ user, setCurrentView }) => {
                   ))}
                 </select>
               </div>
+              
             </div>
 
             <div className="consultar-pago-actions">
@@ -1067,6 +1076,23 @@ const ConsultarPago = ({ user, setCurrentView }) => {
               <div className="report-header">
                 <p><strong>Trabajo:</strong> {calculations.trabajo}</p>
                 <p><strong>Período:</strong> {formatFechaDisplay(calculations.startDate)} a {formatFechaDisplay(calculations.endDate)}</p>
+              </div>
+
+              <div className="select-mode" style={{ justifyContent: 'center', marginTop: 10 }}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={simulateSchedule}
+                    onChange={(e) => {
+                      const newVal = e.target.checked;
+                      setSimulateSchedule(newVal);
+                      calculatePayment(newVal);
+                    }}
+                  />
+                  Simulación: usar horario programado en vez de horas registradas
+                  <span className="simulate-info-tag">La simulación toma como base el horario programado para calcular las horas trabajadas y no los registros reales de marcación. Por esta razón, ese valor debería considerarse como el mínimo que tendrían que pagarte, en caso de que no se validen los minutos efectivamente trabajados.
+</span>
+                </label>
               </div>
 
               <div className="report-summary">

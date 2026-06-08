@@ -556,6 +556,17 @@
   transform: scale(0.93);
 }
 
+.simulate-info-tag {
+  margin-left: 10px;
+  background: rgba(0, 212, 255, 0.06);
+  color: #00d4ff;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 /* ─── MES ACTUAL (botón) ─── */
 .calendar-current-month {
   display: inline-flex;
@@ -762,6 +773,108 @@
   background: rgba(220, 38, 38, 0.15) !important;
   color: #fca5a5 !important;
   border-color: rgba(220, 38, 38, 0.3) !important;
+}
+
+/* ─── ANIMACIONES DE FESTIVOS ─── */
+
+/* Festivo sin registro → dorado pulsante refinado */
+@keyframes pulse-gold-consultar {
+  0%, 100% {
+    background-color: #a07010;
+    box-shadow: 0 0 4px 1px rgba(255, 215, 0, 0.2);
+    border-color: rgba(255, 215, 0, 0.4);
+  }
+  50% {
+    background-color: #c9960c;
+    box-shadow: 0 0 14px 5px rgba(255, 200, 0, 0.5);
+    border-color: rgba(255, 215, 0, 0.75);
+  }
+}
+
+/* Festivo trabajado → pulso verde */
+@keyframes pulse-trabajado-consultar {
+  0%, 100% {
+    background-color: #04724D;
+    box-shadow: 0 0 6px 2px rgba(4, 114, 77, 0.4);
+  }
+  50% {
+    background-color: #05a870;
+    box-shadow: 0 0 18px 7px rgba(4, 114, 77, 0.8);
+  }
+}
+
+/* Festivo descanso → pulso azul */
+@keyframes pulse-descanso-consultar {
+  0%, 100% {
+    background-color: #5a9dbf;
+    box-shadow: 0 0 6px 2px rgba(132, 188, 218, 0.4);
+  }
+  50% {
+    background-color: #84BCDA;
+    box-shadow: 0 0 18px 7px rgba(132, 188, 218, 0.85);
+  }
+}
+
+/* Festivo incapacidad común → pulso ámbar */
+@keyframes pulse-incapacidad-comun-consultar {
+  0%, 100% {
+    background-color: #b07708;
+    box-shadow: 0 0 6px 2px rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    background-color: #f59e0b;
+    box-shadow: 0 0 18px 7px rgba(245, 158, 11, 0.85);
+  }
+}
+
+/* Festivo incapacidad laboral → pulso rojo */
+@keyframes pulse-incapacidad-laboral-consultar {
+  0%, 100% {
+    background-color: #b91c1c;
+    box-shadow: 0 0 6px 2px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    background-color: #ef4444;
+    box-shadow: 0 0 18px 7px rgba(239, 68, 68, 0.85);
+  }
+}
+
+/* DÍA FESTIVO sin registro → dorado pulsante */
+.react-calendar__tile.festivo {
+  animation: pulse-gold-consultar 1.8s ease-in-out infinite !important;
+  color: #1a0f00 !important;
+  border-color: rgba(255, 215, 0, 0.55) !important;
+  font-weight: 700;
+}
+
+.react-calendar__tile.festivo:enabled:hover,
+.react-calendar__tile.festivo:enabled:focus {
+  filter: brightness(1.1) !important;
+}
+
+/* Festivos CON registro — el color del tipo gana, animado */
+.react-calendar__tile.festivo.trabajado {
+  animation: pulse-trabajado-consultar 1.8s ease-in-out infinite !important;
+  color: #ffffff !important;
+  border-color: rgba(4, 114, 77, 0.5) !important;
+}
+
+.react-calendar__tile.festivo.descanso {
+  animation: pulse-descanso-consultar 1.8s ease-in-out infinite !important;
+  color: #ffffff !important;
+  border-color: rgba(132, 188, 218, 0.5) !important;
+}
+
+.react-calendar__tile.festivo.incapacidad_comun {
+  animation: pulse-incapacidad-comun-consultar 1.8s ease-in-out infinite !important;
+  color: #1a0f00 !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+}
+
+.react-calendar__tile.festivo.incapacidad_laboral {
+  animation: pulse-incapacidad-laboral-consultar 1.8s ease-in-out infinite !important;
+  color: #ffffff !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
 }
 
 /* ─── RESPONSIVE ─── */
