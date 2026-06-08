@@ -32,6 +32,7 @@ function App() {
   const [showComentariosModal, setShowComentariosModal] = useState(false);
   const [pendingCommentsCount, setPendingCommentsCount] = useState(0);
   const [userPlan, setUserPlan] = useState(null);
+  const [userCounts, setUserCounts] = useState({ total: 0, premium: 0, free: 0 });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -115,6 +116,44 @@ function App() {
     return unsubscribe;
   }, [user]);
 
+  useEffect(() => {
+    if (!user || user.email !== 'jocheangel728@gmail.com') {
+      setUserCounts({ total: 0, premium: 0, free: 0 });
+      return;
+    }
+
+    const usersQuery = query(collection(db, 'usuarios'));
+    const unsubscribe = onSnapshot(
+      usersQuery,
+      (snapshot) => {
+        let premium = 0;
+        let free = 0;
+
+        snapshot.docs.forEach((docItem) => {
+          const data = docItem.data();
+          const plan = data.plan || (data.membresia ? 'premium' : 'free');
+          if (plan === 'premium') {
+            premium += 1;
+          } else {
+            free += 1;
+          }
+        });
+
+        setUserCounts({
+          total: snapshot.size,
+          premium,
+          free,
+        });
+      },
+      (error) => {
+        console.error('Error escuchando usuarios:', error);
+        setUserCounts({ total: 0, premium: 0, free: 0 });
+      }
+    );
+
+    return unsubscribe;
+  }, [user]);
+
   const handleLogout = async () => {
     setIsLoading(true);
     await auth.signOut();
@@ -186,6 +225,7 @@ function App() {
         setShowPlanModal={setShowPlanModal}
         setShowComentariosModal={setShowComentariosModal}
         pendingCommentsCount={pendingCommentsCount}
+        userCounts={userCounts}
       />
       <main style={{ minHeight: 'calc(100vh - 60px)' }}>
         {renderView()}

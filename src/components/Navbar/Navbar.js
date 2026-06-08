@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import '../../colors.css';
 import './Navbar.css';
 
-const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal, setShowPlanModal, setShowComentariosModal, pendingCommentsCount }) => {
+const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal, setShowPlanModal, setShowComentariosModal, pendingCommentsCount, userCounts }) => {
   const [isOpen, setIsOpen] = useState(false);
   const ocultarFunciones = userPlan?.ocultarFunciones;
 
@@ -73,6 +73,7 @@ const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal
           >
             MyTime
           </div>
+
           {userPlan && !ocultarFunciones && (
             <button
               type="button"
@@ -139,10 +140,15 @@ const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal
               </button>
               <button
                 type="button"
-                className="navbar-item"
+                className="navbar-item users-btn"
                 onClick={() => { setShowSubsModal(true); closeMenu(); }}
               >
                 Usuarios
+                <span className="users-counts">
+                  <span className="users-count-badge users-total">{userCounts.total}</span>
+                  <span className="users-count-badge users-premium">{userCounts.premium}</span>
+                  <span className="users-count-badge users-free">{userCounts.free}</span>
+                </span>
               </button>
             </>
           )}
