@@ -547,302 +547,340 @@ const ConsultarPago = ({ user, setCurrentView }) => {
 
   try {
     const { jsPDF } = require('jspdf');
-
     const pdf = new jsPDF('p', 'mm', 'a4');
 
-    // 🔑 IMPORTANTE (faltaba en tu código)
     const startDateTime = createDateFromString(calculations.startDate);
     const endDateTime = createDateFromString(calculations.endDate);
 
-    // Helpers
+    // ─── Helpers ───────────────────────────────────────────────────
     const formatMoney = (value) =>
       `$${Math.floor(value).toLocaleString('es-CO')}`;
 
+    // ─── Constantes de columnas ────────────────────────────────────
+    // Tabla principal (3 columnas)
+    const MC = { label: 17, qty: 110, amount: 193 };
+
+    // Tabla de horario — sin columna GENERADO, más espacio para cada col
+    const HC = {
+      dia:    16,
+      entH:   52,
+      entR:   74,
+      salH:   96,
+      salR:   118,
+      llegan: 140,
+      extra:  158,
+      total:  176,
+    };
+
+    // Resumen acumulado (2 columnas lado a lado)
+    const SC = {
+      leftLabel:  17,
+      leftVal:    95,
+      rightLabel: 107,
+      rightVal:   195,
+    };
+
+    const PAGE_BOTTOM = 272;
+    const ROW_H       = 8;
+
     let y = 15;
 
-    // 🧾 TITULO
+    // ─── TÍTULO ────────────────────────────────────────────────────
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(18);
+    pdf.setFontSize(16);
     pdf.text('REPORTE DE PAGO', 105, y, { align: 'center' });
 
-    y += 10;
+    y += 2;
+    pdf.setDrawColor(30, 41, 59);
+    pdf.setLineWidth(0.6);
+    pdf.line(15, y + 5, 195, y + 5);
+    y += 12;
 
-    // Línea
-    pdf.setDrawColor(200);
-    pdf.line(15, y, 195, y);
-
-    y += 8;
-
-    // 📄 INFO GENERAL
-    pdf.setFontSize(11);
+    // ─── INFO GENERAL ──────────────────────────────────────────────
+    pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
-
+    pdf.setTextColor(60, 60, 60);
     pdf.text(`Trabajo: ${calculations.trabajo}`, 15, y);
-    y += 6;
-    pdf.text(`Periodo: ${calculations.startDate} a ${calculations.endDate}`, 15, y);
-
+    y += 5;
+    pdf.text(`Periodo: del ${formatFechaDisplay(calculations.startDate)} al ${formatFechaDisplay(calculations.endDate)}`, 15, y);
     y += 10;
 
-    // 🧮 TABLA PRINCIPAL
+    // ─── TABLA PRINCIPAL ───────────────────────────────────────────
     const pdfRows = reportMode === 'classic'
       ? [
-          { label: 'Horas Diurnas', quantityLabel: formatHoras(calculations.horasDiurnas), amount: calculations.pagoBase },
-          { label: 'Horas Nocturnas', quantityLabel: formatHoras(calculations.horasNocturnas), amount: calculations.pagoNocturno },
-          { label: 'Horas Diurnas Dominical', quantityLabel: formatHoras(calculations.horasDiurnaDominical), amount: calculations.pagoDiurnaDominical },
-          { label: 'Horas Nocturnas Dominical', quantityLabel: formatHoras(calculations.horasNocturnaDominical), amount: calculations.pagoNocturnaDominical },
-          { label: 'Horas Extra Diurna', quantityLabel: formatHoras(calculations.horasExtraDiurna), amount: calculations.pagoExtraDiurna },
-          { label: 'Horas Extra Nocturna', quantityLabel: formatHoras(calculations.horasExtraNocturna), amount: calculations.pagoExtraNocturna },
-          { label: 'Horas Extra Dominical Diurna', quantityLabel: formatHoras(calculations.horasExtraDominicalDiurna), amount: calculations.pagoExtraDominicalDiurna },
-          { label: 'Horas Extra Dominical Nocturna', quantityLabel: formatHoras(calculations.horasExtraDominicalNocturna), amount: calculations.pagoExtraDominicalNocturna },
-          { label: 'Incapacidad Común', quantityLabel: `${calculations.diasIncapacidadComun} días`, amount: calculations.pagoIncapacidadComun },
-          { label: 'Incapacidad Laboral', quantityLabel: `${calculations.diasIncapacidadLaboral} días`, amount: calculations.pagoIncapacidadLaboral },
-          { label: 'Auxilio Transporte', quantityLabel: `${calculations.detalles.length} días`, amount: calculations.auxilioTransporte },
+          { label: 'Horas diurnas',                  quantityLabel: formatHoras(calculations.horasDiurnas),               amount: calculations.pagoBase },
+          { label: 'Horas nocturnas',                 quantityLabel: formatHoras(calculations.horasNocturnas),              amount: calculations.pagoNocturno },
+          { label: 'Horas diurnas dominical',         quantityLabel: formatHoras(calculations.horasDiurnaDominical),        amount: calculations.pagoDiurnaDominical },
+          { label: 'Horas nocturnas dominical',       quantityLabel: formatHoras(calculations.horasNocturnaDominical),      amount: calculations.pagoNocturnaDominical },
+          { label: 'Horas extra diurna',              quantityLabel: formatHoras(calculations.horasExtraDiurna),            amount: calculations.pagoExtraDiurna },
+          { label: 'Horas extra nocturna',            quantityLabel: formatHoras(calculations.horasExtraNocturna),          amount: calculations.pagoExtraNocturna },
+          { label: 'Horas extra dominical diurna',    quantityLabel: formatHoras(calculations.horasExtraDominicalDiurna),   amount: calculations.pagoExtraDominicalDiurna },
+          { label: 'Horas extra dominical nocturna',  quantityLabel: formatHoras(calculations.horasExtraDominicalNocturna), amount: calculations.pagoExtraDominicalNocturna },
+          { label: 'Incapacidad común',               quantityLabel: `${calculations.diasIncapacidadComun} días`,           amount: calculations.pagoIncapacidadComun },
+          { label: 'Incapacidad laboral',             quantityLabel: `${calculations.diasIncapacidadLaboral} días`,         amount: calculations.pagoIncapacidadLaboral },
+          { label: 'Auxilio de transporte',           quantityLabel: `${calculations.detalles.length} días`,               amount: calculations.auxilioTransporte },
         ]
       : [
-          { label: 'Horas Diarias', quantityLabel: formatHoras(calculations.totalHoras), amount: calculations.totalHoras * calculations.baseHourly },
-          {
-            label: 'Recargo Nocturno',
-            quantityLabel: formatHoras(calculations.horasNocturnas + calculations.horasExtraNocturna),
-            amount: (calculations.pagoNocturnoRecargo || 0) + (calculations.pagoExtraNocturnaRecargo || 0),
-          },
-          { label: 'Horas Dominicales', quantityLabel: formatHoras(calculations.totalDominicalHours), amount: calculations.totalDominicalAmount },
-          { label: 'Auxilio Transporte', quantityLabel: `${calculations.detalles.length} días`, amount: calculations.auxilioTransporte },
+          { label: 'Horas diarias',         quantityLabel: formatHoras(calculations.totalHoras),                                                                         amount: calculations.totalHoras * calculations.baseHourly },
+          { label: 'Recargo nocturno',      quantityLabel: formatHoras(calculations.horasNocturnas + calculations.horasExtraNocturna),                                   amount: (calculations.pagoNocturnoRecargo || 0) + (calculations.pagoExtraNocturnaRecargo || 0) },
+          { label: 'Horas dominicales',     quantityLabel: formatHoras(calculations.totalDominicalHours),                                                                amount: calculations.totalDominicalAmount },
+          { label: 'Auxilio de transporte', quantityLabel: `${calculations.detalles.length} días`,                                                                       amount: calculations.auxilioTransporte },
         ];
 
-    // Encabezado
-    pdf.setFont('helvetica', 'bold');
+    // Encabezado tabla principal
     pdf.setFillColor(30, 41, 59);
     pdf.setTextColor(255, 255, 255);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9);
+    pdf.rect(15, y, 180, 10, 'F');   // ← era 8
+pdf.text('CONCEPTO', MC.label,  y + 6);  // ← era y + 5
+pdf.text('CANTIDAD', MC.qty,    y + 6);
+pdf.text('PAGO',     MC.amount, y + 6, { align: 'right' });
+y += 12;  // ← era 10
 
-    pdf.rect(15, y, 180, 8, 'F');
-    pdf.text('Concepto', 17, y + 5);
-    pdf.text('Cantidad', 90, y + 5);
-    pdf.text('Pago', 160, y + 5);
-
-    y += 10;
-
-    // Filas
+    // Filas tabla principal
     pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(0, 0, 0);
-
+    pdf.setFontSize(10);
     pdfRows.forEach((row, i) => {
+      pdf.setTextColor(0, 0, 0);
       if (i % 2 === 0) {
         pdf.setFillColor(245, 245, 245);
-        pdf.rect(15, y - 4, 180, 8, 'F');
+        pdf.rect(15, y - 5, 180, ROW_H, 'F');
       }
-
-      pdf.text(row.label, 17, y);
-      pdf.text(row.quantityLabel, 90, y);
-      pdf.text(formatMoney(row.amount), 160, y, { align: 'right' });
-
-      y += 8;
+      pdf.text(row.label,               MC.label,  y);
+      pdf.text(row.quantityLabel,        MC.qty,    y);
+      pdf.text(formatMoney(row.amount),  MC.amount, y, { align: 'right' });
+      y += ROW_H;
     });
 
-    // 💰 TOTAL
-    y += 5;
-
+    // Fila TOTAL
+    y += 2;
+    const pdfTotalAmount = pdfRows.reduce((sum, r) => sum + r.amount, 0);
     pdf.setFont('helvetica', 'bold');
     pdf.setFillColor(30, 41, 59);
     pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(10);
+    pdf.rect(15, y - 5, 180, 10, 'F');
+    pdf.text('TOTAL A PAGAR',                         MC.label,  y + 1);
+    pdf.text(formatHoras(calculations.totalHoras),    MC.qty,    y + 1);
+    pdf.text(formatMoney(pdfTotalAmount),             MC.amount, y + 1, { align: 'right' });
 
-    pdf.rect(15, y - 4, 180, 10, 'F');
+    y += 14;
 
-    const pdfTotalAmount = pdfRows.reduce((sum, row) => sum + row.amount, 0);
-
-    pdf.text('TOTAL A PAGAR', 17, y + 2);
-    pdf.text(formatHoras(calculations.totalHoras), 90, y + 2);
-    pdf.text(formatMoney(pdfTotalAmount), 160, y + 2, { align: 'right' });
-
-    // 🔥 NUEVA TABLA DE CONTROL DE HORARIO
-    y += 15;
-
+    // ─── TABLA DE CONTROL DE HORARIO ───────────────────────────────
     pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(0, 0, 0);
+    pdf.setFontSize(11);
+    pdf.setTextColor(30, 41, 59);
     pdf.text('CONTROL DE HORARIO', 15, y);
+    y += 7;
 
-    y += 6;
+    // Helper encabezado horario
+    const drawHorarioHeader = () => {
+      pdf.setFillColor(30, 41, 59);
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
+      pdf.rect(15, y, 180, 10, 'F');
+      pdf.text('DÍA',      HC.dia,    y + 6);
+      pdf.text('ENT H',    HC.entH,   y + 6);
+      pdf.text('ENT R',    HC.entR,   y + 6);
+      pdf.text('SAL H',    HC.salH,   y + 6);
+      pdf.text('SAL R',    HC.salR,   y + 6);
+      pdf.text('LLEGADA',  HC.llegan, y + 6);
+      pdf.text('TIEMPO +', HC.extra,  y + 6);
+      pdf.text('TOTAL',    HC.total,  y + 6);
+      y += 12;
+    };
 
-    // Encabezados con las nuevas columnas
-    pdf.setFontSize(9);
-    pdf.setFillColor(30, 41, 59);
-    pdf.setTextColor(255, 255, 255);
+    drawHorarioHeader();
 
-    pdf.rect(15, y, 195, 8, 'F');
-
-    pdf.text('Día', 16, y + 5);
-    pdf.text('Ent H', 38, y + 5);
-    pdf.text('Ent R', 58, y + 5);
-    pdf.text('Sal H', 78, y + 5);
-    pdf.text('Sal R', 98, y + 5);
-    pdf.text('Llegan', 118, y + 5);
-    pdf.text('+ Tiempo', 138, y + 5);
-    pdf.text('Total', 158, y + 5);
-
-    y += 10;
-
+    // Construir filas del horario
     const tableHorario = [];
 
     for (let d = new Date(startDateTime); d <= endDateTime; d.setDate(d.getDate() + 1)) {
       const dateStr = formatLocalDate(d);
       const dayData = diasData[dateStr];
+      if (!dayData) continue;
 
-      if (!dayData || dayData.tipo !== 'trabajado') continue;
+      if (dayData.tipo === 'trabajado') {
+        const daySchedule       = getHorarioForDay(dateStr, horariosData);
+        const entradaH          = daySchedule?.startTime || '-';
+        const salidaH           = daySchedule?.endTime   || '-';
+        const entradaR          = dayData.entrada || '-';
+        const salidaR           = dayData.salida  || '-';
+        const isNextDay         = doesExitCrossMidnight(entradaR, salidaR);
+        const diffEntrada       = entradaH !== '-' && entradaR !== '-' ? calculateAdjustmentMinutes(entradaH, entradaR, 'entrada') : 0;
+        const diffSalida        = salidaH  !== '-' && salidaR  !== '-' ? calculateAdjustmentMinutes(salidaH, salidaR, 'salida', isNextDay) : 0;
+        const scheduleMinutes   = entradaH !== '-' && salidaH  !== '-' ? calculateWorkedMinutes(entradaH, salidaH) : 0;
+        const registeredMinutes = entradaR !== '-' && salidaR  !== '-' ? calculateWorkedMinutes(entradaR, salidaR, isNextDay) : 0;
 
-      const daySchedule = getHorarioForDay(dateStr, horariosData);
-      const entradaH = daySchedule?.startTime || '-';
-      const salidaH = daySchedule?.endTime || '-';
-      const entradaR = dayData.entrada || '-';
-      const salidaR = dayData.salida || '-';
-
-      // Verificar si la salida cruza medianoche usando la nueva función
-      const isNextDay = doesExitCrossMidnight(entradaR, salidaR);
-      
-      // Calcular diferencia de llegada: entrada programada - entrada real
-      // Positivo = llegó antes (temprano), Negativo = llegó tarde
-      const diffEntrada = entradaH !== '-' && entradaR !== '-' ? calculateAdjustmentMinutes(entradaH, entradaR, 'entrada') : 0;
-      
-      // Calcular tiempo extra de salida:
-      // Simple: salida real - salida programada (sin ajustar por llegada temprana)
-      // Si la salida cruza medianoche, sumamos 24 horas
-      const diffSalida = salidaH !== '-' && salidaR !== '-' ? calculateAdjustmentMinutes(salidaH, salidaR, 'salida', isNextDay) : 0;
-      
-      // Calcular minutos trabajados según el horario
-      const scheduleMinutes = entradaH !== '-' && salidaH !== '-' ? calculateWorkedMinutes(entradaH, salidaH) : 0;
-      
-      // Calcular minutos registrados (considerando si cruza medianoche)
-      const registeredMinutes = entradaR !== '-' && salidaR !== '-' ? calculateWorkedMinutes(entradaR, salidaR, isNextDay) : 0;
-      
-      // Total: llegada temprana (positiva) + tiempo extra (positiva) - llegada tarde (negativa)
-      // La llegada tarde (negativa) se resta del tiempo extra
-      const total = diffEntrada + diffSalida;
-
-      tableHorario.push({
-        fecha: dateStr,
-        entradaH,
-        entradaR,
-        salidaH,
-        salidaR,
-        diffEntrada,
-        diffSalida,
-        total,
-        scheduleMinutes,
-        registeredMinutes,
-      });
+        tableHorario.push({
+          fecha: dateStr, entradaH, entradaR, salidaH, salidaR,
+          diffEntrada, diffSalida,
+          total: diffEntrada + diffSalida,
+          scheduleMinutes, registeredMinutes,
+          tipo: 'trabajado',
+        });
+      } else {
+        tableHorario.push({ fecha: dateStr, tipo: dayData.tipo });
+      }
     }
 
-    const totalScheduleMinutes = tableHorario.reduce((sum, row) => sum + row.scheduleMinutes, 0);
-    const totalRegisteredMinutes = tableHorario.reduce((sum, row) => sum + row.registeredMinutes, 0);
-    const totalAdjustmentMinutes = tableHorario.reduce((sum, row) => sum + row.total, 0);
-    // Total de llegada temprana (solo positivos)
-    const totalLlegadaTemprano = tableHorario.reduce((sum, row) => sum + (row.diffEntrada > 0 ? row.diffEntrada : 0), 0);
-    // Total de llegada tarde (solo negativos)
-    const totalLlegadaTarde = tableHorario.reduce((sum, row) => sum + (row.diffEntrada < 0 ? row.diffEntrada : 0), 0);
-    // Total de tiempo extra (solo positivos)
-    const totalTiempoExtra = tableHorario.reduce((sum, row) => sum + (row.diffSalida > 0 ? row.diffSalida : 0), 0);
+    // Renderizar filas del horario
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
 
-    // Mostrar filas donde hubo diferencias (llegada temprana, llegada tarde, o tiempo extra)
-    const filteredTableHorario = tableHorario.filter(row => row.diffEntrada !== 0 || row.diffSalida !== 0);
+    tableHorario.forEach((row, i) => {
+      if (y > PAGE_BOTTOM) {
+        pdf.addPage();
+        y = 15;
+        drawHorarioHeader();
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+      }
 
-    pdf.setTextColor(0, 0, 0);
-
-    filteredTableHorario.forEach((row, i) => {
       if (i % 2 === 0) {
         pdf.setFillColor(245, 245, 245);
-        pdf.rect(15, y - 4, 195, 8, 'F');
+        pdf.rect(15, y - 5, 180, ROW_H, 'F');
       }
 
-      pdf.text(formatFechaDisplay(row.fecha), 16, y);
-      pdf.text(row.entradaH || '-', 38, y);
-      pdf.text(row.entradaR || '-', 58, y);
-      pdf.text(row.salidaH || '-', 78, y);
-      pdf.text(row.salidaR || '-', 98, y);
-
-      // Columna de llegada: positivo = llegó antes, negativo = llegó tarde
-      if (row.diffEntrada !== 0) {
-        pdf.setTextColor(row.diffEntrada > 0 ? 0 : 255, row.diffEntrada > 0 ? 128 : 0, 0);
-        pdf.text(formatMin(row.diffEntrada), 118, y);
-      } else {
-        pdf.setTextColor(0, 0, 0);
-        pdf.text('-', 118, y);
-      }
-      
-      // Columna de más tiempo: siempre positivo (tiempo extra)
-      if (row.diffSalida > 0) {
-        pdf.setTextColor(0, 128, 0);
-        pdf.text(formatMin(row.diffSalida), 138, y);
-      } else {
-        pdf.setTextColor(0, 0, 0);
-        pdf.text('-', 138, y);
-      }
-      
-      // Columna total
-      if (row.total !== 0) {
-        pdf.setTextColor(row.total > 0 ? 0 : 255, row.total > 0 ? 128 : 0, 0);
-        pdf.text(formatMin(row.total), 158, y);
-      } else {
-        pdf.setTextColor(0, 0, 0);
-        pdf.text('-', 158, y);
-      }
       pdf.setTextColor(0, 0, 0);
 
-      y += 8;
+      if (row.tipo === 'trabajado') {
+        pdf.text(formatFechaDisplay(row.fecha), HC.dia,   y);
+        pdf.text(row.entradaH || '-',           HC.entH,  y);
+        pdf.text(row.entradaR || '-',           HC.entR,  y);
+        pdf.text(row.salidaH  || '-',           HC.salH,  y);
+        pdf.text(row.salidaR  || '-',           HC.salR,  y);
+
+        // Llegada
+        if (row.diffEntrada !== 0) {
+          pdf.setTextColor(row.diffEntrada > 0 ? 0 : 200, row.diffEntrada > 0 ? 128 : 0, 0);
+          pdf.text(formatMin(row.diffEntrada), HC.llegan, y);
+        } else {
+          pdf.setTextColor(150, 150, 150);
+          pdf.text('—', HC.llegan, y);
+        }
+
+        // + Tiempo
+        if (row.diffSalida > 0) {
+          pdf.setTextColor(0, 128, 0);
+          pdf.text(formatMin(row.diffSalida), HC.extra, y);
+        } else {
+          pdf.setTextColor(150, 150, 150);
+          pdf.text('—', HC.extra, y);
+        }
+
+        // Total
+        if (row.total !== 0) {
+          pdf.setTextColor(row.total > 0 ? 0 : 200, row.total > 0 ? 128 : 0, 0);
+          pdf.text(formatMin(row.total), HC.total, y);
+        } else {
+          pdf.setTextColor(150, 150, 150);
+          pdf.text('—', HC.total, y);
+        }
+
+        pdf.setTextColor(0, 0, 0);
+
+      } else {
+        // Descanso / incapacidad
+        const tipoLabel =
+          row.tipo === 'descanso'          ? 'DESCANSO'      :
+          row.tipo === 'incapacidad_comun' ? 'INC. COMÚN'    : 'INC. LABORAL';
+
+        pdf.setFont('helvetica', 'italic');
+        pdf.setTextColor(120, 120, 120);
+        pdf.text(formatFechaDisplay(row.fecha), HC.dia, y);
+        pdf.text(tipoLabel, 105, y, { align: 'center' });
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(0, 0, 0);
+      }
+
+      y += ROW_H;
     });
 
-    if (filteredTableHorario.length > 0) {
+    // ─── RESUMEN ACUMULADO ─────────────────────────────────────────
+    if (tableHorario.length > 0) {
+      if (y > PAGE_BOTTOM - 55) {
+        pdf.addPage();
+        y = 15;
+      }
+
+      const totalLlegadaTemprano   = tableHorario.reduce((s, r) => s + (r.diffEntrada > 0 ? r.diffEntrada : 0), 0);
+      const totalLlegadaTarde      = tableHorario.reduce((s, r) => s + (r.diffEntrada < 0 ? r.diffEntrada : 0), 0);
+      const totalTiempoExtra       = tableHorario.reduce((s, r) => s + (r.diffSalida  > 0 ? r.diffSalida  : 0), 0);
+      const totalAdjustmentMinutes = tableHorario.reduce((s, r) => s + (r.total || 0), 0);
+      const totalScheduleMinutes   = tableHorario.reduce((s, r) => s + (r.scheduleMinutes   || 0), 0);
+      const totalRegisteredMinutes = tableHorario.reduce((s, r) => s + (r.registeredMinutes || 0), 0);
+
       y += 4;
       pdf.setFont('helvetica', 'bold');
-      pdf.text('RESUMEN ACUMULADO:', 15, y);
+      pdf.setFontSize(11);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text('RESUMEN ACUMULADO', 15, y);
       y += 8;
-      
-      // Llegadas tempranas
-      pdf.setTextColor(0, 128, 0);
-      pdf.text('Llegadas tempranas:', 15, y);
-      pdf.text(formatMin(totalLlegadaTemprano), 80, y);
+
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.3);
+      pdf.line(15, y - 3, 195, y - 3);
+
+      pdf.setFontSize(9.5);
+
+      // Fila 1
+      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(80, 80, 80);
+      pdf.text('Llegadas tempranas:', SC.leftLabel, y);
+      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(0, 140, 0);
+      pdf.text(formatMin(totalLlegadaTemprano), SC.leftVal, y, { align: 'right' });
+
+      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(80, 80, 80);
+      pdf.text('Total por horario:', SC.rightLabel, y);
+      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(0, 53, 128);
+      pdf.text(formatHoras(totalScheduleMinutes / 60), SC.rightVal, y, { align: 'right' });
       y += 7;
 
-      // Llegadas tardes (en rojo)
-      pdf.setTextColor(255, 0, 0);
-      pdf.text('Llegadas tardes:', 15, y);
-      pdf.text(formatMin(totalLlegadaTarde), 80, y);
+      // Fila 2
+      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(80, 80, 80);
+      pdf.text('Llegadas tardías:', SC.leftLabel, y);
+      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(200, 0, 0);
+      pdf.text(formatMin(totalLlegadaTarde), SC.leftVal, y, { align: 'right' });
+
+      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(80, 80, 80);
+      pdf.text('Total por registro:', SC.rightLabel, y);
+      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(0, 53, 128);
+      pdf.text(formatHoras(totalRegisteredMinutes / 60), SC.rightVal, y, { align: 'right' });
       y += 7;
 
-      // Tiempo extra
-      pdf.setTextColor(0, 128, 0);
-      pdf.text('Tiempo extra:', 15, y);
-      pdf.text(formatMin(totalTiempoExtra), 80, y);
+      // Fila 3
+      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(80, 80, 80);
+      pdf.text('Tiempo extra:', SC.leftLabel, y);
+      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(0, 140, 0);
+      pdf.text(formatMin(totalTiempoExtra), SC.leftVal, y, { align: 'right' });
       y += 7;
 
-      // Ajuste total
+      // Fila 4 — total ajuste
+      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(80, 80, 80);
+      pdf.text('Total ajuste:', SC.leftLabel, y);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...(totalAdjustmentMinutes >= 0 ? [0, 140, 0] : [200, 0, 0]));
+      pdf.text(formatMin(totalAdjustmentMinutes), SC.leftVal, y, { align: 'right' });
       pdf.setTextColor(0, 0, 0);
-      pdf.text('Total ajuste:', 15, y);
-      pdf.setTextColor(totalAdjustmentMinutes >= 0 ? 0 : 255, totalAdjustmentMinutes >= 0 ? 128 : 0, 0);
-      pdf.text(formatMin(totalAdjustmentMinutes), 80, y);
-      pdf.setTextColor(0, 0, 0);
+      y += 4;
 
-      // Totales por horario y registro
-      y += 7;
-      pdf.setTextColor(0, 0, 128);
-      pdf.text('Totales por horario:', 15, y);
-      pdf.text(formatHoras(totalScheduleMinutes / 60), 80, y);
-      y += 7;
-      pdf.setTextColor(0, 0, 128);
-      pdf.text('Totales por registro:', 15, y);
-      pdf.text(formatHoras(totalRegisteredMinutes / 60), 80, y);
-      pdf.setTextColor(0, 0, 0);
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(15, y, 195, y);
     }
 
-    // 📅 FOOTER
+    // ─── FOOTER ────────────────────────────────────────────────────
     y += 10;
-
-    pdf.setTextColor(100);
-    pdf.setFontSize(9);
+    if (y > PAGE_BOTTOM) { pdf.addPage(); y = 15; }
+    pdf.setTextColor(150, 150, 150);
+    pdf.setFontSize(8);
     pdf.setFont('helvetica', 'italic');
+    pdf.text(`Generado el: ${new Date().toLocaleDateString('es-CO')}`, 195, y, { align: 'right' });
 
-    const today = new Date().toLocaleDateString('es-CO');
-    pdf.text(`Generado el: ${today}`, 15, y);
-
-    // 💾 GUARDAR
-    pdf.save(`Calculo_Pago_${calculations.trabajo}_${calculations.startDate}.pdf`);
+    // ─── ABRIR EN EL NAVEGADOR ─────────────────────────────────────
+    const pdfBlob = pdf.output('blob');
+    window.open(URL.createObjectURL(pdfBlob), '_blank');
 
   } catch (error) {
     console.error('Error generando PDF:', error);
@@ -1057,7 +1095,7 @@ const ConsultarPago = ({ user, setCurrentView }) => {
             </div>
 
             <div className="consultar-pago-actions">
-              <button type="button" className="btn-calculate" onClick={calculatePayment}>
+              <button type="button" className="btn-calculate" onClick={() => calculatePayment(false)}>
                 Calcular Pago
               </button>
               <button
@@ -1207,7 +1245,10 @@ const ConsultarPago = ({ user, setCurrentView }) => {
               <button className="btn-download" onClick={downloadPDF}>
                 Descargar PDF
               </button>
-              <button className="btn-new-calculation" onClick={() => setCalculations(null)}>
+              <button className="btn-new-calculation" onClick={() => {
+                setCalculations(null);
+                setSimulateSchedule(false);
+              }}>
                 Nuevo Cálculo
               </button>
             </div>
