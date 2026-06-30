@@ -384,6 +384,58 @@
   border-left-color: #9d00ff;
 }
 
+.horariosgrupo-td-name.cargo-level-8 {
+  border-left-color: #38bdf8;
+}
+
+.horariosgrupo-td-name.cargo-level-9 {
+  border-left-color: #22c55e;
+}
+
+.horariosgrupo-td-name.cargo-level-10 {
+  border-left-color: #ec4899;
+}
+
+.horariosgrupo-td-name.cargo-level-11 {
+  border-left-color: #8b5cf6;
+}
+
+.horariosgrupo-td-name.cargo-level-12 {
+  border-left-color: #06b6d4;
+}
+
+.horariosgrupo-td-name.cargo-level-13 {
+  border-left-color: #84cc16;
+}
+
+.horariosgrupo-td-name.cargo-level-14 {
+  border-left-color: #f97316;
+}
+
+.horariosgrupo-td-name.cargo-level-15 {
+  border-left-color: #ef4444;
+}
+
+.horariosgrupo-td-name.cargo-level-16 {
+  border-left-color: #14b8a6;
+}
+
+.horariosgrupo-td-name.cargo-level-17 {
+  border-left-color: #a855f7;
+}
+
+.horariosgrupo-td-name.cargo-level-18 {
+  border-left-color: #3b82f6;
+}
+
+.horariosgrupo-td-name.cargo-level-19 {
+  border-left-color: #eab308;
+}
+
+.horariosgrupo-td-name.cargo-level-20 {
+  border-left-color: #fb7185;
+}
+
 .horariosgrupo-td-name:hover {
   transform: translateX(2px);
   box-shadow: 0 4px 10px rgba(0,0,0,0.08);

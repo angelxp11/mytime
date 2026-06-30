@@ -59,6 +59,24 @@ const estadoDescriptions = {
 
 const getEstadoDescription = (estado) => estadoDescriptions[estado] || estado;
 
+const normalizeEstadoValue = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return '-';
+  if (normalized === 'libre' || normalized === 'descanso' || normalized === 'day off' || normalized === 'free') return 'libre';
+  if (normalized === 'inc') return 'INC';
+  if (normalized === 'lic') return 'LIC';
+  if (normalized === 'vac') return 'VAC';
+  if (normalized === 'san') return 'SAN';
+  if (normalized === 'cap') return 'CAP';
+  if (normalized === 'ceo') return 'CEO';
+  return normalized.toUpperCase();
+};
+
+const isNonWorkingState = (value) => {
+  const normalized = normalizeEstadoValue(value);
+  return ['libre', 'INC', 'LIC', 'VAC', 'SAN', 'CAP', 'CEO'].includes(normalized);
+};
+
 // Solo horas enteras: diff = endH - startH
 const calcTotal = (startH, endH, descanso = 0) => {
   let diff = parseInt(endH || 0) - parseInt(startH || 0);
@@ -152,45 +170,45 @@ const LandscapePrompt = () => (
 
 // ─── PARSER DE PEGADO DESDE EXCEL ───────────────────────────────────────────
 // Formato por día: estado  entrada  salida  descanso  horas
-// "estado" puede ser "-" o texto como "Libre"
-// Ejemplo 7 días de un participante:
-//   -  9  18  1  8   Libre                    -  9  18  1  8  ...
-// Tokens libres: "Libre" seguido de espacios vacíos (las celdas fusionadas de Excel
-// se exportan como columnas vacías — en total 5 tokens por día incluyendo el primero)
-const parseExcelPaste = (raw, numParticipants, numDays = 7) => {
-  const lines = raw.trim().split(/\n/);
+// También acepta filas copiadas desde la matriz de esta misma vista
+// (Participante + 5 columnas por día + Total horas).
+export const parseExcelPaste = (raw, numParticipants, numDays = 7) => {
+  const lines = raw
+    .replace(/\r\n/g, '\n')
+    .trim()
+    .split('\n');
 
-  const isTabular = lines.some((l) => l.includes('\t'));
+  const isTabular = raw.includes('\t') || lines.some((line) => line.includes('\t'));
 
   let rows = [];
 
   if (isTabular) {
     rows = lines
-      .map((line) =>
-        line
-          .split('\t')
-          .map((t) => t.trim())
-      )
-      // 🔥 eliminar filas basura (vacías reales)
-      .filter((row) =>
-        row.some((cell) => {
-          const v = (cell || '').toLowerCase();
-          return (
-            v === '-' ||
-            v === 'libre' ||
-            v === 'descanso' ||
-            v === 'day off' ||
-            v === 'free' ||
-            v === 'inc' ||
-            v === 'lic' ||
-            v === 'vac' ||
-            v === 'san' ||
-            v === 'cap' ||
-            v === 'ceo' ||
-            !isNaN(parseInt(v))
-          );
-        })
-      );
+      .map((line) => line.split('\t').map((t) => t.trim()))
+      .filter((row) => row.some((cell) => cell !== ''));
+
+    rows = rows.filter((row) => {
+      const firstCell = (row[0] || '').toLowerCase();
+      const headerTokens = ['participante', 'est', 'entr', 'sal', 'desc', 'tot', 'total', 'horas', 'dia', 'día'];
+      if (headerTokens.includes(firstCell)) return false;
+      return row.some((cell) => {
+        const v = (cell || '').toLowerCase();
+        return (
+          v === '-' ||
+          v === 'libre' ||
+          v === 'descanso' ||
+          v === 'day off' ||
+          v === 'free' ||
+          v === 'inc' ||
+          v === 'lic' ||
+          v === 'vac' ||
+          v === 'san' ||
+          v === 'cap' ||
+          v === 'ceo' ||
+          !Number.isNaN(parseInt(v, 10))
+        );
+      });
+    });
   } else {
     // texto plano (fallback)
     const allTokens = lines.join(' ').trim().split(/\s+/);
@@ -206,59 +224,35 @@ const parseExcelPaste = (raw, numParticipants, numDays = 7) => {
     }
   }
 
-  // 🔥 asegurar cantidad correcta de participantes
   rows = rows.slice(0, numParticipants);
 
   const newSchedules = {};
 
   rows.forEach((tokens, pIndex) => {
-    let tokenIdx = 0;
+    const hasParticipantPrefix = tokens.length > numDays * 5;
+    const dataTokens = hasParticipantPrefix ? tokens.slice(1) : tokens;
+    const usableTokens = dataTokens.slice(0, numDays * 5);
 
     for (let d = 0; d < numDays; d++) {
       const key = `participant_${pIndex}_day_${d}`;
+      const tokenOffset = d * 5;
+      const tok0 = (usableTokens[tokenOffset] || '').toLowerCase(); // estado
+      const tok1 = usableTokens[tokenOffset + 1] || ''; // entrada
+      const tok2 = usableTokens[tokenOffset + 2] || ''; // salida
+      const tok3 = usableTokens[tokenOffset + 3] || ''; // descanso
 
-      const tok0 = (tokens[tokenIdx] || '').toLowerCase(); // estado
-      const tok1 = tokens[tokenIdx + 1] || ''; // entrada
-      const tok2 = tokens[tokenIdx + 2] || ''; // salida
-      const tok3 = tokens[tokenIdx + 3] || ''; // descanso
-      // tok4 = tokens[tokenIdx + 4] -> IGNORADO (horas)
-
-      const isNonWorkingDay =
-        tok0 === 'libre' ||
-        tok0 === 'descanso' ||
-        tok0 === 'day off' ||
-        tok0 === 'free' ||
-        tok0 === 'inc' ||
-        tok0 === 'lic' ||
-        tok0 === 'vac' ||
-        tok0 === 'san' ||
-        tok0 === 'cap' ||
-        tok0 === 'ceo';
-
-      if (isNonWorkingDay) {
-        const estadoMap = {
-          'libre': 'libre',
-          'descanso': 'libre',
-          'day off': 'libre',
-          'free': 'libre',
-          'inc': 'INC',
-          'lic': 'LIC',
-          'vac': 'VAC',
-          'san': 'SAN',
-          'cap': 'CAP',
-          'ceo': 'CEO',
-        };
+      if (isNonWorkingState(tok0)) {
         newSchedules[key] = {
-          estado: estadoMap[tok0] || 'libre',
+          estado: normalizeEstadoValue(tok0),
           startH: '00',
           endH: '00',
           descanso: '00',
           horas: '00',
         };
       } else {
-        const startH = String(parseInt(tok1) || 0).padStart(2, '0');
-        const endH = String(parseInt(tok2) || 0).padStart(2, '0');
-        const descanso = String(parseInt(tok3) || 0).padStart(2, '0');
+        const startH = String(parseInt(tok1, 10) || 0).padStart(2, '0');
+        const endH = String(parseInt(tok2, 10) || 0).padStart(2, '0');
+        const descanso = String(parseInt(tok3, 10) || 0).padStart(2, '0');
 
         newSchedules[key] = {
           estado: '-',
@@ -268,9 +262,6 @@ const parseExcelPaste = (raw, numParticipants, numDays = 7) => {
           horas: String(calcTotal(startH, endH, descanso)).padStart(2, '0'),
         };
       }
-
-      // 🔥 CLAVE: avanzar SIEMPRE 5 columnas por día
-      tokenIdx += 5;
     }
   });
 
@@ -367,6 +358,178 @@ const PasteModal = ({ numParticipants, onApply, onClose }) => {
   );
 };
 
+const ParticipantRow = React.memo(function ParticipantRow({
+  participant,
+  pIndex,
+  days,
+  groupSchedules,
+  updateCell,
+  changedCells,
+  hoverCell,
+  setHoverCell,
+  previousGroupSchedules,
+  draggedIndex,
+  userRole,
+  getCargoLevelClass,
+  getChangeMessage,
+  calcRowTotal,
+  onDragStart,
+  onDragOver,
+  onDrop,
+}) {
+  const rowTotal = calcRowTotal(pIndex, days);
+
+  return (
+    <tr
+      className={`horariosgrupo-row ${draggedIndex === pIndex ? 'dragging' : ''}`}
+      draggable
+      onDragStart={() => onDragStart(pIndex)}
+      onDragOver={onDragOver}
+      onDrop={() => onDrop(pIndex)}
+    >
+      <td className={`horariosgrupo-td horariosgrupo-td-name ${getCargoLevelClass(participant)}`}>
+        <span className="horariosgrupo-drag-handle">⋮⋮</span>
+        <strong className="horariosgrupo-participant-name">{participant.name}</strong>
+      </td>
+
+      {days.map((_, dayIndex) => {
+        const key = `participant_${pIndex}_day_${dayIndex}`;
+        const cell = groupSchedules?.[key] || {};
+        const estado = cell.estado || '-';
+        const isNonWorkingDay = ['libre', 'INC', 'LIC', 'VAC', 'SAN', 'CAP', 'CEO'].includes(estado);
+        const startH = cell.startH || '00';
+        const endH = cell.endH || '00';
+        const dayTotal = isNonWorkingDay
+          ? (estado === 'CEO' || estado === 'CAP' ? 8 : 0)
+          : calcTotal(startH, endH, cell.descanso);
+
+        if (isNonWorkingDay) {
+          return (
+            <React.Fragment key={dayIndex}>
+              <td className={`horariosgrupo-td horariosgrupo-td-estado horariosgrupo-estado-${estado}`}>
+                <select
+                  className="horariosgrupo-cell-estado"
+                  value={estado}
+                  disabled={userRole === 'lector'}
+                  onChange={(e) => updateCell(pIndex, dayIndex, 'estado', e.target.value)}
+                >
+                  <option value="-">-</option>
+                  <option value="libre">Libre</option>
+                  <option value="INC">INC</option>
+                  <option value="LIC">LIC</option>
+                  <option value="VAC">VAC</option>
+                  <option value="SAN">SAN</option>
+                  <option value="CAP">CAP</option>
+                  <option value="CEO">CEO</option>
+                </select>
+              </td>
+              <td className={`horariosgrupo-td horariosgrupo-td-descanso horariosgrupo-descanso-${estado}`} colSpan={4}>
+                {getEstadoDescription(estado)}
+              </td>
+            </React.Fragment>
+          );
+        }
+
+        return (
+          <React.Fragment key={dayIndex}>
+            <td 
+              className={`horariosgrupo-td horariosgrupo-td-estado ${changedCells.has(key) ? 'changed' : ''}`}
+              onMouseEnter={() => changedCells.has(key) && setHoverCell(key)}
+              onMouseLeave={() => setHoverCell(null)}
+            >
+              <select
+                className="horariosgrupo-cell-estado"
+                value={estado}
+                disabled={userRole === 'lector'}
+                onChange={(e) => updateCell(pIndex, dayIndex, 'estado', e.target.value)}
+              >
+                <option value="-">-</option>
+                <option value="libre">Libre</option>
+                <option value="INC">INC</option>
+                <option value="LIC">LIC</option>
+                <option value="VAC">VAC</option>
+                <option value="SAN">SAN</option>
+                <option value="CAP">CAP</option>
+                <option value="CEO">CEO</option>
+              </select>
+              {hoverCell === key && previousGroupSchedules[key] && (
+                <div className="horariosgrupo-tooltip">
+                  {getChangeMessage(previousGroupSchedules[key], cell).map((msg, idx) => (
+                    <div key={idx}>{msg}</div>
+                  ))}
+                </div>
+              )}
+            </td>
+            <td 
+              className={`horariosgrupo-td ${changedCells.has(key) ? 'changed' : ''}`}
+              onMouseEnter={() => changedCells.has(key) && setHoverCell(key)}
+              onMouseLeave={() => setHoverCell(null)}
+            >
+              <TwoDigitInput
+                value={startH}
+                disabled={userRole === 'lector'}
+                onChange={(v) => updateCell(pIndex, dayIndex, 'startH', v)}
+              />
+            </td>
+            <td 
+              className={`horariosgrupo-td ${changedCells.has(key) ? 'changed' : ''}`}
+              onMouseEnter={() => changedCells.has(key) && setHoverCell(key)}
+              onMouseLeave={() => setHoverCell(null)}
+            >
+              <TwoDigitInput
+                value={endH}
+                disabled={userRole === 'lector'}
+                onChange={(v) => updateCell(pIndex, dayIndex, 'endH', v)}
+              />
+            </td>
+            <td 
+              className={`horariosgrupo-td ${changedCells.has(key) ? 'changed' : ''}`}
+              onMouseEnter={() => changedCells.has(key) && setHoverCell(key)}
+              onMouseLeave={() => setHoverCell(null)}
+            >
+              <TwoDigitInput
+                value={cell.descanso || '00'}
+                disabled={userRole === 'lector'}
+                onChange={(v) => updateCell(pIndex, dayIndex, 'descanso', v)}
+              />
+            </td>
+            <td className="horariosgrupo-td horariosgrupo-td-total">
+              {dayTotal}h
+            </td>
+          </React.Fragment>
+        );
+      })}
+
+      <td className="horariosgrupo-td horariosgrupo-td-rowtotal">
+        {rowTotal}h
+      </td>
+    </tr>
+  );
+}, (prevProps, nextProps) => {
+  if (prevProps.pIndex !== nextProps.pIndex || prevProps.userRole !== nextProps.userRole || prevProps.draggedIndex !== nextProps.draggedIndex || prevProps.hoverCell !== nextProps.hoverCell || prevProps.rowTotal !== nextProps.rowTotal) {
+    return false;
+  }
+
+  if (prevProps.changedCells.size !== nextProps.changedCells.size) return false;
+  const changedEntries = Array.from(prevProps.changedCells);
+  const nextChangedEntries = Array.from(nextProps.changedCells);
+  if (changedEntries.length !== nextChangedEntries.length) return false;
+  for (let i = 0; i < changedEntries.length; i++) {
+    if (changedEntries[i] !== nextChangedEntries[i]) return false;
+  }
+
+  const participantChanged = prevProps.participant.name !== nextProps.participant.name || prevProps.participant.email !== nextProps.participant.email;
+  if (participantChanged) return false;
+
+  const daysChanged = prevProps.days.some((_, dayIndex) => {
+    const prevCell = prevProps.groupSchedules?.[`participant_${prevProps.pIndex}_day_${dayIndex}`] || {};
+    const nextCell = nextProps.groupSchedules?.[`participant_${nextProps.pIndex}_day_${dayIndex}`] || {};
+    return prevCell.estado !== nextCell.estado || prevCell.startH !== nextCell.startH || prevCell.endH !== nextCell.endH || prevCell.descanso !== nextCell.descanso;
+  });
+
+  return !daysChanged;
+});
+
 // ─── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
 const HorariosGrupo = ({ group, user, onBack }) => {
   const [today] = useState(() => new Date());
@@ -381,6 +544,7 @@ const HorariosGrupo = ({ group, user, onBack }) => {
   const [changedCells, setChangedCells] = useState(new Set());
   const [hoverCell, setHoverCell] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Cargando horarios del grupo...');
   const [scheduleLoaded, setScheduleLoaded] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [participants, setParticipants] = useState(group.participants || []);
@@ -466,11 +630,28 @@ const HorariosGrupo = ({ group, user, onBack }) => {
     return schedule;
   };
 
+  const clearChangedHighlights = () => {
+    setChangedCells(new Set());
+    setHoverCell(null);
+  };
+
+  const runWithLoading = async (message, action) => {
+    setLoadingMessage(message);
+    setLoading(true);
+    try {
+      await action();
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const loadGroupSchedules = async () => {
       const weekStartDate = formatDateInput(currentWeekStart);
+      setLoadingMessage('Cargando horarios del grupo...');
       setLoading(true);
       setScheduleLoaded(false);
+      clearChangedHighlights();
       if (!user) { setLoading(false); return; }
       try {
         // Usar el ID del owner del grupo para garantizar consistencia
@@ -685,43 +866,46 @@ if (data?.participantOrderGlobal) {
     setDraggedIndex(null);
   };
 
-  const updateCell = (pIndex, dayIndex, field, value) => {
+  const updateCell = React.useCallback((pIndex, dayIndex, field, value) => {
     const key = `participant_${pIndex}_day_${dayIndex}`;
     setGroupSchedules((prev) => ({
       ...prev,
       [key]: { ...prev[key], [field]: value },
     }));
-  };
+  }, []);
   const handleSaveParticipantOrder = async () => {
-  try {
-    const ownerId = group.ownerId || group.id;
+    await runWithLoading('Guardando orden de participantes...', async () => {
+      try {
+        const ownerId = group.ownerId || group.id;
 
-    const orderPayload = participants.map((p, index) => ({
-      uid: p.uid || '',
-      email: p.email || '',
-      index,
-    }));
+        const orderPayload = participants.map((p, index) => ({
+          uid: p.uid || '',
+          email: p.email || '',
+          index,
+        }));
 
-    await setDoc(
-      doc(db, 'HORARIOS_GRUPOS', `${ownerId}_${group.id}`),
-      {
-        participantOrderGlobal: orderPayload,
-      },
-      { merge: true }
-    );
+        await setDoc(
+          doc(db, 'HORARIOS_GRUPOS', `${ownerId}_${group.id}`),
+          {
+            participantOrderGlobal: orderPayload,
+          },
+          { merge: true }
+        );
 
-    showToast('Orden de participantes guardado correctamente.', 'success');
-  } catch (error) {
-    console.error(error);
-    showToast('Error guardando el orden.', 'error');
-  }
-};
+        showToast('Orden de participantes guardado correctamente.', 'success');
+      } catch (error) {
+        console.error(error);
+        showToast('Error guardando el orden.', 'error');
+      }
+    });
+  };
 
   const handleSaveSchedules = async () => {
     if (!user) { showToast('No se encontró usuario activo.', 'error'); return; }
 
-    try {
-      const weekStartDate = formatDateInput(currentWeekStart);
+    await runWithLoading('Guardando horarios del grupo...', async () => {
+      try {
+        const weekStartDate = formatDateInput(currentWeekStart);
       const weekEndDate = formatDateInput(new Date(currentWeekStart.getTime() + 6 * 86400000));
       const groupSchedulesArray = participants.map((participant, pIndex) => {
         const nonWorkingStates = ['libre', 'INC', 'LIC', 'VAC', 'SAN', 'CAP', 'CEO'];
@@ -781,40 +965,42 @@ if (data?.participantOrderGlobal) {
   updatedAt: new Date().toISOString(),
 };
 
-      await setDoc(
-        doc(db, 'HORARIOS_GRUPOS', `${group.ownerId || group.id}_${group.id}`),
-        { semanas: { [weekStartDate]: schedulePayload } },
-        { merge: true }
-      );
+        await setDoc(
+          doc(db, 'HORARIOS_GRUPOS', `${group.ownerId || group.id}_${group.id}`),
+          { semanas: { [weekStartDate]: schedulePayload } },
+          { merge: true }
+        );
 
-      await Promise.all(
-        participants.map(async (participant, pIndex) => {
-          if (!participant.email) return;
-          const participantId = participant.uid || await findUserIdByEmail(participant.email);
-          if (!participantId) return;
+        await Promise.all(
+          participants.map(async (participant, pIndex) => {
+            if (!participant.email) return;
+            const participantId = participant.uid || await findUserIdByEmail(participant.email);
+            if (!participantId) return;
 
-          const individualPayload = buildIndividualSchedulePayload(
-            currentWeekStart,
-            groupSchedules,
-            weekStartDate,
-            pIndex
-          );
+            const individualPayload = buildIndividualSchedulePayload(
+              currentWeekStart,
+              groupSchedules,
+              weekStartDate,
+              pIndex
+            );
 
-          await setDoc(
-            doc(db, 'HORARIOS', participantId),
-            { semanas: { [weekStartDate]: individualPayload } },
-            { merge: true }
-          );
-        })
-      );
+            await setDoc(
+              doc(db, 'HORARIOS', participantId),
+              { semanas: { [weekStartDate]: individualPayload } },
+              { merge: true }
+            );
+          })
+        );
 
-      setScheduleLoaded(true);
-      setLastUpdated(schedulePayload.updatedAt);
-      showToast('Horarios del grupo guardados correctamente y exportados a HORARIOS.', 'success');
-    } catch (error) {
-      console.error('Error guardando horarios del grupo:', error);
-      showToast('No se pudo guardar los horarios. Intenta de nuevo.', 'error');
-    }
+        setScheduleLoaded(true);
+        setLastUpdated(schedulePayload.updatedAt);
+        clearChangedHighlights();
+        showToast('Horarios del grupo guardados correctamente y exportados a HORARIOS.', 'success');
+      } catch (error) {
+        console.error('Error guardando horarios del grupo:', error);
+        showToast('No se pudo guardar los horarios. Intenta de nuevo.', 'error');
+      }
+    });
   };
 
   // Aplica horarios pegados desde el modal
@@ -854,9 +1040,10 @@ if (data?.participantOrderGlobal) {
   };
 
   const handleCopyMatrix = async () => {
-    try {
-      const days = createScheduleDays(currentWeekStart);
-      let matrixText = '';
+    await runWithLoading('Copiando matriz...', async () => {
+      try {
+        const days = createScheduleDays(currentWeekStart);
+        let matrixText = '';
 
       // Encabezados
       let headerRow = 'Participante';
@@ -883,11 +1070,13 @@ if (data?.participantOrderGlobal) {
         days.forEach((_, dayIndex) => {
           const key = `participant_${pIndex}_day_${dayIndex}`;
           const cell = groupSchedules?.[key] || {};
-          const estado = cell.estado === 'libre' ? 'Libre' : '-';
+          const estado = cell.estado === '-' ? '-' : (cell.estado === 'libre' ? 'Libre' : cell.estado);
           const startH = cell.startH || '00';
           const endH = cell.endH || '00';
           const descanso = cell.descanso || '00';
-          const dayTotal = cell.estado === 'libre' ? 0 : calcTotal(startH, endH, descanso);
+          const dayTotal = isNonWorkingState(cell.estado)
+            ? (cell.estado === 'CEO' || cell.estado === 'CAP' ? 8 : 0)
+            : calcTotal(startH, endH, descanso);
 
           row += `\t${estado}\t${startH}\t${endH}\t${descanso}\t${dayTotal}`;
         });
@@ -896,22 +1085,23 @@ if (data?.participantOrderGlobal) {
         matrixText += row + '\n';
       });
 
-      // Copiar al portapapeles
-      await navigator.clipboard.writeText(matrixText);
-      showToast('Matriz copiada al portapapeles. ¡Listo para pegar en Excel!', 'success');
-    } catch (error) {
-      console.error('Error copiando matriz:', error);
-      showToast('Error al copiar la matriz.', 'error');
-    }
+        // Copiar al portapapeles
+        await navigator.clipboard.writeText(matrixText);
+        showToast('Matriz copiada al portapapeles. ¡Listo para pegar en Excel!', 'success');
+      } catch (error) {
+        console.error('Error copiando matriz:', error);
+        showToast('Error al copiar la matriz.', 'error');
+      }
+    });
   };
 
-  if (loading) return <Loading text="Cargando horarios del grupo..." />;
+  if (loading) return <Loading text={loadingMessage} />;
 
   const days = createScheduleDays(currentWeekStart);
 
   return (
     <div className="horariosgrupo-container">
-      <button className="horariosgrupo-back-button" onClick={onBack}>
+      <button className="horariosgrupo-back-button" onClick={onBack} disabled={loading}>
         ← Volver
       </button>
 
@@ -1006,137 +1196,28 @@ if (data?.participantOrderGlobal) {
             </tr>
           </thead>
           <tbody>
-            {participants.map((participant, pIndex) => {
-              const rowTotal = calcRowTotal(pIndex, days);
-              return (
-                <tr
-                  key={`${participant.email}-${pIndex}`}
-                  className={`horariosgrupo-row ${draggedIndex === pIndex ? 'dragging' : ''}`}
-                  draggable
-                  onDragStart={() => handleDragStart(pIndex)}
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(pIndex)}
-                >
-                  <td className={`horariosgrupo-td horariosgrupo-td-name ${getCargoLevelClass(participant)}`}>
-                    <span className="horariosgrupo-drag-handle">⋮⋮</span>
-                    <strong className="horariosgrupo-participant-name">{participant.name}</strong>
-                  </td>
-
-                  {days.map((_, dayIndex) => {
-                    const key = `participant_${pIndex}_day_${dayIndex}`;
-                    const cell = groupSchedules?.[key] || {};
-                    const estado = cell.estado || '-';
-                    const isNonWorkingDay = ['libre', 'INC', 'LIC', 'VAC', 'SAN', 'CAP', 'CEO'].includes(estado);
-                    const startH = cell.startH || '00';
-                    const endH = cell.endH || '00';
-                    const dayTotal = isNonWorkingDay
-  ? (estado === 'CEO' || estado === 'CAP' ? 8 : 0)
-  : calcTotal(startH, endH, cell.descanso);
-
-                    if (isNonWorkingDay) {
-                      return (
-                        <React.Fragment key={dayIndex}>
-                          <td className={`horariosgrupo-td horariosgrupo-td-estado horariosgrupo-estado-${estado}`}>
-                            <select
-                              className="horariosgrupo-cell-estado"
-                              value={estado}
-                              disabled={userRole === 'lector'}
-                              onChange={(e) => updateCell(pIndex, dayIndex, 'estado', e.target.value)}
-                            >
-                              <option value="-">-</option>
-                              <option value="libre">Libre</option>
-                              <option value="INC">INC</option>
-                              <option value="LIC">LIC</option>
-                              <option value="VAC">VAC</option>
-                              <option value="SAN">SAN</option>
-                              <option value="CAP">CAP</option>
-                              <option value="CEO">CEO</option>
-                            </select>
-                          </td>
-                          <td className={`horariosgrupo-td horariosgrupo-td-descanso horariosgrupo-descanso-${estado}`} colSpan={4}>
-                            {getEstadoDescription(estado)}
-                          </td>
-                        </React.Fragment>
-                      );
-                    }
-
-                    return (
-                      <React.Fragment key={dayIndex}>
-                        <td 
-                          className={`horariosgrupo-td horariosgrupo-td-estado ${changedCells.has(key) ? 'changed' : ''}`}
-                          onMouseEnter={() => changedCells.has(key) && setHoverCell(key)}
-                          onMouseLeave={() => setHoverCell(null)}
-                        >
-                          <select
-                            className="horariosgrupo-cell-estado"
-                            value={estado}
-                            disabled={userRole === 'lector'}
-                            onChange={(e) => updateCell(pIndex, dayIndex, 'estado', e.target.value)}
-                          >
-                            <option value="-">-</option>
-                            <option value="libre">Libre</option>
-                            <option value="INC">INC</option>
-                            <option value="LIC">LIC</option>
-                            <option value="VAC">VAC</option>
-                            <option value="SAN">SAN</option>
-                            <option value="CAP">CAP</option>
-                            <option value="CEO">CEO</option>
-                          </select>
-                          {hoverCell === key && previousGroupSchedules[key] && (
-                            <div className="horariosgrupo-tooltip">
-                              {getChangeMessage(previousGroupSchedules[key], cell).map((msg, idx) => (
-                                <div key={idx}>{msg}</div>
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                        <td 
-                          className={`horariosgrupo-td ${changedCells.has(key) ? 'changed' : ''}`}
-                          onMouseEnter={() => changedCells.has(key) && setHoverCell(key)}
-                          onMouseLeave={() => setHoverCell(null)}
-                        >
-                          <TwoDigitInput
-                            value={startH}
-                            disabled={userRole === 'lector'}
-                            onChange={(v) => updateCell(pIndex, dayIndex, 'startH', v)}
-                          />
-                        </td>
-                        <td 
-                          className={`horariosgrupo-td ${changedCells.has(key) ? 'changed' : ''}`}
-                          onMouseEnter={() => changedCells.has(key) && setHoverCell(key)}
-                          onMouseLeave={() => setHoverCell(null)}
-                        >
-                          <TwoDigitInput
-                            value={endH}
-                            disabled={userRole === 'lector'}
-                            onChange={(v) => updateCell(pIndex, dayIndex, 'endH', v)}
-                          />
-                        </td>
-                        <td 
-                          className={`horariosgrupo-td ${changedCells.has(key) ? 'changed' : ''}`}
-                          onMouseEnter={() => changedCells.has(key) && setHoverCell(key)}
-                          onMouseLeave={() => setHoverCell(null)}
-                        >
-                          <TwoDigitInput
-                            value={cell.descanso || '00'}
-                            disabled={userRole === 'lector'}
-                            onChange={(v) => updateCell(pIndex, dayIndex, 'descanso', v)}
-                          />
-                        </td>
-                        <td className="horariosgrupo-td horariosgrupo-td-total">
-                          {dayTotal}h
-                        </td>
-                      </React.Fragment>
-                    );
-                  })}
-
-                  {/* Columna total horas de la semana */}
-                  <td className="horariosgrupo-td horariosgrupo-td-rowtotal">
-                    {rowTotal}h
-                  </td>
-                </tr>
-              );
-            })}
+            {participants.map((participant, pIndex) => (
+              <ParticipantRow
+                key={`${participant.email}-${pIndex}`}
+                participant={participant}
+                pIndex={pIndex}
+                days={days}
+                groupSchedules={groupSchedules}
+                updateCell={updateCell}
+                changedCells={changedCells}
+                hoverCell={hoverCell}
+                setHoverCell={setHoverCell}
+                previousGroupSchedules={previousGroupSchedules}
+                draggedIndex={draggedIndex}
+                userRole={userRole}
+                getCargoLevelClass={getCargoLevelClass}
+                getChangeMessage={getChangeMessage}
+                calcRowTotal={calcRowTotal}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              />
+            ))}
           </tbody>
         </table>
       </div>
@@ -1149,16 +1230,18 @@ if (data?.participantOrderGlobal) {
               type="button"
               className="horariosgrupo-paste-button"
               onClick={() => setShowPasteModal(true)}
+              disabled={loading}
             >
               📋 Pegar de Excel
             </button>
-            <button type="button" className="horariosgrupo-save-button" onClick={handleSaveSchedules}>
+            <button type="button" className="horariosgrupo-save-button" onClick={handleSaveSchedules} disabled={loading}>
               Guardar horarios
             </button>
             <button
               type="button"
               className="horariosgrupo-save-button"
               onClick={handleSaveParticipantOrder}
+              disabled={loading}
             >
               💾 Guardar orden
             </button>
@@ -1166,6 +1249,7 @@ if (data?.participantOrderGlobal) {
               type="button"
               className="horariosgrupo-copy-button"
               onClick={handleCopyMatrix}
+              disabled={loading}
             >
               📋 Copiar matriz
             </button>
