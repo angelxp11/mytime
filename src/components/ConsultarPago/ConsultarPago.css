@@ -371,6 +371,26 @@
   padding: 12px 10px;
 }
 
+.report-table .discount-row {
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.report-table .discount-row td {
+  color: #fca5a5;
+}
+
+.report-table .discount-row td:last-child {
+  color: #f87171;
+}
+
+.report-summary .discount-summary {
+  color: #fecaca;
+}
+
+.report-summary .net-summary {
+  color: #a7f3d0;
+}
+
 /* ─── SWITCH DE MODO (radio buttons) ─── */
 .report-mode-switch {
   margin-bottom: 10px;
@@ -723,6 +743,32 @@
   background: #ff7605 !important;
   color: #fff !important;
   filter: brightness(1.1);
+}
+
+.react-calendar__tile.festivo.range-start,
+.react-calendar__tile.festivo.range-end,
+.react-calendar__tile.festivo.range-middle {
+  background: rgba(255, 118, 5, 0.22) !important;
+  color: #fbd38d !important;
+  border-color: rgba(255, 118, 5, 0.35) !important;
+}
+
+.react-calendar__tile.festivo.range-start:enabled:hover,
+.react-calendar__tile.festivo.range-end:enabled:hover,
+.react-calendar__tile.festivo.range-middle:enabled:hover {
+  background: rgba(255, 118, 5, 0.3) !important;
+  color: #fbd38d !important;
+  filter: brightness(1.1);
+}
+
+.react-calendar__tile.festivo.range-start:enabled:active,
+.react-calendar__tile.festivo.range-end:enabled:active,
+.react-calendar__tile--active.festivo.range-start,
+.react-calendar__tile--active.festivo.range-end,
+.react-calendar__tile.festivo.range-middle:enabled:active,
+.react-calendar__tile--active.festivo.range-middle {
+  background: rgba(255, 118, 5, 0.25) !important;
+  color: #fbd38d !important;
 }
 
 .react-calendar__tile.range-middle:enabled:hover {

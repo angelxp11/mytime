@@ -47,6 +47,12 @@ const CreateWorkForm = ({ onCreate, onCancel, editingJob, onDelete }) => {
   const [extraDominicalNocturnaPct, setExtraDominicalNocturnaPct] = useState(editingJob?.extraDominicalNocturnaPct || 165);
   const [incapacidadComunPct, setIncapacidadComunPct] = useState(editingJob?.incapacidadComunPct || 66.67);
   const [incapacidadLaboralPct, setIncapacidadLaboralPct] = useState(editingJob?.incapacidadLaboralPct || 100);
+  const [discounts, setDiscounts] = useState(editingJob?.discounts?.map((desc, idx) => ({
+    id: desc.id || String(idx),
+    name: desc.name || '',
+    value: desc.value || '',
+    quincena: desc.quincena || '15',
+  })) || []);
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -98,6 +104,24 @@ const CreateWorkForm = ({ onCreate, onCancel, editingJob, onDelete }) => {
     }
   };
 
+  const handleAddDiscount = () => {
+    setDiscounts((prev) => [
+      ...prev,
+      { id: Date.now().toString(), name: '', value: '', quincena: '15' },
+    ]);
+  };
+
+  const handleRemoveDiscount = (id) => {
+    setDiscounts((prev) => prev.filter((discount) => discount.id !== id));
+  };
+
+  const handleDiscountChange = (id, field, value) => {
+    setDiscounts((prev) => prev.map((discount) => {
+      if (discount.id !== id) return discount;
+      return { ...discount, [field]: field === 'name' ? value.toUpperCase() : value };
+    }));
+  };
+
   const base = toFloat(baseHourly.replace(/\./g, ''));
   const auxilioTransporte = toFloat(auxilioTransporteDiario.replace(/\./g, ''));
 
@@ -142,6 +166,14 @@ const CreateWorkForm = ({ onCreate, onCancel, editingJob, onDelete }) => {
         incapacidadComunPct: toFloat(incapacidadComunPct),
         incapacidadLaboralPct: toFloat(incapacidadLaboralPct),
         values,
+        discounts: discounts
+          .filter((discount) => discount.name.trim() && toFloat(discount.value) > 0)
+          .map((discount) => ({
+            id: discount.id,
+            name: discount.name.trim().toUpperCase(),
+            value: toInt(discount.value),
+            quincena: discount.quincena || '15',
+          })),
       });
       showToast(editingJob ? 'Trabajo actualizado exitosamente' : 'Trabajo guardado exitosamente');
       setWorkName('');
@@ -191,6 +223,59 @@ const CreateWorkForm = ({ onCreate, onCancel, editingJob, onDelete }) => {
             onChange={handleAuxilioTransporteChange}
             placeholder="Ingrese auxilio de transporte"
           />
+        </div>
+
+        <div className="discounts-section">
+          <div className="discounts-header">
+            <h4>Descuentos quincenales</h4>
+            <button type="button" className="add-discount-button" onClick={handleAddDiscount}>
+              Agregar descuento
+            </button>
+          </div>
+          {discounts.length === 0 && (
+            <p className="discounts-note">Agrega descuentos que se apliquen cada quincena (15 / 30).</p>
+          )}
+          <div className="discounts-grid">
+            {discounts.map((discount) => (
+              <div key={discount.id} className="discount-item">
+                <div className="discount-fields">
+                  <div className="form-group">
+                    <label>Nombre del descuento</label>
+                    <input
+                      type="text"
+                      value={discount.name}
+                      onChange={(e) => handleDiscountChange(discount.id, 'name', e.target.value)}
+                      placeholder="Ej: RETIRO FONDO"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Valor a descontar</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={discount.value}
+                      onChange={(e) => handleDiscountChange(discount.id, 'value', e.target.value)}
+                      placeholder="Ingrese valor"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Quincena</label>
+                    <select
+                      value={discount.quincena}
+                      onChange={(e) => handleDiscountChange(discount.id, 'quincena', e.target.value)}
+                    >
+                      <option value="15">15</option>
+                      <option value="30">30</option>
+                      <option value="ambos">15 y 30</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="button" className="remove-discount-button" onClick={() => handleRemoveDiscount(discount.id)}>
+                  Eliminar
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="form-grid">

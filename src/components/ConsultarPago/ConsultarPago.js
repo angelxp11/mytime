@@ -40,6 +40,11 @@ const formatHoras = (horas) => {
   return `${hours}h ${minutes}m`;
 };
 
+const toInt = (value) => {
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? 0 : Math.floor(parsed);
+};
+
 const getFestivos = () => {
   const festivos = new Set();
   const lines = festivosText.split('\n');
@@ -281,6 +286,27 @@ const ConsultarPago = ({ user, setCurrentView }) => {
     }
   };
 
+  const getQuincenaDatesInRange = (startDateStr, endDateStr, quincena) => {
+    const start = createDateFromString(startDateStr);
+    const end = createDateFromString(endDateStr);
+    const dates = [];
+
+    for (let d = new Date(start.getFullYear(), start.getMonth(), 1); d <= end; d.setMonth(d.getMonth() + 1)) {
+      const year = d.getFullYear();
+      const month = d.getMonth();
+      const fifteenth = new Date(year, month, 15);
+      if (fifteenth >= start && fifteenth <= end && (quincena === '15' || quincena === 'ambos')) {
+        dates.push(fifteenth);
+      }
+      const thirtieth = new Date(year, month, 30);
+      if (thirtieth.getMonth() === month && thirtieth >= start && thirtieth <= end && (quincena === '30' || quincena === 'ambos')) {
+        dates.push(thirtieth);
+      }
+    }
+
+    return dates;
+  };
+
   const calculatePayment = (simulateOverride) => {
     setLoading(true);
     try {
@@ -493,6 +519,23 @@ const ConsultarPago = ({ user, setCurrentView }) => {
         pagoExtraDominicalDiurna + pagoExtraDominicalNocturna + pagoIncapacidadComun +
         pagoIncapacidadLaboral + auxilioTransporte;
 
+      const descuentosAplicados = Array.isArray(trabajo.discounts)
+        ? trabajo.discounts.map((discount) => {
+            const count = getQuincenaDatesInRange(startDate, endDate, discount.quincena || '15').length;
+            const amount = (toInt(discount.value) || 0) * count;
+            return {
+              name: (discount.name || '').toUpperCase(),
+              value: toInt(discount.value) || 0,
+              quincena: discount.quincena || '15',
+              count,
+              amount,
+            };
+          }).filter((discount) => discount.count > 0 && discount.amount !== 0)
+        : [];
+
+      const totalDescuento = descuentosAplicados.reduce((sum, item) => sum + item.amount, 0);
+      const totalConDescuentos = totalPago - totalDescuento;
+
       setCalculations({
         trabajo: trabajo.workName,
         startDate,
@@ -533,6 +576,9 @@ const ConsultarPago = ({ user, setCurrentView }) => {
         totalDominicalAmount,
         valorDominical: dominicalHourly,
         totalPago,
+        totalDescuento,
+        totalConDescuentos,
+        descuentosAplicados,
         detalles: diasLaborados,
       });
     } catch (error) {
@@ -627,6 +673,14 @@ const ConsultarPago = ({ user, setCurrentView }) => {
           { label: 'Auxilio de transporte', quantityLabel: `${calculations.detalles.length} días`,                                                                       amount: calculations.auxilioTransporte },
         ];
 
+    const descuentoPdfRows = calculations.descuentosAplicados?.map((item) => ({
+      label: `DESCUENTO ${item.name} (${item.quincena === 'ambos' ? '15/30' : item.quincena})`,
+      quantityLabel: `${item.count} ${item.count === 1 ? 'quincena' : 'quincenas'}`,
+      amount: -item.amount,
+    })) || [];
+
+    const allPdfRows = [...pdfRows, ...descuentoPdfRows];
+
     // Encabezado tabla principal
     pdf.setFillColor(30, 41, 59);
     pdf.setTextColor(255, 255, 255);
@@ -641,7 +695,7 @@ y += 12;  // ← era 10
     // Filas tabla principal
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(10);
-    pdfRows.forEach((row, i) => {
+    allPdfRows.forEach((row, i) => {
       pdf.setTextColor(0, 0, 0);
       if (i % 2 === 0) {
         pdf.setFillColor(245, 245, 245);
@@ -655,7 +709,7 @@ y += 12;  // ← era 10
 
     // Fila TOTAL
     y += 2;
-    const pdfTotalAmount = pdfRows.reduce((sum, r) => sum + r.amount, 0);
+    const pdfTotalAmount = allPdfRows.reduce((sum, r) => sum + r.amount, 0);
     pdf.setFont('helvetica', 'bold');
     pdf.setFillColor(30, 41, 59);
     pdf.setTextColor(255, 255, 255);
@@ -894,6 +948,13 @@ y += 12;  // ← era 10
     ? calculations.horasDiurnaDominical + calculations.horasNocturnaDominical + calculations.horasExtraDominicalDiurna + calculations.horasExtraDominicalNocturna
     : 0;
 
+  const discountReportRows = calculations?.descuentosAplicados?.map((item) => ({
+    label: `DESCUENTO ${item.name} (${item.quincena === 'ambos' ? '15/30' : item.quincena})`,
+    quantity: item.count,
+    amount: -item.amount,
+    unit: item.count === 1 ? 'quincena' : 'quincenas',
+  })) || [];
+
   const reportRows = calculations ? (
     reportMode === 'classic'
       ? [
@@ -981,7 +1042,7 @@ y += 12;  // ← era 10
             unit: 'días',
           },
         ]
-  ).filter((row) => row.quantity > 0 || row.amount !== 0) : [];
+  ).concat(discountReportRows).filter((row) => row.quantity > 0 || row.amount !== 0) : [];
 
   const reportTotalAmount = reportRows.reduce((sum, row) => sum + row.amount, 0);
 
@@ -1137,6 +1198,12 @@ y += 12;  // ← era 10
                 <p><strong>Horas pagadas totales:</strong> {formatHoras(calculations.totalHoras)}</p>
                 <p><strong>Horas recargo nocturno:</strong> {formatHoras(recargoNocturnoHours)}</p>
                 <p><strong>Horas recargo dominical:</strong> {formatHoras(recargoDominicalHours)}</p>
+                {calculations.totalDescuento > 0 && (
+                  <>
+                    <p className="discount-summary"><strong>Descuentos totales:</strong> -${Math.floor(calculations.totalDescuento).toLocaleString('es-CO')}</p>
+                    <p className="net-summary"><strong>Pago neto estimado:</strong> ${Math.floor(calculations.totalConDescuentos).toLocaleString('es-CO')}</p>
+                  </>
+                )}
                 {/* Totales por horario y registro */}
                 <p><strong>Totales por horario:</strong> {formatHoras((() => {
                   // Recalcular aquí para la vista
@@ -1223,7 +1290,7 @@ y += 12;  // ← era 10
                   </thead>
                   <tbody>
                     {reportRows.map((row) => (
-                      <tr key={row.label}>
+                      <tr key={row.label} className={row.amount < 0 ? 'discount-row' : ''}>
                         <td>{row.label}</td>
                         <td>
                           {row.unit ? `${row.quantity} ${row.unit}` : formatHoras(row.quantity)}

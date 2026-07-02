@@ -118,6 +118,73 @@
   gap: 16px;
 }
 
+.discounts-section {
+  margin-bottom: 18px;
+}
+
+.discounts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.discounts-header h4 {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 1rem;
+}
+
+.discounts-note {
+  color: #94a3b8;
+  margin-bottom: 12px;
+  font-size: 0.92rem;
+}
+
+.discounts-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.discount-item {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.discount-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.remove-discount-button,
+.add-discount-button {
+  width: fit-content;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(239, 68, 68, 0.15);
+  color: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-discount-button:hover,
+.add-discount-button:hover {
+  background: rgba(239, 68, 68, 0.25);
+  transform: translateY(-1px);
+}
+
+.remove-discount-button {
+  justify-self: flex-end;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
 .values-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

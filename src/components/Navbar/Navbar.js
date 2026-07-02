@@ -103,28 +103,29 @@ const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal
                 <FiClock size={15} />
                 Registrar Hora
               </button>
-
-              <button type="button" className="navbar-item" onClick={() => handleNavClick('trabajos')}>
-                Mis Trabajos
-              </button>
-              <button type="button" className="navbar-item" onClick={() => handleNavClick('calendar')}>
-                Calendario
-              </button>
-              <button type="button" className="navbar-item" onClick={() => handleNavClick('horarios')}>
-                Horarios
-              </button>
-              <button type="button" className="navbar-item" onClick={() => handleNavClick('pago')}>
-                Consultar Pago
-              </button>
             </>
           )}
 
           <button type="button" className="navbar-item" onClick={() => handleNavClick('home')}>
             Inicio
           </button>
-          <button type="button" className="navbar-item" onClick={() => handleNavClick('grupos')}>
-            Grupos
-          </button>
+
+          {!ocultarFunciones && (
+            <>
+              <button type="button" className="navbar-item" onClick={() => handleNavClick('trabajos')}>
+                Mis Trabajos
+              </button>
+              <button type="button" className="navbar-item" onClick={() => handleNavClick('grupos')}>
+                Grupos
+              </button>
+              <button type="button" className="navbar-item" onClick={() => handleNavClick('calendar')}>
+                Calendario
+              </button>
+              <button type="button" className="navbar-item" onClick={() => handleNavClick('pago')}>
+                Consultar Pago
+              </button>
+            </>
+          )}
 
           {user && user.email === 'jocheangel728@gmail.com' && (
             <>

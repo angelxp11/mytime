@@ -128,6 +128,16 @@ const MisTrabajos = ({ user }) => {
               <p>Hora Base: ${Math.floor(job.baseHourly || 0).toLocaleString('es-CO')}</p>
               <p>Rango Diurno: {job.diurnalStart} - {job.diurnalEnd}</p>
               <p>Hora Nocturna: ${Math.floor(job.values?.nocturna || 0).toLocaleString('es-CO')}</p>
+              {job.discounts?.length > 0 && (
+                <p>
+                  Descuentos:{' '}
+                  {job.discounts.map((discount, index) => (
+                    <span key={`${discount.name}-${index}`}>
+                      {discount.name} {discount.value > 0 ? `-$${Math.floor(discount.value).toLocaleString('es-CO')}` : ''} ({discount.quincena === 'ambos' ? '15/30' : discount.quincena}){index < job.discounts.length - 1 ? ', ' : ''}
+                    </span>
+                  ))}
+                </p>
+              )}
             </div>
           ))
         )}
