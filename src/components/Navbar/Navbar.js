@@ -115,9 +115,6 @@ const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal
               <button type="button" className="navbar-item" onClick={() => handleNavClick('trabajos')}>
                 Mis Trabajos
               </button>
-              <button type="button" className="navbar-item" onClick={() => handleNavClick('grupos')}>
-                Grupos
-              </button>
               <button type="button" className="navbar-item" onClick={() => handleNavClick('calendar')}>
                 Calendario
               </button>
@@ -126,6 +123,10 @@ const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal
               </button>
             </>
           )}
+
+          <button type="button" className="navbar-item" onClick={() => handleNavClick('grupos')}>
+            Grupos
+          </button>
 
           {user && user.email === 'jocheangel728@gmail.com' && (
             <>
