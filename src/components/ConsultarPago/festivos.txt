@@ -8,6 +8,7 @@
 // 08/06/2026 - Corphus Christi
 // 15/06/2026 - Sagrado Corazón de Jesús
 // 29/06/2026 - San Pedro y San Pablo
+// 13/07/2026 - Día de la Virgen del Carmen
 // 20/07/2026 - Día de la Independencia
 // 07/08/2026 - Batalla de Boyacá
 // 17/08/2026 - La Asunción de la Virgen
