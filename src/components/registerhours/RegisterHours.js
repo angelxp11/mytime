@@ -13,15 +13,6 @@ const getTodayDateInput = () => {
   return `${year}-${month}-${day}`;
 };
 
-const getMondayOfWeek = (date) => {
-  const result = new Date(date);
-  const day = result.getDay();
-  const diff = (day + 6) % 7;
-  result.setDate(result.getDate() - diff);
-  result.setHours(0, 0, 0, 0);
-  return result;
-};
-
 const formatDateInput = (date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -33,6 +24,15 @@ const getDayName = (dateString) => {
   const names = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   const date = new Date(`${dateString}T00:00:00`);
   return names[date.getDay()];
+};
+
+const getWeekKeyFromDate = (date, weeksOffset = 0) => {
+  const result = new Date(date);
+  const day = result.getDay();
+  const diff = (day + 6) % 7;
+  result.setDate(result.getDate() - diff - (weeksOffset * 7));
+  result.setHours(0, 0, 0, 0);
+  return formatDateInput(result);
 };
 
 const parseTime = (value) => {
@@ -90,26 +90,61 @@ const RegisterHours = ({ user, setCurrentView }) => {
   useEffect(() => {
     const loadMissingDescansoDays = async () => {
       if (!user) return;
-      const weekStart = getMondayOfWeek(new Date());
-      const weekStartDate = formatDateInput(weekStart);
+
       try {
         const [horariosSnap, horasSnap] = await Promise.all([
           getDoc(doc(db, 'HORARIOS', user.uid)),
           getDoc(doc(db, 'horasTrabajadas', user.uid)),
         ]);
+
         const registeredDates = horasSnap.exists()
           ? Object.keys(horasSnap.data()?.dias || {})
           : [];
-        const savedWeek = horariosSnap.exists()
-          ? horariosSnap.data()?.semanas?.[weekStartDate]
-          : null;
-        const missingDays = (savedWeek?.days || [])
-          .filter((day) => day.tipo === 'descanso')
-          .filter((day) => !registeredDates.includes(day.date));
+        const semanas = horariosSnap.exists() ? horariosSnap.data()?.semanas || {} : {};
 
-        if (missingDays.length > 0) {
-          setMissingDescansoDays(missingDays);
+        const getMissingDescansoDays = (weekKey) => {
+          const savedWeek = semanas[weekKey];
+          return (savedWeek?.days || [])
+            .filter((day) => day.tipo === 'descanso')
+            .filter((day) => !registeredDates.includes(day.date));
+        };
+
+        const currentWeekKey = getWeekKeyFromDate(new Date());
+        const currentWeekMissingDays = getMissingDescansoDays(currentWeekKey);
+
+        let streakCount = 0;
+        let streakDays = [];
+        let foundThreeWeekStreak = false;
+
+        for (let offset = 0; offset < 6; offset += 1) {
+          const weekKey = getWeekKeyFromDate(new Date(), offset);
+          const weekDays = semanas[weekKey]?.days || [];
+          const weekHasDescanso = weekDays.some((day) => day.tipo === 'descanso');
+          const weekMissingDays = getMissingDescansoDays(weekKey);
+
+          if (weekHasDescanso) {
+            streakCount += 1;
+            streakDays.push(...weekMissingDays);
+            if (streakCount >= 3) {
+              foundThreeWeekStreak = true;
+              break;
+            }
+          } else {
+            streakCount = 0;
+            streakDays = [];
+          }
+        }
+
+        const nextMissingDays = foundThreeWeekStreak
+          ? streakDays.filter((day, index, arr) => arr.findIndex((item) => item.date === day.date) === index)
+          : currentWeekMissingDays;
+
+        if (nextMissingDays.length > 0) {
+          setMissingDescansoDays(nextMissingDays);
           setShowDescansoPrompt(true);
+        } else {
+          setMissingDescansoDays([]);
+          setShowDescansoPrompt(false);
         }
       } catch (error) {
         console.error('Error cargando días de descanso:', error);
@@ -188,14 +223,22 @@ const RegisterHours = ({ user, setCurrentView }) => {
 
   const renderDescansoMessage = () => {
     if (!showDescansoPrompt || missingDescansoDays.length === 0) return null;
-    const namesArray = missingDescansoDays.map((day) => getDayName(day.date));
-    const names = namesArray.length > 1
-      ? `${namesArray.slice(0, -1).join(', ')} y ${namesArray[namesArray.length - 1]}`
-      : namesArray[0];
+
+    const formattedDays = [...missingDescansoDays]
+      .sort((a, b) => new Date(`${b.date}T00:00:00`) - new Date(`${a.date}T00:00:00`))
+      .map((day) => {
+        const date = new Date(`${day.date}T00:00:00`);
+        const dayName = getDayName(day.date);
+        const dayNumber = date.getDate();
+        const monthName = date.toLocaleDateString('es-ES', { month: 'long' });
+        return `${dayName} ${dayNumber} de ${monthName}`;
+      })
+      .join(', ');
+
     return (
       <div className="register-hours-alert">
         <p>
-          Tienes días de descanso sin registrar esta semana: <strong>{names}</strong>.
+          Tienes días de descanso sin registrar esta semana: <strong>{formattedDays}</strong>.
           ¿Deseas registrarlos ahora?
         </p>
         <div className="register-hours-alert-actions">
