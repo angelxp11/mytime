@@ -758,6 +758,112 @@
   transition: all 0.2s ease;
 }
 
+.horariosgrupo-cargo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.horariosgrupo-cargo-modal {
+  width: min(480px, 100%);
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+.horariosgrupo-cargo-modal h3 {
+  margin-top: 0;
+  color: #f8fafc;
+}
+
+.horariosgrupo-cargo-modal-info {
+  margin: 10px 0 0;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.horariosgrupo-cargo-modal-label {
+  margin-top: 16px;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.horariosgrupo-cargo-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.horariosgrupo-cargo-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  background: rgba(15, 23, 42, 0.95);
+  color: #e5e7eb;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.horariosgrupo-cargo-option:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.horariosgrupo-cargo-option.selected {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.horariosgrupo-cargo-modal-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  color: #f8fafc;
+}
+
+.horariosgrupo-cargo-modal-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+}
+
+.horariosgrupo-cargo-badge {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  flex-shrink: 0;
+}
+
+.horariosgrupo-cargo-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
 .horariosgrupo-modal-cancel:hover {
   background: rgba(56, 189, 248, 0.12);
   color: #cbd5e1;

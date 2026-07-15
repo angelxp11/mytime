@@ -11,8 +11,8 @@ const formatName = (value) =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
 
-const sortCargosByLevel = (cargos) =>
-  [...cargos].sort((a, b) => (a.nivel || 0) - (b.nivel || 0));
+const normalizeCargoLevels = (cargos) =>
+  cargos.map((cargo, index) => ({ ...cargo, nivel: index + 1 }));
 
 const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
   const [groupName, setGroupName] = useState('');
@@ -21,11 +21,14 @@ const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [selectedSearchResult, setSelectedSearchResult] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchAttempted, setSearchAttempted] = useState(false);
+  const [pendingParticipantName, setPendingParticipantName] = useState('');
   const [cargos, setCargos] = useState([]);
   const [newCargoName, setNewCargoName] = useState('');
   const [newCargoLevel, setNewCargoLevel] = useState(1);
   const [activeTab, setActiveTab] = useState('participants');
   const [expandedCargos, setExpandedCargos] = useState({});
+  const [roleModal, setRoleModal] = useState(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -33,7 +36,7 @@ const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
     if (group) {
       setGroupName(group.groupName || '');
       setParticipants(group.participants || []);
-      setCargos(sortCargosByLevel(group.cargos || []));
+      setCargos(normalizeCargoLevels(group.cargos || []));
     } else {
       setGroupName('');
       setParticipants([]);
@@ -43,6 +46,8 @@ const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
     setSearchResults([]);
     setSelectedSearchResult(null);
     setIsSearching(false);
+    setSearchAttempted(false);
+    setPendingParticipantName('');
     setNewCargoName('');
     setNewCargoLevel(1);
   }, [group, isOpen]);
@@ -57,6 +62,8 @@ const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
     setIsSearching(true);
     setSearchResults([]);
     setSelectedSearchResult(null);
+    setSearchAttempted(true);
+    setPendingParticipantName('');
 
     try {
       const usuariosRef = collection(db, 'usuarios');
@@ -101,6 +108,34 @@ const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
     setSelectedSearchResult(null);
     setSearchEmail('');
     setSearchResults([]);
+    setSearchAttempted(false);
+  };
+
+  const handleAddPendingParticipant = () => {
+    const email = searchEmail.trim().toLowerCase();
+    if (!email || !pendingParticipantName.trim()) return;
+
+    const alreadyExists = participants.some(
+      (participant) => participant.email === email
+    );
+    if (alreadyExists) {
+      return;
+    }
+
+    setParticipants([
+      ...participants,
+      {
+        name: formatName(pendingParticipantName),
+        email,
+        role: 'lector',
+        pending: true,
+      },
+    ]);
+    setPendingParticipantName('');
+    setSearchEmail('');
+    setSearchResults([]);
+    setSearchAttempted(false);
+    setSelectedSearchResult(null);
   };
 
   const handleRemoveParticipant = (index) => {
@@ -115,22 +150,63 @@ const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
     );
   };
 
+  const openRoleModal = (event, index) => {
+    event.preventDefault();
+    const participant = participants[index];
+    if (!participant) return;
+
+    setRoleModal({
+      index,
+      currentRole: participant.role || 'lector',
+      selectedRole: participant.role || 'lector',
+      name: participant.name,
+      email: participant.email,
+    });
+  };
+
+  const closeRoleModal = () => setRoleModal(null);
+
+  const handleApplyRoleChange = () => {
+    if (!roleModal) return;
+    const { index, selectedRole } = roleModal;
+    setParticipants((prev) =>
+      prev.map((participant, idx) =>
+        idx === index ? { ...participant, role: selectedRole } : participant
+      )
+    );
+    closeRoleModal();
+  };
+
+  const handleRoleSelectionChange = (role) => {
+    setRoleModal((prev) => (prev ? { ...prev, selectedRole: role } : prev));
+  };
+
   const handleAddCargo = () => {
     if (!newCargoName.trim()) return;
     
     const newCargo = {
       id: Date.now().toString(),
       nombre: newCargoName.trim(),
-      nivel: parseInt(newCargoLevel),
+      nivel: cargos.length + 1,
     };
     
-    setCargos([...cargos, newCargo].sort((a, b) => a.nivel - b.nivel));
+    setCargos((prev) => normalizeCargoLevels([...prev, newCargo]));
     setNewCargoName('');
     setNewCargoLevel(1);
   };
 
+  const handleMoveCargo = (index, direction) => {
+    setCargos((prev) => {
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= prev.length) return prev;
+      const updated = [...prev];
+      [updated[index], updated[nextIndex]] = [updated[nextIndex], updated[index]];
+      return normalizeCargoLevels(updated);
+    });
+  };
+
   const handleRemoveCargo = (cargoId) => {
-    setCargos(cargos.filter((cargo) => cargo.id !== cargoId));
+    setCargos((prev) => normalizeCargoLevels(prev.filter((cargo) => cargo.id !== cargoId)));
     setParticipants((prev) =>
       prev.map((participant) =>
         participant.cargo === cargoId ? { ...participant, cargo: null } : participant
@@ -152,7 +228,7 @@ const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
     onSave({
       groupName: groupName.trim(),
       participants,
-      cargos: sortCargosByLevel(cargos),
+      cargos,
     });
   };
 
@@ -251,15 +327,48 @@ const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
                   </button>
                 </div>
               ) : (
-                searchEmail.trim() !== '' && !isSearching && (
-                  <p className="empty-text">No se encontró ningún usuario con ese correo.</p>
-                )
+                searchAttempted && searchEmail.trim() !== '' && !isSearching ? (
+                  <div className="pending-participant-form">
+                    <p className="section-description">
+                      No se encontró ningún usuario con ese correo. Puedes agregarlo como participante pendiente.
+                    </p>
+                    <label>
+                      Nombre
+                      <input
+                        type="text"
+                        value={pendingParticipantName}
+                        onChange={(e) => setPendingParticipantName(e.target.value)}
+                        placeholder="Nombre del participante"
+                      />
+                    </label>
+                    <label>
+                      Correo
+                      <input
+                        type="email"
+                        value={searchEmail}
+                        readOnly
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="participant-add-selected-button"
+                      onClick={handleAddPendingParticipant}
+                      disabled={!pendingParticipantName.trim()}
+                    >
+                      Agregar participante pendiente
+                    </button>
+                  </div>
+                ) : null
               )}
 
               <div className="participant-list">
                 {participants.length > 0 ? (
                   participants.map((participant, index) => (
-                    <div key={`${participant.email}-${index}`} className="participant-row">
+                    <div
+                      key={`${participant.email}-${index}`}
+                      className="participant-row"
+                      onContextMenu={(e) => openRoleModal(e, index)}
+                    >
                       <div>
                         <strong>{participant.name}</strong>
                         <span>{participant.email}</span>
@@ -301,6 +410,41 @@ const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
                   <p className="empty-text">No hay participantes añadidos aún.</p>
                 )}
               </div>
+
+              {roleModal && (
+                <div className="role-modal-overlay" onClick={closeRoleModal}>
+                  <div className="role-modal-dialog" onClick={(e) => e.stopPropagation()}>
+                    <h3>Cambiar rol de participante</h3>
+                    <p className="role-modal-current">
+                      <strong>Participante:</strong> {roleModal.name}
+                    </p>
+                    <p className="role-modal-current">
+                      <strong>Correo:</strong> {roleModal.email}
+                    </p>
+                    <p className="role-modal-current">
+                      <strong>Rol actual:</strong> {roleModal.currentRole}
+                    </p>
+                    <label>
+                      Rol nuevo
+                      <select
+                        value={roleModal.selectedRole}
+                        onChange={(e) => handleRoleSelectionChange(e.target.value)}
+                      >
+                        <option value="lector">Lector</option>
+                        <option value="editor">Editor</option>
+                      </select>
+                    </label>
+                    <div className="role-modal-actions">
+                      <button type="button" className="modal-button cancel-button" onClick={closeRoleModal}>
+                        Cancelar
+                      </button>
+                      <button type="button" className="modal-button save-button" onClick={handleApplyRoleChange}>
+                        Aplicar cambio
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </section>
           ) : (
             <section className="modal-section cargo-section">
@@ -347,7 +491,7 @@ const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
 
               {cargos.length > 0 ? (
                 <div className="cargo-list">
-                  {cargos.map((cargo) => {
+                  {cargos.map((cargo, index) => {
                     const assignedParticipants = participants.filter(
                       (participant) => participant.cargo === cargo.id
                     );
@@ -388,13 +532,32 @@ const ModalGrupo = ({ isOpen, onClose, onSave, group, isSaving }) => {
                           </div>
                         )}
 
-                        <button
-                          type="button"
-                          className="cargo-remove"
-                          onClick={() => handleRemoveCargo(cargo.id)}
-                        >
-                          Eliminar cargo
-                        </button>
+                        <div className="cargo-actions">
+                          <button
+                            type="button"
+                            className="cargo-move-button"
+                            onClick={() => handleMoveCargo(index, -1)}
+                            disabled={index === 0}
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            className="cargo-move-button"
+                            onClick={() => handleMoveCargo(index, 1)}
+                            disabled={index === cargos.length - 1}
+                          >
+                            ▼
+                          </button>
+                          <button
+                            type="button"
+                            className="cargo-remove"
+                            onClick={() => handleRemoveCargo(cargo.id)}
+                            aria-label="Eliminar cargo"
+                          >
+                            −
+                          </button>
+                        </div>
                       </div>
                     );
                   })}

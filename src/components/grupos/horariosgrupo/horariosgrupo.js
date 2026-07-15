@@ -3,6 +3,7 @@ import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase
 import { db } from '../../server/api';
 import { showToast } from '../../ToastContainer';
 import Loading from '../../loading/loading';
+import { buildGroupParticipantUpdatePayload } from './participantCargoUtils';
 import './horariosgrupo.css';
 
 const weekOptions = [
@@ -376,6 +377,7 @@ const ParticipantRow = React.memo(function ParticipantRow({
   onDragStart,
   onDragOver,
   onDrop,
+  openCargoModal,
 }) {
   const rowTotal = calcRowTotal(pIndex, days);
 
@@ -386,6 +388,7 @@ const ParticipantRow = React.memo(function ParticipantRow({
       onDragStart={() => onDragStart(pIndex)}
       onDragOver={onDragOver}
       onDrop={() => onDrop(pIndex)}
+      onContextMenu={(e) => openCargoModal(e, pIndex)}
     >
       <td className={`horariosgrupo-td horariosgrupo-td-name ${getCargoLevelClass(participant)}`}>
         <span className="horariosgrupo-drag-handle">⋮⋮</span>
@@ -518,7 +521,7 @@ const ParticipantRow = React.memo(function ParticipantRow({
     if (changedEntries[i] !== nextChangedEntries[i]) return false;
   }
 
-  const participantChanged = prevProps.participant.name !== nextProps.participant.name || prevProps.participant.email !== nextProps.participant.email;
+  const participantChanged = prevProps.participant.name !== nextProps.participant.name || prevProps.participant.email !== nextProps.participant.email || prevProps.participant.cargo !== nextProps.participant.cargo || prevProps.participant.role !== nextProps.participant.role;
   if (participantChanged) return false;
 
   const daysChanged = prevProps.days.some((_, dayIndex) => {
@@ -548,6 +551,7 @@ const HorariosGrupo = ({ group, user, onBack }) => {
   const [scheduleLoaded, setScheduleLoaded] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [participants, setParticipants] = useState(group.participants || []);
+  const [cargoModal, setCargoModal] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [showPasteModal, setShowPasteModal] = useState(false);
   const [isPortrait, setIsPortrait] = useState(
@@ -572,6 +576,92 @@ const HorariosGrupo = ({ group, user, onBack }) => {
   const getCargoLevelClass = (participant) => {
     const nivel = getCargoLevelById(participant?.cargo);
     return nivel ? `cargo-level-${nivel}` : '';
+  };
+
+  const cargoLevelColors = {
+    1: '#ffff99',
+    2: '#f59e0b',
+    3: '#009300',
+    4: '#ff0000',
+    5: '#ffff00',
+    6: '#ff0080',
+    7: '#9d00ff',
+    8: '#38bdf8',
+    9: '#22c55e',
+    10: '#ec4899',
+    11: '#8b5cf6',
+    12: '#06b6d4',
+    13: '#84cc16',
+    14: '#f97316',
+    15: '#ef4444',
+    16: '#14b8a6',
+    17: '#a855f7',
+    18: '#3b82f6',
+    19: '#eab308',
+    20: '#fb7185',
+  };
+
+  const getCargoById = (cargoId) => group.cargos?.find((item) => item.id === cargoId);
+
+  const getCargoBadgeStyle = (cargoId) => {
+    const cargo = getCargoById(cargoId);
+    const color = cargo ? cargoLevelColors[cargo.nivel] : 'transparent';
+    return {
+      backgroundColor: color,
+      boxShadow: cargo ? `0 0 0 4px ${color}33` : 'none',
+    };
+  };
+
+  const openCargoModal = React.useCallback((event, pIndex) => {
+    event.preventDefault();
+    const participant = participants[pIndex];
+    if (!participant) return;
+
+    setCargoModal({
+      index: pIndex,
+      currentCargoId: participant.cargo || '',
+      selectedCargoId: participant.cargo || '',
+      name: participant.name,
+      email: participant.email,
+    });
+  }, [participants]);
+
+  const closeCargoModal = () => setCargoModal(null);
+
+  const handleCargoSelectionChange = (cargoId) => {
+    setCargoModal((prev) => (prev ? { ...prev, selectedCargoId: cargoId } : prev));
+  };
+
+  const handleApplyCargoChange = async () => {
+    if (!cargoModal) return;
+
+    const { index, selectedCargoId } = cargoModal;
+    const updatedParticipants = participants.map((participant, idx) =>
+      idx === index ? { ...participant, cargo: selectedCargoId || null } : participant
+    );
+
+    setParticipants(updatedParticipants);
+
+    try {
+      const ownerId = group.ownerId || group.id;
+      const groupDocId = group.id || ownerId;
+      const groupDocRef = doc(db, 'grupos', groupDocId);
+      const payload = buildGroupParticipantUpdatePayload(
+        updatedParticipants,
+        index,
+        selectedCargoId,
+        group.groupName,
+        group.cargos || []
+      );
+
+      await setDoc(groupDocRef, payload, { merge: true });
+      showToast('Cargo actualizado correctamente.', 'success');
+    } catch (error) {
+      console.error('Error actualizando cargo del grupo:', error);
+      showToast('No se pudo actualizar el cargo.', 'error');
+    } finally {
+      closeCargoModal();
+    }
   };
 
   useEffect(() => {
@@ -1216,6 +1306,7 @@ if (data?.participantOrderGlobal) {
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
+                openCargoModal={openCargoModal}
               />
             ))}
           </tbody>
@@ -1269,6 +1360,56 @@ if (data?.participantOrderGlobal) {
           onApply={handleApplyPaste}
           onClose={() => setShowPasteModal(false)}
         />
+      )}
+
+      {cargoModal && (
+        <div className="horariosgrupo-cargo-modal-overlay" onClick={closeCargoModal}>
+          <div className="horariosgrupo-cargo-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Cambiar cargo</h3>
+            <p className="horariosgrupo-cargo-modal-info">
+              <strong>Participante:</strong> {cargoModal.name}
+            </p>
+            <p className="horariosgrupo-cargo-modal-info">
+              <strong>Correo:</strong> {cargoModal.email}
+            </p>
+            <p className="horariosgrupo-cargo-modal-info">
+              <strong>Cargo actual:</strong>{' '}
+              {cargoModal.currentCargoId
+                ? group.cargos?.find((cargo) => cargo.id === cargoModal.currentCargoId)?.nombre || 'Sin cargo'
+                : 'Sin cargo'}
+            </p>
+            <div className="horariosgrupo-cargo-modal-label">Nuevo cargo</div>
+            <div className="horariosgrupo-cargo-options">
+              <button
+                type="button"
+                className={`horariosgrupo-cargo-option${cargoModal.selectedCargoId === '' ? ' selected' : ''}`}
+                onClick={() => handleCargoSelectionChange('')}
+              >
+                <span className="horariosgrupo-cargo-badge" style={getCargoBadgeStyle('')} />
+                <span>Sin cargo</span>
+              </button>
+              {group.cargos?.map((cargo) => (
+                <button
+                  type="button"
+                  key={cargo.id}
+                  className={`horariosgrupo-cargo-option${cargoModal.selectedCargoId === cargo.id ? ' selected' : ''}`}
+                  onClick={() => handleCargoSelectionChange(cargo.id)}
+                >
+                  <span className="horariosgrupo-cargo-badge" style={getCargoBadgeStyle(cargo.id)} />
+                  <span>{cargo.nombre}</span>
+                </button>
+              ))}
+            </div>
+            <div className="horariosgrupo-cargo-modal-actions">
+              <button type="button" className="horariosgrupo-modal-cancel" onClick={closeCargoModal}>
+                Cancelar
+              </button>
+              <button type="button" className="horariosgrupo-modal-apply" onClick={handleApplyCargoChange}>
+                Aplicar cargo
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
