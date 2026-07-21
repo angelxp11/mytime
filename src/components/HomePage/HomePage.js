@@ -51,6 +51,60 @@ const getFirstName = (fullName) => {
   return fullName.trim().split(/\s+/)[0];
 };
 
+const normalizeEmail = (value) => {
+  if (!value) return '';
+  return String(value).trim().toLowerCase();
+};
+
+const resolveParticipantProfile = async (participant) => {
+  const participantEmail = normalizeEmail(participant?.email);
+  const participantUid = participant?.uid;
+
+  if (participantUid) {
+    try {
+      const userDocSnap = await getDoc(doc(db, 'usuarios', participantUid));
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        return {
+          uid: participantUid,
+          name: userData.name || participant?.name || 'Usuario',
+          email: userData.email || participantEmail || participant?.email || '',
+        };
+      }
+    } catch (error) {
+      console.warn(`No se pudo cargar el perfil por UID para ${participantEmail || participantUid}:`, error);
+    }
+  }
+
+  if (participantEmail) {
+    try {
+      const usuariosQuery = query(
+        collection(db, 'usuarios'),
+        where('email', '==', participantEmail)
+      );
+      const usuarioQuerySnap = await getDocs(usuariosQuery);
+
+      if (!usuarioQuerySnap.empty) {
+        const userDoc = usuarioQuerySnap.docs[0];
+        const userData = userDoc.data();
+        return {
+          uid: userDoc.id,
+          name: userData.name || participant?.name || 'Usuario',
+          email: userData.email || participantEmail || participant?.email || '',
+        };
+      }
+    } catch (error) {
+      console.warn(`No se pudo cargar el perfil por correo para ${participantEmail}:`, error);
+    }
+  }
+
+  return {
+    uid: participantUid || null,
+    name: participant?.name || 'Usuario',
+    email: participantEmail || participant?.email || '',
+  };
+};
+
 const parseTimeToMinutes = (time) => {
   if (!time || time === '—') return null;
   const [hour, minute] = time.split(':').map(Number);
@@ -228,7 +282,10 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
         const ownerSnapshot = await getDocs(ownerQuery);
 
         if (!ownerSnapshot.empty) {
-          setUserGroup(ownerSnapshot.docs[0].data());
+          setUserGroup({
+            id: ownerSnapshot.docs[0].id,
+            ...ownerSnapshot.docs[0].data(),
+          });
           return;
         }
 
@@ -242,7 +299,10 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
             (p) => p.email?.toLowerCase?.() === userEmail
           );
           if (isParticipant) {
-            setUserGroup(groupData);
+            setUserGroup({
+              id: doc.id,
+              ...groupData,
+            });
             return;
           }
         }
@@ -331,20 +391,24 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
       : participants;
 
     try {
+      const ownerId = userGroup.ownerId || userGroup.id || user.uid;
+      const groupDocId = `${ownerId}_${userGroup.id || ownerId}`;
+      const groupSchedulesDocRef = doc(db, 'HORARIOS_GRUPOS', groupDocId);
+      const groupSchedulesDocSnap = await getDoc(groupSchedulesDocRef);
+      const groupWeekData = groupSchedulesDocSnap.exists()
+        ? groupSchedulesDocSnap.data()?.semanas?.[weekStartDate]
+        : null;
+      const groupEntries = Array.isArray(groupWeekData?.groupSchedules)
+        ? groupWeekData.groupSchedules
+        : [];
+
       // Paralelizar todas las operaciones de lectura para cada participante
       const schedulePromises = orderedParticipants.map(async (participant) => {
         try {
-          const [usuarioDocSnap, horariosSnap] = await Promise.all([
-            getDoc(doc(db, 'usuarios', participant.uid)),
-            getDoc(doc(db, 'HORARIOS', participant.uid)),
-          ]);
-
-          if (!usuarioDocSnap.exists()) return null;
-
-          const userData = usuarioDocSnap.data();
-          const fullName = formatName(userData.name || 'Usuario');
+          const profile = await resolveParticipantProfile(participant);
+          const fullName = formatName(profile.name || participant.name || 'Usuario');
           const firstName = getFirstName(fullName);
-          const email = userData.email;
+          const email = profile.email || participant.email || '';
 
           let schedule = {
             name: firstName,
@@ -356,38 +420,73 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
             descanso: '00',
           };
 
-          if (horariosSnap.exists()) {
-            const horariosData = horariosSnap.data();
-            const savedWeek = horariosData?.semanas?.[weekStartDate];
-            const selectedSchedule = savedWeek?.days?.find((day) => day.date === selectedDateStr);
+          const matchingGroupEntry = groupEntries.find((entry) => {
+            const entryEmail = normalizeEmail(entry?.email);
+            const participantEmail = normalizeEmail(participant?.email);
+            return entryEmail && participantEmail && entryEmail === participantEmail
+              ? true
+              : entry?.uid && entry.uid === participant?.uid;
+          });
 
-            if (selectedSchedule && selectedSchedule.tipo === 'trabajado') {
-              schedule = {
-                name: firstName,
-                fullName: fullName,
-                ingreso: selectedSchedule.startTime || '00:00',
-                salida: selectedSchedule.endTime || '00:00',
-                email: email,
-                estado: selectedSchedule.estado || null,
-                descanso: selectedSchedule.descanso || '00',
-              };
-            } else if (selectedSchedule && selectedSchedule.tipo !== 'trabajado') {
-              // Día de descanso o estado especial
-              schedule = {
-                name: firstName,
-                fullName: fullName,
-                ingreso: 'LI',
-                salida: 'BRE',
-                email: email,
-                estado: selectedSchedule.estado || 'libre',
-                descanso: selectedSchedule.descanso || '00',
-              };
+          const selectedSchedule = matchingGroupEntry?.days?.find((day) => day.date === selectedDateStr);
+
+          if (selectedSchedule && selectedSchedule.tipo === 'trabajado') {
+            schedule = {
+              name: firstName,
+              fullName: fullName,
+              ingreso: selectedSchedule.startTime || '00:00',
+              salida: selectedSchedule.endTime || '00:00',
+              email: email,
+              estado: selectedSchedule.estado || null,
+              descanso: selectedSchedule.descanso || '00',
+            };
+          } else if (selectedSchedule && selectedSchedule.tipo !== 'trabajado') {
+            schedule = {
+              name: firstName,
+              fullName: fullName,
+              ingreso: 'LI',
+              salida: 'BRE',
+              email: email,
+              estado: selectedSchedule.estado || 'libre',
+              descanso: selectedSchedule.descanso || '00',
+            };
+          } else {
+            const horariosSnap = profile.uid
+              ? await getDoc(doc(db, 'HORARIOS', profile.uid))
+              : null;
+
+            if (horariosSnap?.exists()) {
+              const horariosData = horariosSnap.data();
+              const savedWeek = horariosData?.semanas?.[weekStartDate];
+              const fallbackSchedule = savedWeek?.days?.find((day) => day.date === selectedDateStr);
+
+              if (fallbackSchedule && fallbackSchedule.tipo === 'trabajado') {
+                schedule = {
+                  name: firstName,
+                  fullName: fullName,
+                  ingreso: fallbackSchedule.startTime || '00:00',
+                  salida: fallbackSchedule.endTime || '00:00',
+                  email: email,
+                  estado: fallbackSchedule.estado || null,
+                  descanso: fallbackSchedule.descanso || '00',
+                };
+              } else if (fallbackSchedule && fallbackSchedule.tipo !== 'trabajado') {
+                schedule = {
+                  name: firstName,
+                  fullName: fullName,
+                  ingreso: 'LI',
+                  salida: 'BRE',
+                  email: email,
+                  estado: fallbackSchedule.estado || 'libre',
+                  descanso: fallbackSchedule.descanso || '00',
+                };
+              }
             }
           }
 
           return schedule;
         } catch (error) {
-          console.error(`Error cargando horarios del participante ${participant.uid}:`, error);
+          console.error(`Error cargando horarios del participante ${participant?.email || participant?.uid || 'desconocido'}:`, error);
           return null;
         }
       });
