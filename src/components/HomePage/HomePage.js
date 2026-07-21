@@ -134,6 +134,7 @@ const markOverlappingSchedules = (schedules) => {
   if (schedules.length === 0) return schedules;
 
   const userSchedule = schedules[0]; // El primer horario es siempre del usuario
+  const userRole = userSchedule.role || null;
   const userStart = parseTimeToMinutes(userSchedule.ingreso);
   const userEnd = parseTimeToMinutes(userSchedule.salida);
   const userHasSchedule = userStart !== null && userEnd !== null;
@@ -141,6 +142,7 @@ const markOverlappingSchedules = (schedules) => {
   const markedSchedules = schedules.map((item, index) => {
     let overlap = false;
     let category = 0; // 0: overlap, 1: no-overlap con horario, 2: descanso, 3: no registrado, 4+: estados especiales
+    let sortPriority = 0;
     
     // Determinar si la celda debe fusionarse (ESTADO ESPECIAL, LIBRE o NO REGISTRADO)
     let merged = false;
@@ -152,14 +154,17 @@ const markOverlappingSchedules = (schedules) => {
       merged = true;
       mergedText = getEstadoDescription(estado);
       category = 4; // Estados especiales
+      sortPriority = 5;
     } else if (item.ingreso === 'LI' && item.salida === 'BRE') {
       merged = true;
       mergedText = 'DESCANSO';
       category = 2; // Descanso
+      sortPriority = 5;
     } else if (item.ingreso === 'NO' && item.salida === 'REGISTRO') {
       merged = true;
       mergedText = 'NO REGISTRADO';
       category = 3; // No registrado
+      sortPriority = 6;
     } else {
       if (index === 0) {
         // Usuario: siempre overlap si tiene horario
@@ -176,14 +181,17 @@ const markOverlappingSchedules = (schedules) => {
       } else {
         category = 1; // No coincide pero tiene horario (rojo)
       }
+
+      const sameRole = userRole === (item.role || null);
+      sortPriority = overlap ? (sameRole ? 0 : 1) : (sameRole ? 2 : 3);
     }
     
-    return { ...item, overlap, merged, mergedText, category, estado };
+    return { ...item, overlap, merged, mergedText, category, estado, sortPriority };
   });
 
-  // Mantener el usuario en posición 0, ordenar el resto por categoría
+  // Mantener el usuario en posición 0 y agrupar primero por rol y turno compartido.
   const userItem = markedSchedules[0];
-  const otherItems = markedSchedules.slice(1).sort((a, b) => a.category - b.category);
+  const otherItems = markedSchedules.slice(1).sort((a, b) => a.sortPriority - b.sortPriority);
   
   return [userItem, ...otherItems];
 };
@@ -384,8 +392,12 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
     const participants = userGroup.participants || [];
     
     // Separar: el usuario actual primero, luego los demás
-    const userParticipant = participants.find(p => p.uid === user.uid);
-    const otherParticipants = participants.filter(p => p.uid !== user.uid);
+    const userEmail = normalizeEmail(user.email);
+    const isCurrentUser = (participant) =>
+      (participant.uid && participant.uid === user.uid) ||
+      (userEmail && normalizeEmail(participant.email) === userEmail);
+    const userParticipant = participants.find(isCurrentUser);
+    const otherParticipants = participants.filter((participant) => !isCurrentUser(participant));
     const orderedParticipants = userParticipant 
       ? [userParticipant, ...otherParticipants]
       : participants;
@@ -413,6 +425,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
           let schedule = {
             name: firstName,
             fullName: fullName,
+            role: participant.cargo || participant.role || null,
             ingreso: 'NO',
             salida: 'REGISTRO',
             email: email,
@@ -434,6 +447,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
             schedule = {
               name: firstName,
               fullName: fullName,
+              role: participant.cargo || participant.role || null,
               ingreso: selectedSchedule.startTime || '00:00',
               salida: selectedSchedule.endTime || '00:00',
               email: email,
@@ -444,6 +458,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
             schedule = {
               name: firstName,
               fullName: fullName,
+              role: participant.cargo || participant.role || null,
               ingreso: 'LI',
               salida: 'BRE',
               email: email,
@@ -464,6 +479,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                 schedule = {
                   name: firstName,
                   fullName: fullName,
+                  role: participant.cargo || participant.role || null,
                   ingreso: fallbackSchedule.startTime || '00:00',
                   salida: fallbackSchedule.endTime || '00:00',
                   email: email,
@@ -474,6 +490,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
                 schedule = {
                   name: firstName,
                   fullName: fullName,
+                  role: participant.cargo || participant.role || null,
                   ingreso: 'LI',
                   salida: 'BRE',
                   email: email,
