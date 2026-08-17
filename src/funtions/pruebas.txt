@@ -1,0 +1,141 @@
+pruebas_calculadora_buk.txt
+
+
+REGISTRO DE PRUEBAS - CALCULADORA BUK
+======================================
+
+Configuración:
+- Valor hora base: $9.285
+- Recargo nocturno: 30%
+- Recargo dominical: 54,54%
+
+1. HORAS ORDINARIAS
+-------------------
+Entrada:
+Horas: 58.269999999999996
+
+Resultado:
+Horas: 58.269999999999996
+Valor hora: $9,285
+Total mostrado: $541,037
+
+
+2. RECARGO DOMINICAL
+--------------------
+Entrada:
+Horas: 18
+Minutos: 15
+
+Resultado:
+Tiempo: 18 h 15 min
+Recargo: 54.54%
+Valor hora dominical: $14,349
+Total: $261,870
+
+
+3. RECARGO NOCTURNO
+-------------------
+Entrada:
+Horas: 36
+Minutos: 51
+
+Resultado:
+Tiempo: 36 h 51 min
+Recargo: 30.00%
+Recargo por hora: $2,786
+Total recargo: $102,646
+
+
+4. CALCULAR CUALQUIER RECARGO
+-----------------------------
+Entrada:
+Horas: 18
+Minutos: 15
+Valor pagado: $261,450
+
+Resultado:
+Valor ordinario: $169,451
+Valor pagado: $261,450
+Valor del recargo: $91,999
+Recargo correspondiente: 54.29%
+
+
+Entrada:
+Horas: 16
+Minutos: 8
+Valor pagado: $231,222
+
+Resultado:
+Valor ordinario: $149,798
+Valor pagado: $231,222
+Valor del recargo: $81,424
+Recargo correspondiente: 54.36%
+
+
+Entrada:
+Horas: 6
+Minutos: 3
+Valor pagado: $86,672
+
+Resultado:
+Valor ordinario: $56,174
+Valor pagado: $86,672
+Valor del recargo: $30,498
+Recargo correspondiente: 54.29%
+
+
+Entrada:
+Horas: 24
+Minutos: 58
+Valor pagado: $357,863
+
+Resultado:
+Valor ordinario: $231,815
+Valor pagado: $357,863
+Valor del recargo: $126,048
+Recargo correspondiente: 54.37%
+
+
+Entrada:
+Horas: 18
+Minutos: 49
+Valor pagado: $269,759
+
+Resultado:
+Valor ordinario: $174,713
+Valor pagado: $269,759
+Valor del recargo: $95,046
+Recargo correspondiente: 54.40%
+
+
+Entrada:
+Horas: 12
+Minutos: 14
+Valor pagado: $185,081
+
+Resultado:
+Valor ordinario: $113,586
+Valor pagado: $185,081
+Valor del recargo: $71,495
+Recargo correspondiente: 62.94%
+
+
+Entrada:
+Horas: 16
+Minutos: 7
+Valor pagado: $255,531
+
+Resultado:
+Valor ordinario: $149,643
+Valor pagado: $255,531
+Valor del recargo: $105,888
+Recargo correspondiente: 70.76%
+
+
+ERRORES OBSERVADOS
+------------------
+- KeyboardInterrupt al detener el programa manualmente.
+- ValueError cuando se dejó vacío el campo de horas.
+- ValueError cuando se introdujo una letra ("d") como valor pagado.
+- Se debe validar la entrada para evitar que el programa se cierre ante entradas inválidas.
+- El menú debe continuar funcionando después de un error de entrada.

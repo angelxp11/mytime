@@ -26,6 +26,30 @@ const getDayName = (dateString) => {
   return names[date.getDay()];
 };
 
+export const normalizePendingDayKind = (day = {}) => {
+  const tipo = String(day?.tipo || '').trim().toLowerCase();
+  const estado = String(day?.estado || '').trim().toLowerCase();
+
+  if (tipo === 'capacitacion' || estado === 'cap' || estado === 'capacitacion') {
+    return 'capacitacion';
+  }
+
+  if (
+    tipo === 'vacaciones' ||
+    tipo === 'vac' ||
+    estado === 'vac' ||
+    estado === 'vacaciones'
+  ) {
+    return 'vacaciones';
+  }
+
+  if (tipo === 'descanso' || estado === 'libre' || estado === 'descanso') {
+    return 'descanso';
+  }
+
+  return tipo || 'descanso';
+};
+
 const getWeekKeyFromDate = (date, weeksOffset = 0) => {
   const result = new Date(date);
   const day = result.getDay();
@@ -67,7 +91,7 @@ const formatLongDate = (dateValue) => {
   });
 };
 
-const RegisterHours = ({ user, setCurrentView }) => {
+const RegisterHours = ({ user, setCurrentView, previousView = 'home' }) => {
   const [todayActive, setTodayActive]             = useState(true);
   const [selectedDate, setSelectedDate]           = useState(getTodayDateInput());
   const [entryTime, setEntryTime]                 = useState('18:00');
@@ -87,6 +111,14 @@ const RegisterHours = ({ user, setCurrentView }) => {
     if (todayActive) setSelectedDate(getTodayDateInput());
   }, [todayActive]);
 
+  // Cuando tipo cambia a capacitacion, establecer automáticamente 6 horas (06:00-12:00)
+  useEffect(() => {
+    if (tipo === 'capacitacion') {
+      setEntryTime('06:00');
+      setExitTime('12:00');
+    }
+  }, [tipo]);
+
   useEffect(() => {
     const loadMissingDescansoDays = async () => {
       if (!user) return;
@@ -97,61 +129,74 @@ const RegisterHours = ({ user, setCurrentView }) => {
           getDoc(doc(db, 'horasTrabajadas', user.uid)),
         ]);
 
-        const registeredDates = horasSnap.exists()
-          ? Object.keys(horasSnap.data()?.dias || {})
-          : [];
+        const registeredDates = new Set(
+          horasSnap.exists() ? Object.keys(horasSnap.data()?.dias || {}) : []
+        );
         const semanas = horariosSnap.exists() ? horariosSnap.data()?.semanas || {} : {};
 
-        const getMissingDescansoDays = (weekKey) => {
+        const getMissingPendingDays = (weekKey) => {
           const savedWeek = semanas[weekKey];
           return (savedWeek?.days || [])
-            .filter((day) => day.tipo === 'descanso')
-            .filter((day) => !registeredDates.includes(day.date));
+            .filter((day) => day?.date)
+            .map((day) => ({
+              ...day,
+              pendingType: normalizePendingDayKind(day),
+            }))
+            .filter((day) => ['descanso', 'capacitacion', 'vacaciones'].includes(day.pendingType))
+            .filter((day) => !registeredDates.has(day.date));
         };
 
         const currentWeekKey = getWeekKeyFromDate(new Date());
-        const currentWeekMissingDays = getMissingDescansoDays(currentWeekKey);
+        const currentWeekMissingDays = getMissingPendingDays(currentWeekKey);
 
-        let streakCount = 0;
-        let streakDays = [];
-        let foundThreeWeekStreak = false;
+        let pendingDays = [...currentWeekMissingDays];
 
-        for (let offset = 0; offset < 6; offset += 1) {
+        for (let offset = 1; offset < 6; offset += 1) {
           const weekKey = getWeekKeyFromDate(new Date(), offset);
-          const weekDays = semanas[weekKey]?.days || [];
-          const weekHasDescanso = weekDays.some((day) => day.tipo === 'descanso');
-          const weekMissingDays = getMissingDescansoDays(weekKey);
-
-          if (weekHasDescanso) {
-            streakCount += 1;
-            streakDays.push(...weekMissingDays);
-            if (streakCount >= 3) {
-              foundThreeWeekStreak = true;
-              break;
-            }
-          } else {
-            streakCount = 0;
-            streakDays = [];
-          }
+          const weekMissingDays = getMissingPendingDays(weekKey);
+          pendingDays.push(...weekMissingDays);
         }
 
-        const nextMissingDays = foundThreeWeekStreak
-          ? streakDays.filter((day, index, arr) => arr.findIndex((item) => item.date === day.date) === index)
-          : currentWeekMissingDays;
+        const deduplicated = pendingDays.filter(
+          (day, index, arr) => arr.findIndex((item) => item.date === day.date && item.pendingType === day.pendingType) === index
+        );
 
-        if (nextMissingDays.length > 0) {
-          setMissingDescansoDays(nextMissingDays);
+        if (deduplicated.length > 0) {
+          setMissingDescansoDays(deduplicated);
           setShowDescansoPrompt(true);
         } else {
           setMissingDescansoDays([]);
           setShowDescansoPrompt(false);
         }
       } catch (error) {
-        console.error('Error cargando días de descanso:', error);
+        console.error('Error cargando días pendientes:', error);
       }
     };
     loadMissingDescansoDays();
   }, [user]);
+
+  const getWeekDaysWithTypes = async (selectedDateStr) => {
+    if (!user) return { descansos: [], capacitaciones: [], allDays: [] };
+    try {
+      const horariosSnap = await getDoc(doc(db, 'HORARIOS', user.uid));
+      if (!horariosSnap.exists()) return { descansos: [], capacitaciones: [], allDays: [] };
+
+      const semanas = horariosSnap.data()?.semanas || {};
+      const selectedDate = new Date(`${selectedDateStr}T00:00:00`);
+      const monday = getWeekKeyFromDate(selectedDate);
+      const weekData = semanas[monday];
+
+      if (!weekData || !weekData.days) return { descansos: [], capacitaciones: [], allDays: [] };
+
+      const descansos = weekData.days.filter((day) => day.tipo === 'descanso');
+      const capacitaciones = weekData.days.filter((day) => day.tipo === 'capacitacion');
+      const vacaciones = weekData.days.filter((day) => day.tipo === 'vacaciones');
+      return { descansos, capacitaciones, vacaciones, allDays: weekData.days };
+    } catch (error) {
+      console.error('Error obteniendo días de la semana:', error);
+      return { descansos: [], capacitaciones: [], allDays: [] };
+    }
+  };
 
   const worked = useMemo(() => calculateWorked(entryTime, exitTime), [entryTime, exitTime]);
 
@@ -160,28 +205,77 @@ const RegisterHours = ({ user, setCurrentView }) => {
     if (!user) return;
 
     const fecha = selectedDate || getTodayDateInput();
+    const workedHours = calculateWorked(entryTime, exitTime);
     const payload = {
       tipo,
       registeredAt: new Date().toISOString(),
       date: fecha,
     };
 
-    if (tipo === 'trabajado') {
+    if (tipo === 'trabajado' || tipo === 'capacitacion') {
       payload.entrada = entryTime;
       payload.salida  = exitTime;
-      payload.worked  = { hours: worked.hours, minutes: worked.minutes, seconds: worked.seconds };
+      payload.worked  = { hours: workedHours.hours, minutes: workedHours.minutes, seconds: workedHours.seconds };
     }
 
     setIsSubmitting(true);
     try {
+      // Registrar el día principal
       await setDoc(
         doc(db, 'horasTrabajadas', user.uid),
         { dias: { [fecha]: payload } },
         { merge: true }
       );
-      showToast('Registro guardado con éxito.', 'success');
+
+      // Si es trabajado, capacitacion o vacaciones, registrar automáticamente los días pendientes de la semana
+      if (tipo === 'trabajado' || tipo === 'capacitacion' || tipo === 'vacaciones') {
+        const { allDays } = await getWeekDaysWithTypes(fecha);
+
+        const horasSnap = await getDoc(doc(db, 'horasTrabajadas', user.uid));
+        const registeredDates = horasSnap.exists()
+          ? Object.keys(horasSnap.data()?.dias || {})
+          : [];
+
+        const pendingWeekDays = (allDays || [])
+          .filter((day) => day?.date)
+          .map((day) => ({
+            ...day,
+            pendingType: normalizePendingDayKind(day),
+          }))
+          .filter((day) => ['descanso', 'capacitacion', 'vacaciones'].includes(day.pendingType))
+          .filter((day) => !registeredDates.includes(day.date));
+
+        if (pendingWeekDays.length > 0) {
+          const diasPayload = pendingWeekDays.reduce((acc, day) => {
+            acc[day.date] = {
+              tipo: day.pendingType,
+              registeredAt: new Date().toISOString(),
+              date: day.date,
+              worked: { hours: 0, minutes: 0, seconds: 0 },
+              ...(day.pendingType === 'capacitacion' ? { entrada: '06:00', salida: '12:00' } : {}),
+            };
+            return acc;
+          }, {});
+
+          await setDoc(
+            doc(db, 'horasTrabajadas', user.uid),
+            { dias: diasPayload },
+            { merge: true }
+          );
+
+          const diasFormato = pendingWeekDays
+            .map((day) => `${day.pendingType === 'capacitacion' ? 'Capacitación' : 'Descanso'} ${getDayName(day.date)}`)
+            .join(', ');
+          showToast(`Registro guardado + Días pendientes registrados automáticamente: ${diasFormato}`, 'success');
+        } else {
+          showToast('Registro guardado con éxito.', 'success');
+        }
+      } else {
+        showToast('Registro guardado con éxito.', 'success');
+      }
+      
       if (todayActive) {
-        setCurrentView('home');
+        setCurrentView();
       } else {
         setEntryTime('18:00');
         setExitTime('02:00');
@@ -198,11 +292,13 @@ const RegisterHours = ({ user, setCurrentView }) => {
   const handleRegisterMissingDescansoDays = async () => {
     if (!user || missingDescansoDays.length === 0) return;
     const diasPayload = missingDescansoDays.reduce((acc, day) => {
+      const pendingType = normalizePendingDayKind(day);
       acc[day.date] = {
-        tipo: 'descanso',
+        tipo: pendingType,
         registeredAt: new Date().toISOString(),
         date: day.date,
         worked: { hours: 0, minutes: 0, seconds: 0 },
+        ...(pendingType === 'capacitacion' ? { entrada: '06:00', salida: '12:00' } : {}),
       };
       return acc;
     }, {});
@@ -212,12 +308,17 @@ const RegisterHours = ({ user, setCurrentView }) => {
         { dias: diasPayload },
         { merge: true }
       );
-      showToast('Días de descanso registrados correctamente.', 'success');
+      const tipoTexto = missingDescansoDays.some((day) => normalizePendingDayKind(day) === 'capacitacion')
+        ? 'Días pendientes registrados correctamente.'
+        : missingDescansoDays.some((day) => normalizePendingDayKind(day) === 'vacaciones')
+          ? 'Días de vacaciones registrados correctamente.'
+          : 'Días de descanso registrados correctamente.';
+      showToast(tipoTexto, 'success');
       setShowDescansoPrompt(false);
       setMissingDescansoDays([]);
     } catch (error) {
-      console.error('Error registrando días de descanso:', error);
-      showToast('No se pudieron registrar los días de descanso.', 'error');
+      console.error('Error registrando días pendientes:', error);
+      showToast('No se pudieron registrar los días pendientes.', 'error');
     }
   };
 
@@ -231,21 +332,34 @@ const RegisterHours = ({ user, setCurrentView }) => {
         const dayName = getDayName(day.date);
         const dayNumber = date.getDate();
         const monthName = date.toLocaleDateString('es-ES', { month: 'long' });
-        return `${dayName} ${dayNumber} de ${monthName}`;
-      })
-      .join(', ');
+        const pendingKind = normalizePendingDayKind(day);
+    const tipoLabel = pendingKind === 'capacitacion'
+      ? 'Capacitación'
+      : pendingKind === 'vacaciones'
+        ? 'Vacaciones'
+        : 'Descanso';
+    return `${tipoLabel} · ${dayName} ${dayNumber} de ${monthName}`;
+  })
+  .join(', ');
 
     return (
       <div className="register-hours-alert">
         <p>
-          Tienes días de descanso sin registrar esta semana: <strong>{formattedDays}</strong>.
-          ¿Deseas registrarlos ahora?
+          ℹ️ Días sin registrar: <strong>{formattedDays}</strong>
         </p>
         <div className="register-hours-alert-actions">
-          <button type="button" className="register-hours-alert-yes" onClick={handleRegisterMissingDescansoDays}>
-            Sí, registrar
+          <button
+            type="button"
+            className="register-hours-alert-yes"
+            onClick={handleRegisterMissingDescansoDays}
+          >
+            Registrar pendientes
           </button>
-          <button type="button" className="register-hours-alert-no" onClick={() => setShowDescansoPrompt(false)}>
+          <button
+            type="button"
+            className="register-hours-alert-no"
+            onClick={() => setShowDescansoPrompt(false)}
+          >
             Ahora no
           </button>
         </div>
@@ -256,7 +370,7 @@ const RegisterHours = ({ user, setCurrentView }) => {
   const isNightShift = exitTime <= entryTime;
 
   return (
-    <div className="register-hours-overlay" onClick={(e) => e.target === e.currentTarget && setCurrentView('home')}>
+    <div className="register-hours-overlay" onClick={(e) => e.target === e.currentTarget && setCurrentView()}>
       <div className="register-hours-modal">
 
         {/* Header */}
@@ -273,7 +387,7 @@ const RegisterHours = ({ user, setCurrentView }) => {
           <button
             type="button"
             className="register-hours-close"
-            onClick={() => setCurrentView('home')}
+            onClick={() => setCurrentView()}
             aria-label="Cerrar"
           >
             <FiX size={18} />
@@ -330,12 +444,14 @@ const RegisterHours = ({ user, setCurrentView }) => {
             <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
               <option value="trabajado">Trabajado</option>
               <option value="descanso">Día libre</option>
+              <option value="vacaciones">Vacaciones</option>
+              <option value="capacitacion">Capacitación</option>
               <option value="incapacidad_comun">Incapacidad común</option>
               <option value="incapacidad_laboral">Incapacidad laboral</option>
             </select>
           </div>
 
-          {/* Horas — solo si tipo === trabajado */}
+          {/* Horas — si tipo === trabajado o capacitacion */}
           {tipo === 'trabajado' && (
             <>
               <div className="register-hours-row two-columns">
@@ -369,12 +485,32 @@ const RegisterHours = ({ user, setCurrentView }) => {
             </>
           )}
 
+          {tipo === 'capacitacion' && (
+            <div className="register-hours-field">
+              <label>Capacitación</label>
+              <div className="duration-box" style={{ backgroundColor: '#e0e7ff', color: '#6366f1' }}>
+                <strong>CAP - 6 horas (06:00 a 12:00)</strong>
+                <span>⏱️ Automático</span>
+              </div>
+            </div>
+          )}
+
+          {tipo === 'vacaciones' && (
+            <div className="register-hours-field">
+              <label>Vacaciones</label>
+              <div className="duration-box" style={{ backgroundColor: '#dcfce7', color: '#15803d' }}>
+                <strong>VAC - Día pagado</strong>
+                <span>🏖️ Se registra como día de vacaciones</span>
+              </div>
+            </div>
+          )}
+
           {/* Acciones */}
           <div className="register-hours-actions">
             <button
               type="button"
               className="register-hours-secondary"
-              onClick={() => setCurrentView('home')}
+              onClick={() => setCurrentView(previousView || 'home')}
             >
               Cancelar
             </button>

@@ -403,7 +403,7 @@ const ParticipantRow = React.memo(function ParticipantRow({
         const startH = cell.startH || '00';
         const endH = cell.endH || '00';
         const dayTotal = isNonWorkingDay
-          ? (estado === 'CEO' || estado === 'CAP' ? 8 : 0)
+          ? (estado === 'CEO' || estado === 'CAP' ? 6 : 0)
           : calcTotal(startH, endH, cell.descanso);
 
         if (isNonWorkingDay) {
@@ -1121,7 +1121,7 @@ if (data?.participantOrderGlobal) {
       const estado = cell.estado || '-';
       
       if (estado === 'CEO' || estado === 'CAP') {
-        total += 8;
+        total += 6;
       } else if (!['libre', 'INC', 'LIC', 'VAC', 'SAN'].includes(estado)) {
         total += calcTotal(cell.startH, cell.endH, cell.descanso);
       }

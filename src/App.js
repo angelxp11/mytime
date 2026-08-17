@@ -24,6 +24,7 @@ import Footer from './components/footer/footer';
 
 function App() {
   const [currentView, setCurrentView] = useState('home');
+  const [isRegisterHoursOpen, setIsRegisterHoursOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showCopiModal, setShowCopiModal] = useState(false);
@@ -159,46 +160,87 @@ function App() {
     await auth.signOut();
   };
 
+  const handleSetCurrentView = (view) => {
+    if (view === undefined) {
+      setIsRegisterHoursOpen(false);
+      return;
+    }
+
+    if (view === 'registerhours') {
+      setIsRegisterHoursOpen(true);
+      return;
+    }
+
+    setIsRegisterHoursOpen(false);
+    setCurrentView(view);
+  };
+
+  const handleCloseRegisterHours = () => {
+    setIsRegisterHoursOpen(false);
+  };
+
   const renderView = () => {
+    let content;
+
     switch (currentView) {
       case 'login':
-        return <Login setCurrentView={setCurrentView} />;
+        content = <Login setCurrentView={setCurrentView} />;
+        break;
       case 'register':
-        return <Register setCurrentView={setCurrentView} />;
+        content = <Register setCurrentView={setCurrentView} />;
+        break;
       case 'reset':
-        return <ResetPassword setCurrentView={setCurrentView} />;
+        content = <ResetPassword setCurrentView={setCurrentView} />;
+        break;
       case 'home':
-        return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+        content = <HomePage user={user} userPlan={userPlan} setCurrentView={handleSetCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+        break;
       case 'trabajos':
         if (userPlan?.ocultarFunciones) {
-          return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+          content = <HomePage user={user} userPlan={userPlan} setCurrentView={handleSetCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+        } else {
+          content = <MisTrabajos user={user} />;
         }
-        return <MisTrabajos user={user} />;
+        break;
       case 'grupos':
-        return <Grupos user={user} />;
+        content = <Grupos user={user} />;
+        break;
       case 'calendar':
         if (userPlan?.ocultarFunciones) {
-          return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+          content = <HomePage user={user} userPlan={userPlan} setCurrentView={handleSetCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+        } else {
+          content = <CalendarComponent user={user} />;
         }
-        return <CalendarComponent user={user} />;
+        break;
       case 'pago':
         if (userPlan?.ocultarFunciones || !userPlan || userPlan.plan !== 'premium') {
-          return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+          content = <HomePage user={user} userPlan={userPlan} setCurrentView={handleSetCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+        } else {
+          content = <ConsultarPago user={user} setCurrentView={handleSetCurrentView} />;
         }
-        return <ConsultarPago user={user} setCurrentView={setCurrentView} />;
-      case 'registerhours':
-        if (userPlan?.ocultarFunciones || !userPlan || userPlan.plan !== 'premium') {
-          return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
-        }
-        return <RegisterHours user={user} setCurrentView={setCurrentView} />;
+        break;
       case 'horarios':
         if (userPlan?.ocultarFunciones) {
-          return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+          content = <HomePage user={user} userPlan={userPlan} setCurrentView={handleSetCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+        } else {
+          content = <Horario user={user} setCurrentView={handleSetCurrentView} />;
         }
-        return <Horario user={user} setCurrentView={setCurrentView} />;
+        break;
       default:
-        return <HomePage user={user} userPlan={userPlan} setCurrentView={setCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+        content = <HomePage user={user} userPlan={userPlan} setCurrentView={handleSetCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;
+        break;
     }
+
+    if (isRegisterHoursOpen && currentView !== 'login' && currentView !== 'register' && currentView !== 'reset') {
+      return (
+        <>
+          {content}
+          <RegisterHours user={user} setCurrentView={handleCloseRegisterHours} previousView={currentView} />
+        </>
+      );
+    }
+
+    return content;
   };
 
   if (isLoading) {
@@ -217,7 +259,7 @@ function App() {
   return (
     <div className="App">
       <Navbar
-        setCurrentView={setCurrentView}
+        setCurrentView={handleSetCurrentView}
         user={user}
         userPlan={userPlan}
         handleLogout={handleLogout}

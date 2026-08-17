@@ -55,6 +55,8 @@ const getTipoLabel = (tipo) => {
       return 'Trabajado';
     case 'descanso':
       return 'Día libre';
+    case 'capacitacion':
+      return 'Capacitación';
     case 'incapacidad_comun':
       return 'Incapacidad común';
     case 'incapacidad_laboral':
@@ -62,7 +64,7 @@ const getTipoLabel = (tipo) => {
     default:
       return 'Sin tipo';
   }
-};
+}
 
 const getFestivos = () => {
   const festivos = new Set();
@@ -130,7 +132,7 @@ const CalendarComponent = ({ user }) => {
   const counts = useMemo(() => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
-    const counts = { trabajado: 0, descanso: 0, incapacidad_comun: 0, incapacidad_laboral: 0 };
+    const counts = { trabajado: 0, descanso: 0, capacitacion: 0, incapacidad_comun: 0, incapacidad_laboral: 0 }
     Object.keys(diasData).forEach(dateStr => {
       const date = new Date(dateStr);
       if (date.getFullYear() === year && date.getMonth() === month) {
@@ -278,6 +280,9 @@ const CalendarComponent = ({ user }) => {
           <span className="color-box descanso"></span> Descanso: {counts.descanso}
         </div>
         <div className="legend-item">
+          <span className="color-box capacitacion"></span> Capacitación: {counts.capacitacion}
+        </div>
+        <div className="legend-item">
           <span className="color-box incapacidad_comun"></span> Incapacidad Común: {counts.incapacidad_comun}
         </div>
         <div className="legend-item">
@@ -362,6 +367,7 @@ const CalendarComponent = ({ user }) => {
                   <select value={editTipo} onChange={(e) => setEditTipo(e.target.value)}>
                     <option value="trabajado">Trabajado</option>
                     <option value="descanso">Día libre o descanso</option>
+                    <option value="capacitacion">Capacitación</option>
                     <option value="incapacidad_comun">Incapacidad común</option>
                     <option value="incapacidad_laboral">Incapacidad laboral</option>
                   </select>
