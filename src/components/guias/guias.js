@@ -104,9 +104,34 @@ const Guias = ({ user, setCurrentView }) => {
   const toggleAttendance = async (member) => {
     if (!selectedGuide || !canAuthorizeAttendance(selectedGuide)) return;
     const memberKey = getMemberKey(member);
+    const existingRecord = selectedGuide.attendance?.[memberKey];
+    const hasScore = existingRecord && typeof existingRecord.score === 'number';
+
+    if (selectedGuide.hasEvaluation && !hasScore) {
+      if (existingRecord) {
+        window.alert('La asistencia ya quedó confirmada. Escribe el puntaje para finalizar la evaluación.');
+        return;
+      }
+    }
+
     const attendance = { ...(selectedGuide.attendance || {}) };
-    if (attendance[memberKey]) delete attendance[memberKey];
-    else attendance[memberKey] = { approvedBy: user.uid, approvedByName: user.displayName || user.email || 'Usuario', approvedAt: new Date().toISOString() };
+    if (selectedGuide.hasEvaluation && !hasScore) {
+      attendance[memberKey] = {
+        ...(existingRecord || {}),
+        approvedBy: user.uid,
+        approvedByName: user.displayName || user.email || 'Usuario',
+        approvedAt: new Date().toISOString(),
+      };
+    } else if (attendance[memberKey]) {
+      delete attendance[memberKey];
+    } else {
+      attendance[memberKey] = {
+        approvedBy: user.uid,
+        approvedByName: user.displayName || user.email || 'Usuario',
+        approvedAt: new Date().toISOString(),
+      };
+    }
+
     setSaving(true);
     try {
       await updateDoc(doc(db, 'GUIAS', selectedGuide.id), { attendance });
@@ -175,9 +200,15 @@ const Guias = ({ user, setCurrentView }) => {
       `${member.name} ${member.email}`.toLowerCase().includes(attendeeFilter.toLowerCase())
     )
     .sort((firstMember, secondMember) => {
-      const firstAttended = Boolean(selectedGuide?.attendance?.[getMemberKey(firstMember)]);
-      const secondAttended = Boolean(selectedGuide?.attendance?.[getMemberKey(secondMember)]);
-      return Number(firstAttended) - Number(secondAttended);
+      if (!selectedGuide?.hasEvaluation) return 0;
+
+      const firstRecord = selectedGuide.attendance?.[getMemberKey(firstMember)];
+      const secondRecord = selectedGuide.attendance?.[getMemberKey(secondMember)];
+      const firstCompleted = Boolean(firstRecord && typeof firstRecord.score === 'number');
+      const secondCompleted = Boolean(secondRecord && typeof secondRecord.score === 'number');
+
+      if (firstCompleted === secondCompleted) return 0;
+      return Number(firstCompleted) - Number(secondCompleted);
     });
 
   return (
