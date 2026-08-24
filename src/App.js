@@ -14,6 +14,7 @@ import Grupos from './components/grupos/grupos';
 import ConsultarPago from './components/ConsultarPago/ConsultarPago';
 import CalendarComponent from './components/Calendar/calendar';
 import Horario from './components/horario/horario';
+import Guias from './components/guias/guias';
 import Loading from './components/loading/loading';
 import RegisterHours from './components/registerhours/RegisterHours';
 import ToastContainer from './components/ToastContainer';
@@ -225,6 +226,9 @@ function App() {
         } else {
           content = <Horario user={user} setCurrentView={handleSetCurrentView} />;
         }
+        break;
+      case 'guias':
+        content = <Guias user={user} setCurrentView={handleSetCurrentView} />;
         break;
       default:
         content = <HomePage user={user} userPlan={userPlan} setCurrentView={handleSetCurrentView} setShowCopiModal={setShowCopiModal} setShowPlanModal={setShowPlanModal} />;

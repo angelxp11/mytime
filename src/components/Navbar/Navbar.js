@@ -128,8 +128,11 @@ const Navbar = ({ setCurrentView, user, userPlan, handleLogout, setShowSubsModal
             Grupos
           </button>
           <button type="button" className="navbar-item" onClick={() => handleNavClick('horarios')}>
-                Horarios
-              </button>
+            Horarios
+          </button>
+          <button type="button" className="navbar-item" onClick={() => handleNavClick('guias')}>
+            Guías
+          </button>
 
           {user && user.email === 'jocheangel728@gmail.com' && (
             <>

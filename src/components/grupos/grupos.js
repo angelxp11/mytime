@@ -185,6 +185,14 @@ const Grupos = ({ user }) => {
     .map((participant) => participant.uid)
     .filter(Boolean);
 
+  const adminIds = [
+    user.uid,
+    ...groupData.participants
+      .filter((participant) => participant.role === 'editor')
+      .map((participant) => participant.uid)
+      .filter(Boolean),
+  ];
+
   const cleanSchedules = (groupData.schedules || []).map(schedule => ({
     day: schedule.day || '',
     start: schedule.start || '',
@@ -200,6 +208,7 @@ const Grupos = ({ user }) => {
         participants: groupData.participants,
         participantEmails,
         participantIds,
+        adminIds,
         schedules: cleanSchedules,
         cargos: groupData.cargos || [],
       });
@@ -211,6 +220,7 @@ const Grupos = ({ user }) => {
         participants: groupData.participants,
         participantEmails,
         participantIds,
+        adminIds,
         schedules: cleanSchedules,
         cargos: groupData.cargos || [],
         createdAt: serverTimestamp(),

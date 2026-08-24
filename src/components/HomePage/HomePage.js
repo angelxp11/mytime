@@ -810,6 +810,9 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
             </button>
           </>
         )}
+        <button className="home-button" onClick={() => setCurrentView('guias')}>
+          Guías
+        </button>
         <button className="home-button" onClick={() => setShowCopiModal(true)}>
           Recuperar Datos
         </button>
