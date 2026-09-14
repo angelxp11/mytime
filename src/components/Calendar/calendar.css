@@ -52,6 +52,7 @@
 .trabajado { background-color: #04724D; }
 .descanso { background-color: #84BCDA; }
 .capacitacion { background-color: #c500ec6b; }
+.vacaciones { background-color: #0f766e; }
 .incapacidad_comun { background-color: #f59e0b; }
 .incapacidad_laboral { background-color: #ef4444; }
 
@@ -264,6 +265,12 @@
   border-color: rgba(196, 0, 236, 0.4);
 }
 
+.react-calendar__tile.vacaciones {
+  background: #0f766e;
+  color: #ffffff;
+  border-color: rgba(20, 184, 166, 0.4);
+}
+
 .react-calendar__tile.incapacidad_comun {
   background: #f59e0b;
   color: #0f172a;
@@ -297,6 +304,14 @@
 .react-calendar__tile.capacitacion:enabled:focus,
 .react-calendar__tile.capacitacion:enabled:focus-visible {
   background: #c400ec !important;
+  box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.04) !important;
+  color: #ffffff !important;
+}
+
+.react-calendar__tile.vacaciones:enabled:hover,
+.react-calendar__tile.vacaciones:enabled:focus,
+.react-calendar__tile.vacaciones:enabled:focus-visible {
+  background: #0f766e !important;
   box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.04) !important;
   color: #ffffff !important;
 }

@@ -452,11 +452,11 @@ const RegisterHours = ({ user, setCurrentView, previousView = 'home' }) => {
           </div>
 
           {/* Horas — si tipo === trabajado o capacitacion */}
-          {tipo === 'trabajado' && (
+          {(tipo === 'trabajado' || tipo === 'capacitacion') && (
             <>
               <div className="register-hours-row two-columns">
                 <div className="register-hours-field">
-                  <label>Hora de entrada</label>
+                  <label>{tipo === 'capacitacion' ? 'Inicio de capacitación' : 'Hora de entrada'}</label>
                   <input
                     type="time"
                     value={entryTime}
@@ -465,7 +465,7 @@ const RegisterHours = ({ user, setCurrentView, previousView = 'home' }) => {
                   />
                 </div>
                 <div className="register-hours-field">
-                  <label>Hora de salida</label>
+                  <label>{tipo === 'capacitacion' ? 'Fin de capacitación' : 'Hora de salida'}</label>
                   <input
                     type="time"
                     value={exitTime}
@@ -479,21 +479,12 @@ const RegisterHours = ({ user, setCurrentView, previousView = 'home' }) => {
                 <label>Duración calculada</label>
                 <div className="duration-box">
                   <strong>{worked.hours}h {worked.minutes}m {worked.seconds}s</strong>
-                  <span>{isNightShift ? '🌙 Turno nocturno' : '☀️ Turno diurno'}</span>
+                  <span>{tipo === 'capacitacion' ? 'Horas pagadas como tarifa base' : (isNightShift ? '🌙 Turno nocturno' : '☀️ Turno diurno')}</span>
                 </div>
               </div>
             </>
           )}
 
-          {tipo === 'capacitacion' && (
-            <div className="register-hours-field">
-              <label>Capacitación</label>
-              <div className="duration-box" style={{ backgroundColor: '#e0e7ff', color: '#6366f1' }}>
-                <strong>CAP - 6 horas (06:00 a 12:00)</strong>
-                <span>⏱️ Automático</span>
-              </div>
-            </div>
-          )}
 
           {tipo === 'vacaciones' && (
             <div className="register-hours-field">

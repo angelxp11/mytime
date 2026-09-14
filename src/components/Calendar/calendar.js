@@ -38,6 +38,10 @@ const calculateWorked = (entryValue, exitValue) => {
   };
 };
 
+const getDefaultTimes = (tipo) => tipo === 'capacitacion'
+  ? { entry: '06:00', exit: '12:00' }
+  : { entry: '18:00', exit: '02:00' };
+
 const formatLongDate = (dateValue) => {
   if (!dateValue) return '';
   const date = new Date(`${dateValue}T00:00:00`);
@@ -49,6 +53,23 @@ const formatLongDate = (dateValue) => {
   });
 };
 
+const getDateRange = (startDate, endDate) => {
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  const firstDate = start <= end ? start : end;
+  const lastDate = start <= end ? end : start;
+  const dates = [];
+
+  for (const date = new Date(firstDate); date <= lastDate; date.setDate(date.getDate() + 1)) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    dates.push(`${year}-${month}-${day}`);
+  }
+
+  return dates;
+};
+
 const getTipoLabel = (tipo) => {
   switch (tipo) {
     case 'trabajado':
@@ -57,6 +78,8 @@ const getTipoLabel = (tipo) => {
       return 'Día libre';
     case 'capacitacion':
       return 'Capacitación';
+    case 'vacaciones':
+      return 'Vacaciones';
     case 'incapacidad_comun':
       return 'Incapacidad común';
     case 'incapacidad_laboral':
@@ -86,6 +109,7 @@ const CalendarComponent = ({ user }) => {
   const [loading, setLoading] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState('');
+  const [vacationEndDate, setVacationEndDate] = useState('');
   const [selectedDayData, setSelectedDayData] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -132,7 +156,7 @@ const CalendarComponent = ({ user }) => {
   const counts = useMemo(() => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
-    const counts = { trabajado: 0, descanso: 0, capacitacion: 0, incapacidad_comun: 0, incapacidad_laboral: 0 }
+    const counts = { trabajado: 0, descanso: 0, capacitacion: 0, vacaciones: 0, incapacidad_comun: 0, incapacidad_laboral: 0 }
     Object.keys(diasData).forEach(dateStr => {
       const date = new Date(dateStr);
       if (date.getFullYear() === year && date.getMonth() === month) {
@@ -193,23 +217,27 @@ const CalendarComponent = ({ user }) => {
     const dayData = diasData[dateStr];
     // Si no hay registro, abrir modal en modo edición para crear un nuevo día
     if (!dayData) {
+      const defaultTimes = getDefaultTimes('trabajado');
       setSelectedDate(dateStr);
+      setVacationEndDate(dateStr);
       setSelectedDayData(null);
       setDetailsOpen(true);
       setEditMode(true);
       setEditTipo('trabajado');
-      setEditEntryTime('18:00');
-      setEditExitTime('02:00');
+      setEditEntryTime(defaultTimes.entry);
+      setEditExitTime(defaultTimes.exit);
       return;
     }
 
+    const defaultTimes = getDefaultTimes(dayData.tipo);
     setSelectedDate(dateStr);
+    setVacationEndDate(dateStr);
     setSelectedDayData(dayData);
     setDetailsOpen(true);
     setEditMode(false);
     setEditTipo(dayData.tipo || 'trabajado');
-    setEditEntryTime(dayData.entrada || '18:00');
-    setEditExitTime(dayData.salida || '02:00');
+    setEditEntryTime(dayData.entrada || defaultTimes.entry);
+    setEditExitTime(dayData.salida || defaultTimes.exit);
   };
 
   const startEdit = () => {
@@ -225,18 +253,22 @@ const CalendarComponent = ({ user }) => {
     event.preventDefault();
     if (!user || !selectedDate) return;
 
-    if (editTipo === 'trabajado' && (!editEntryTime || !editExitTime)) {
+    if ((editTipo === 'trabajado' || editTipo === 'capacitacion') && (!editEntryTime || !editExitTime)) {
       showToast('Completa la hora de entrada y salida para guardar el registro.', 'error');
       return;
     }
 
+    const vacationDates = editTipo === 'vacaciones'
+      ? getDateRange(selectedDate, vacationEndDate || selectedDate)
+      : [selectedDate];
+    const registeredAt = selectedDayData?.registeredAt || new Date().toISOString();
     const payload = {
       tipo: editTipo,
-      registeredAt: selectedDayData?.registeredAt || new Date().toISOString(),
+      registeredAt,
       date: selectedDate,
     };
 
-    if (editTipo === 'trabajado') {
+    if (editTipo === 'trabajado' || editTipo === 'capacitacion') {
       payload.entrada = editEntryTime;
       payload.salida = editExitTime;
       payload.worked = calculateWorked(editEntryTime, editExitTime);
@@ -244,15 +276,25 @@ const CalendarComponent = ({ user }) => {
 
     setIsSaving(true);
     try {
+      const diasPayload = vacationDates.reduce((days, date) => {
+        days[date] = { ...payload, date };
+        return days;
+      }, {});
+
       await setDoc(
         doc(db, 'horasTrabajadas', user.uid),
-        { dias: { [selectedDate]: payload } },
+        { dias: diasPayload },
         { merge: true }
       );
-      setDiasData((prev) => ({ ...prev, [selectedDate]: payload }));
+      setDiasData((prev) => ({ ...prev, ...diasPayload }));
       setSelectedDayData(payload);
       setEditMode(false);
-      showToast('Registro actualizado.', 'success');
+      showToast(
+        editTipo === 'vacaciones' && vacationDates.length > 1
+          ? `${vacationDates.length} días de vacaciones registrados.`
+          : 'Registro actualizado.',
+        'success'
+      );
     } catch (error) {
       console.error('Error guardando edición:', error);
       showToast('No se pudo actualizar el registro. Intenta de nuevo.', 'error');
@@ -281,6 +323,9 @@ const CalendarComponent = ({ user }) => {
         </div>
         <div className="legend-item">
           <span className="color-box capacitacion"></span> Capacitación: {counts.capacitacion}
+        </div>
+        <div className="legend-item">
+          <span className="color-box vacaciones"></span> Vacaciones: {counts.vacaciones}
         </div>
         <div className="legend-item">
           <span className="color-box incapacidad_comun"></span> Incapacidad Común: {counts.incapacidad_comun}
@@ -327,18 +372,18 @@ const CalendarComponent = ({ user }) => {
                   <strong>{getTipoLabel(selectedDayData.tipo)}</strong>
                 </div>
 
-                {selectedDayData.tipo === 'trabajado' ? (
+                {selectedDayData.tipo === 'trabajado' || selectedDayData.tipo === 'capacitacion' ? (
                   <>
                     <div className="calendar-modal-row">
-                      <span className="calendar-modal-label">Entrada</span>
+                      <span className="calendar-modal-label">{selectedDayData.tipo === 'capacitacion' ? 'Inicio de capacitación' : 'Entrada'}</span>
                       <strong>{selectedDayData.entrada || '—'}</strong>
                     </div>
                     <div className="calendar-modal-row">
-                      <span className="calendar-modal-label">Salida</span>
+                      <span className="calendar-modal-label">{selectedDayData.tipo === 'capacitacion' ? 'Fin de capacitación' : 'Salida'}</span>
                       <strong>{selectedDayData.salida || '—'}</strong>
                     </div>
                     <div className="calendar-modal-row">
-                      <span className="calendar-modal-label">Tiempo registrado</span>
+                      <span className="calendar-modal-label">{selectedDayData.tipo === 'capacitacion' ? 'Horas de capacitación' : 'Tiempo registrado'}</span>
                       <strong>
                         {selectedDayData.worked?.hours ?? 0}h {selectedDayData.worked?.minutes ?? 0}m {selectedDayData.worked?.seconds ?? 0}s
                       </strong>
@@ -364,19 +409,59 @@ const CalendarComponent = ({ user }) => {
               <form className="calendar-modal-content" onSubmit={handleSaveEdit}>
                 <div className="calendar-modal-row">
                   <label className="calendar-modal-label">Tipo de día</label>
-                  <select value={editTipo} onChange={(e) => setEditTipo(e.target.value)}>
+                  <select
+                    value={editTipo}
+                    onChange={(e) => {
+                      const nextTipo = e.target.value;
+                      const defaultTimes = getDefaultTimes(nextTipo);
+                      setEditTipo(nextTipo);
+                      if (nextTipo === 'vacaciones') {
+                        setVacationEndDate(selectedDate);
+                      }
+                      if (nextTipo === 'capacitacion' || editTipo === 'capacitacion') {
+                        setEditEntryTime(defaultTimes.entry);
+                        setEditExitTime(defaultTimes.exit);
+                      }
+                    }}
+                  >
                     <option value="trabajado">Trabajado</option>
                     <option value="descanso">Día libre o descanso</option>
                     <option value="capacitacion">Capacitación</option>
+                    <option value="vacaciones">Vacaciones</option>
                     <option value="incapacidad_comun">Incapacidad común</option>
                     <option value="incapacidad_laboral">Incapacidad laboral</option>
                   </select>
                 </div>
 
-                {editTipo === 'trabajado' && (
+                {editTipo === 'vacaciones' && (
                   <>
                     <div className="calendar-modal-row">
-                      <label className="calendar-modal-label">Hora de entrada</label>
+                      <label className="calendar-modal-label" htmlFor="vacation-start-date">Fecha inicial</label>
+                      <input
+                        id="vacation-start-date"
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="calendar-modal-row">
+                      <label className="calendar-modal-label" htmlFor="vacation-end-date">Fecha final</label>
+                      <input
+                        id="vacation-end-date"
+                        type="date"
+                        value={vacationEndDate || selectedDate}
+                        onChange={(e) => setVacationEndDate(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+
+                {(editTipo === 'trabajado' || editTipo === 'capacitacion') && (
+                  <>
+                    <div className="calendar-modal-row">
+                      <label className="calendar-modal-label">{editTipo === 'capacitacion' ? 'Inicio de capacitación' : 'Hora de entrada'}</label>
                       <input
                         type="time"
                         value={editEntryTime}
@@ -388,7 +473,7 @@ const CalendarComponent = ({ user }) => {
                       />
                     </div>
                     <div className="calendar-modal-row">
-                      <label className="calendar-modal-label">Hora de salida</label>
+                      <label className="calendar-modal-label">{editTipo === 'capacitacion' ? 'Fin de capacitación' : 'Hora de salida'}</label>
                       <input
                         type="time"
                         value={editExitTime}
@@ -400,7 +485,7 @@ const CalendarComponent = ({ user }) => {
                       />
                     </div>
                     <div className="calendar-modal-row">
-                      <span className="calendar-modal-label">Duración calculada</span>
+                      <span className="calendar-modal-label">{editTipo === 'capacitacion' ? 'Horas de capacitación' : 'Duración calculada'}</span>
                       <strong>
                         {calculateWorked(editEntryTime, editExitTime).hours}h {calculateWorked(editEntryTime, editExitTime).minutes}m {calculateWorked(editEntryTime, editExitTime).seconds}s
                       </strong>

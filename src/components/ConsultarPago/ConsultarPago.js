@@ -339,6 +339,7 @@ const ConsultarPago = ({ user, setCurrentView }) => {
       let horasExtraDominicalDiurna = 0;
       let horasExtraDominicalNocturna = 0;
       let horasCapacitacion = 0;
+      let horasVacaciones = 0;
       let diasDescanso = 0;
       let diasVacaciones = 0;
       let diasIncapacidadComun = 0;
@@ -436,9 +437,11 @@ const ConsultarPago = ({ user, setCurrentView }) => {
             }
           } else if (dayData.tipo === 'capacitacion') {
             // Capacitación: horas sin recargo nocturno, como horas diurnas normales
-            if (dayData.entrada && dayData.salida) {
-              const [entryH, entryM] = dayData.entrada.split(':').map(Number);
-              const [exitH, exitM] = dayData.salida.split(':').map(Number);
+            const entradaCapacitacion = dayData.entrada || '06:00';
+            const salidaCapacitacion = dayData.salida || '12:00';
+            if (entradaCapacitacion && salidaCapacitacion) {
+              const [entryH, entryM] = entradaCapacitacion.split(':').map(Number);
+              const [exitH, exitM] = salidaCapacitacion.split(':').map(Number);
               const entryTime = entryH + entryM / 60;
               const exitTime = exitH + exitM / 60;
               
@@ -451,8 +454,8 @@ const ConsultarPago = ({ user, setCurrentView }) => {
               diasLaborados.push({
                 fecha: dateStr,
                 horas: horasTotal,
-                horaEntrada: dayData.entrada,
-                horaSalida: dayData.salida,
+                horaEntrada: entradaCapacitacion,
+                horaSalida: salidaCapacitacion,
                 tipo: 'capacitacion',
               });
             }
@@ -460,6 +463,8 @@ const ConsultarPago = ({ user, setCurrentView }) => {
             diasDescanso++;
           } else if (dayData.tipo === 'vacaciones') {
             diasVacaciones++;
+            horasVacaciones += 5.015;
+            totalHoras += 5.015;
           } else if (dayData.tipo === 'incapacidad_comun') {
             diasIncapacidadComun++;
           } else if (dayData.tipo === 'incapacidad_laboral') {
@@ -518,7 +523,7 @@ const ConsultarPago = ({ user, setCurrentView }) => {
       );
       const nocturnaDominicalHourly = nocturnaHourly + dominicalHourly - baseHourly;
 
-      const valorDiaVacaciones = (trabajo.baseHourly || 0) * 8;
+      const valorDiaVacaciones = (trabajo.baseHourly || 0) * 5.015;
       const pagoBase = horasDiurnas * baseHourly;
       const pagoCapacitacion = horasCapacitacion * baseHourly;
       const pagoVacaciones = diasVacaciones * valorDiaVacaciones;
@@ -580,6 +585,7 @@ const ConsultarPago = ({ user, setCurrentView }) => {
         horasExtraDominicalDiurna,
         horasExtraDominicalNocturna,
         horasCapacitacion,
+        horasVacaciones,
         diasDescanso,
         diasVacaciones,
         diasIncapacidadComun,
@@ -702,8 +708,9 @@ const ConsultarPago = ({ user, setCurrentView }) => {
           { label: 'Auxilio de transporte',           quantityLabel: `${calculations.detalles.length} días`,               amount: calculations.auxilioTransporte },
         ]
       : [
-          { label: 'Horas diarias',         quantityLabel: formatHoras(calculations.totalHoras - calculations.horasCapacitacion),                                        amount: (calculations.totalHoras - calculations.horasCapacitacion) * calculations.baseHourly },
+          { label: 'Horas diarias',         quantityLabel: formatHoras(calculations.totalHoras - calculations.horasCapacitacion - calculations.horasVacaciones),             amount: (calculations.totalHoras - calculations.horasCapacitacion - calculations.horasVacaciones) * calculations.baseHourly },
           { label: 'Horas capacitación',    quantityLabel: formatHoras(calculations.horasCapacitacion),                                                                 amount: calculations.pagoCapacitacion },
+          { label: 'Vacaciones',             quantityLabel: formatHoras(calculations.horasVacaciones),                                                                  amount: calculations.pagoVacaciones },
           { label: 'Recargo nocturno',      quantityLabel: formatHoras(calculations.horasNocturnas + calculations.horasExtraNocturna),                                   amount: (calculations.pagoNocturnoRecargo || 0) + (calculations.pagoExtraNocturnaRecargo || 0) },
           { label: 'Horas dominicales',     quantityLabel: formatHoras(calculations.totalDominicalHours),                                                                amount: calculations.totalDominicalAmount },
           { label: 'Auxilio de transporte', quantityLabel: `${calculations.detalles.length} días`,                                                                       amount: calculations.auxilioTransporte },
@@ -1068,13 +1075,18 @@ y += 12;  // ← era 10
       : [
           {
             label: 'Horas Diarias',
-            quantity: calculations.totalHoras - calculations.horasCapacitacion,
-            amount: (calculations.totalHoras - calculations.horasCapacitacion) * calculations.baseHourly,
+            quantity: calculations.totalHoras - calculations.horasCapacitacion - calculations.horasVacaciones,
+            amount: (calculations.totalHoras - calculations.horasCapacitacion - calculations.horasVacaciones) * calculations.baseHourly,
           },
           {
             label: 'Horas Capacitación',
             quantity: calculations.horasCapacitacion,
             amount: calculations.pagoCapacitacion,
+          },
+          {
+            label: 'Vacaciones',
+            quantity: calculations.horasVacaciones,
+            amount: calculations.pagoVacaciones,
           },
           {
             label: 'Recargo Nocturno',
