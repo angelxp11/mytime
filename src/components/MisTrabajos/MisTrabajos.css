@@ -23,6 +23,48 @@
   gap: 10px;
 }
 
+.basic-hours-setting {
+  width: 100%;
+  max-width: 980px;
+  margin-bottom: 16px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 18px;
+}
+
+.basic-hours-setting > div {
+  flex: 1;
+}
+
+.basic-hours-setting label {
+  color: #e2e8f0;
+  font-weight: 700;
+}
+
+.basic-hours-setting p {
+  margin: 6px 0 0;
+  color: #94a3b8;
+  font-size: 0.92rem;
+}
+
+.basic-hours-setting input {
+  width: 100px;
+  padding: 10px;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+}
+
+.basic-hours-setting button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 .trabajo-card {
   padding: 20px;
   background: rgba(15, 23, 42, 0.95);
@@ -156,5 +198,14 @@
 
   .trabajos-list {
     max-width: 100%;
+  }
+
+  .basic-hours-setting {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .basic-hours-setting input {
+    width: 100%;
   }
 }

@@ -57,6 +57,12 @@
   gap: 12px;
 }
 
+.grupo-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .grupo-header h3 {
   margin: 0;
 }
@@ -84,6 +90,26 @@
 
 .edit-button:active {
   transform: scale(0.95);
+}
+
+.leave-group-button {
+  padding: 8px 12px;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 12px;
+  color: #fca5a5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.leave-group-button:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.22);
+}
+
+.leave-group-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .grupo-details {
@@ -319,6 +345,15 @@
 
   .grupos-list {
     max-width: 100%;
+  }
+
+  .grupo-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .grupo-header-actions {
+    flex-wrap: wrap;
   }
 
   .grupo-actions {

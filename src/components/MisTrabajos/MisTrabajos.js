@@ -5,14 +5,17 @@ import './MisTrabajos.css';
 import CreateWorkForm from '../work/CreateWorkForm';
 import Loading from '../loading/loading';
 import { showToast } from '../ToastContainer';
-import { collection, addDoc, query, where, onSnapshot, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, onSnapshot, updateDoc, doc, deleteDoc, setDoc } from 'firebase/firestore';
 import { db } from '../server/api';
+import { DEFAULT_BASIC_HOURS } from '../work/hoursBasic';
 
 const MisTrabajos = ({ user }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [basicHours, setBasicHours] = useState(String(DEFAULT_BASIC_HOURS));
+  const [savingBasicHours, setSavingBasicHours] = useState(false);
 
   const currentUserId = user?.uid || 'user1';
 
@@ -32,6 +35,26 @@ const MisTrabajos = ({ user }) => {
 
     return unsubscribe;
   }, [currentUserId]);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const unsubscribe = onSnapshot(
+      doc(db, 'usuarios', user.uid),
+      (snapshot) => {
+        const configuredHours = snapshot.data()?.basicHours;
+        setBasicHours(String(Number.isInteger(configuredHours) && configuredHours >= 1 && configuredHours <= 24
+          ? configuredHours
+          : DEFAULT_BASIC_HOURS));
+      },
+      (error) => {
+        console.error('Error cargando horas básicas:', error);
+        showToast('No se pudieron cargar las horas básicas.', 'error');
+      }
+    );
+
+    return unsubscribe;
+  }, [user]);
 
   const userJobs = useMemo(() => {
     return jobs;
@@ -79,6 +102,26 @@ const MisTrabajos = ({ user }) => {
     }
   };
 
+  const handleSaveBasicHours = async (event) => {
+    event.preventDefault();
+    const hours = Number(basicHours);
+    if (!Number.isInteger(hours) || hours < 1 || hours > 24) {
+      showToast('Las horas básicas deben ser un número entero entre 1 y 24.', 'error');
+      return;
+    }
+
+    setSavingBasicHours(true);
+    try {
+      await setDoc(doc(db, 'usuarios', user.uid), { basicHours: hours }, { merge: true });
+      showToast('Horas básicas actualizadas.', 'success');
+    } catch (error) {
+      console.error('Error guardando horas básicas:', error);
+      showToast('No se pudieron guardar las horas básicas.', 'error');
+    } finally {
+      setSavingBasicHours(false);
+    }
+  };
+
   const handleCancel = () => {
     setShowForm(false);
     setEditingJob(null);
@@ -89,6 +132,25 @@ const MisTrabajos = ({ user }) => {
       {loading && <Loading text="Cargando trabajos..." />}
       <div className="trabajos-container">
         <h2>Mis Trabajos</h2>
+      <form className="basic-hours-setting" onSubmit={handleSaveBasicHours}>
+        <div>
+          <label htmlFor="basic-hours">Horas básicas por turno</label>
+          <p>Mínimo de horas que debe durar tu turno. Se usa para sugerir la salida en Registro y Calendario.</p>
+        </div>
+        <input
+          id="basic-hours"
+          type="number"
+          min="1"
+          max="24"
+          step="1"
+          value={basicHours}
+          onChange={(event) => setBasicHours(event.target.value)}
+          required
+        />
+        <button type="submit" className="edit-button" disabled={savingBasicHours}>
+          {savingBasicHours ? 'Guardando...' : 'Guardar horas'}
+        </button>
+      </form>
       <div className="trabajos-list">
         <div className="trabajo-card create-card" onClick={() => setShowForm(true)}>
           <h3>+ Crear nuevo trabajo</h3>
@@ -126,6 +188,7 @@ const MisTrabajos = ({ user }) => {
                 </button>
               </div>
               <p>Hora Base: ${Math.floor(job.baseHourly || 0).toLocaleString('es-CO')}</p>
+              <p>Horas básicas: {basicHours}h (configuración general)</p>
               <p>Rango Diurno: {job.diurnalStart} - {job.diurnalEnd}</p>
               <p>Hora Nocturna: ${Math.floor(job.values?.nocturna || 0).toLocaleString('es-CO')}</p>
               {job.discounts?.length > 0 && (

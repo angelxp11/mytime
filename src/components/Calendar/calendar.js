@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -7,7 +7,8 @@ import { showToast } from '../ToastContainer';
 import '../../colors.css';
 import './calendar.css';
 import Loading from '../loading/loading';
-  import { festivosText } from '../ConsultarPago/festivos';
+import { festivosText } from '../ConsultarPago/festivos';
+import { addHoursToTime, DEFAULT_BASIC_HOURS } from '../work/hoursBasic';
 
 const parseTime = (value) => {
   if (!value) return null;
@@ -38,9 +39,9 @@ const calculateWorked = (entryValue, exitValue) => {
   };
 };
 
-const getDefaultTimes = (tipo) => tipo === 'capacitacion'
+const getDefaultTimes = (tipo, basicHours) => tipo === 'capacitacion'
   ? { entry: '06:00', exit: '12:00' }
-  : { entry: '18:00', exit: '02:00' };
+  : { entry: '18:00', exit: addHoursToTime('18:00', basicHours) };
 
 const formatLongDate = (dateValue) => {
   if (!dateValue) return '';
@@ -113,10 +114,43 @@ const CalendarComponent = ({ user }) => {
   const [selectedDayData, setSelectedDayData] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [basicHours, setBasicHours] = useState(DEFAULT_BASIC_HOURS);
   const [editTipo, setEditTipo] = useState('trabajado');
   const [editEntryTime, setEditEntryTime] = useState('18:00');
-  const [editExitTime, setEditExitTime] = useState('02:00');
+  const [editExitTime, setEditExitTime] = useState(() => addHoursToTime('18:00', DEFAULT_BASIC_HOURS));
   const [isSaving, setIsSaving] = useState(false);
+  const shouldAutoCalculateExit = useRef(false);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let isCurrentUser = true;
+    const loadBasicHours = async () => {
+      try {
+        const userSnap = await getDoc(doc(db, 'usuarios', user.uid));
+        const configuredHours = userSnap.exists() ? userSnap.data()?.basicHours : null;
+        if (isCurrentUser) {
+          setBasicHours(Number.isInteger(configuredHours) && configuredHours >= 1 && configuredHours <= 24
+            ? configuredHours
+            : DEFAULT_BASIC_HOURS);
+        }
+      } catch (error) {
+        console.error('Error cargando horas básicas:', error);
+        showToast('No se pudieron cargar las horas básicas. Se usarán 5 horas.', 'warning');
+      }
+    };
+
+    loadBasicHours();
+    return () => {
+      isCurrentUser = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (shouldAutoCalculateExit.current && editTipo === 'trabajado') {
+      setEditExitTime(addHoursToTime(editEntryTime, basicHours));
+    }
+  }, [basicHours, editEntryTime, editTipo]);
 
   useEffect(() => {
     if (!user) {
@@ -217,7 +251,7 @@ const CalendarComponent = ({ user }) => {
     const dayData = diasData[dateStr];
     // Si no hay registro, abrir modal en modo edición para crear un nuevo día
     if (!dayData) {
-      const defaultTimes = getDefaultTimes('trabajado');
+      const defaultTimes = getDefaultTimes('trabajado', basicHours);
       setSelectedDate(dateStr);
       setVacationEndDate(dateStr);
       setSelectedDayData(null);
@@ -226,10 +260,11 @@ const CalendarComponent = ({ user }) => {
       setEditTipo('trabajado');
       setEditEntryTime(defaultTimes.entry);
       setEditExitTime(defaultTimes.exit);
+      shouldAutoCalculateExit.current = true;
       return;
     }
 
-    const defaultTimes = getDefaultTimes(dayData.tipo);
+    const defaultTimes = getDefaultTimes(dayData.tipo, basicHours);
     setSelectedDate(dateStr);
     setVacationEndDate(dateStr);
     setSelectedDayData(dayData);
@@ -238,6 +273,7 @@ const CalendarComponent = ({ user }) => {
     setEditTipo(dayData.tipo || 'trabajado');
     setEditEntryTime(dayData.entrada || defaultTimes.entry);
     setEditExitTime(dayData.salida || defaultTimes.exit);
+    shouldAutoCalculateExit.current = false;
   };
 
   const startEdit = () => {
@@ -247,6 +283,7 @@ const CalendarComponent = ({ user }) => {
   const closeDetails = () => {
     setDetailsOpen(false);
     setEditMode(false);
+    shouldAutoCalculateExit.current = false;
   };
 
   const handleSaveEdit = async (event) => {
@@ -289,6 +326,7 @@ const CalendarComponent = ({ user }) => {
       setDiasData((prev) => ({ ...prev, ...diasPayload }));
       setSelectedDayData(payload);
       setEditMode(false);
+      shouldAutoCalculateExit.current = false;
       showToast(
         editTipo === 'vacaciones' && vacationDates.length > 1
           ? `${vacationDates.length} días de vacaciones registrados.`
@@ -413,14 +451,15 @@ const CalendarComponent = ({ user }) => {
                     value={editTipo}
                     onChange={(e) => {
                       const nextTipo = e.target.value;
-                      const defaultTimes = getDefaultTimes(nextTipo);
+                      const defaultTimes = getDefaultTimes(nextTipo, basicHours);
                       setEditTipo(nextTipo);
                       if (nextTipo === 'vacaciones') {
                         setVacationEndDate(selectedDate);
                       }
-                      if (nextTipo === 'capacitacion' || editTipo === 'capacitacion') {
+                      if (nextTipo === 'trabajado' || nextTipo === 'capacitacion' || editTipo === 'capacitacion') {
                         setEditEntryTime(defaultTimes.entry);
                         setEditExitTime(defaultTimes.exit);
+                        shouldAutoCalculateExit.current = nextTipo === 'trabajado';
                       }
                     }}
                   >
@@ -465,7 +504,13 @@ const CalendarComponent = ({ user }) => {
                       <input
                         type="time"
                         value={editEntryTime}
-                        onChange={(e) => setEditEntryTime(e.target.value)}
+                        onChange={(e) => {
+                          setEditEntryTime(e.target.value);
+                          if (editTipo === 'trabajado') {
+                            setEditExitTime(addHoursToTime(e.target.value, basicHours));
+                            shouldAutoCalculateExit.current = true;
+                          }
+                        }}
                         min="00:00"
                         max="23:59"
                         step="60"
@@ -477,7 +522,10 @@ const CalendarComponent = ({ user }) => {
                       <input
                         type="time"
                         value={editExitTime}
-                        onChange={(e) => setEditExitTime(e.target.value)}
+                        onChange={(e) => {
+                          setEditExitTime(e.target.value);
+                          shouldAutoCalculateExit.current = false;
+                        }}
                         min="00:00"
                         max="23:59"
                         step="60"

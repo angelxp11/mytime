@@ -274,7 +274,6 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
   const [todaySchedules, setTodaySchedules] = useState([]);
   const [userName, setUserName] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [sharedWith, setSharedWith] = useState([]);
   const [userGroup, setUserGroup] = useState(null);
   const [isLoadingGroup, setIsLoadingGroup] = useState(true);
 
@@ -283,28 +282,42 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
 
     const checkUserGroup = async () => {
       setIsLoadingGroup(true);
+      setUserGroup(null);
       try {
-        // Buscar si el usuario es propietario de un grupo
+        const userProfileSnap = await getDoc(doc(db, 'usuarios', user.uid));
+        const hiddenGroupIds = userProfileSnap.exists()
+          && Array.isArray(userProfileSnap.data()?.hiddenGroupIds)
+          ? userProfileSnap.data().hiddenGroupIds
+          : [];
         const gruposRef = collection(db, 'grupos');
         const ownerQuery = query(gruposRef, where('ownerId', '==', user.uid));
         const ownerSnapshot = await getDocs(ownerQuery);
+        const ownedGroup = ownerSnapshot.docs.find((groupDoc) =>
+          !hiddenGroupIds.includes(groupDoc.id)
+          && !groupDoc.data()?.hiddenFor?.includes(user.uid)
+        );
 
-        if (!ownerSnapshot.empty) {
+        if (ownedGroup) {
           setUserGroup({
-            id: ownerSnapshot.docs[0].id,
-            ...ownerSnapshot.docs[0].data(),
+            id: ownedGroup.id,
+            ...ownedGroup.data(),
           });
           return;
         }
 
         // Si no es propietario, buscar si es participante
-        const userEmail = user.email?.toLowerCase();
+        const userEmail = normalizeEmail(user.email);
         const allGruposSnapshot = await getDocs(gruposRef);
         
         for (const doc of allGruposSnapshot.docs) {
+          if (hiddenGroupIds.includes(doc.id)) continue;
           const groupData = doc.data();
-          const isParticipant = groupData.participants?.some(
-            (p) => p.email?.toLowerCase?.() === userEmail
+          if (groupData.hiddenFor?.includes(user.uid)) continue;
+          const isParticipant = groupData.participantIds?.includes(user.uid)
+            || groupData.participants?.some(
+              (participant) =>
+                participant.uid === user.uid
+                || normalizeEmail(participant.email) === userEmail
           );
           if (isParticipant) {
             setUserGroup({
@@ -524,8 +537,7 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
 
     if (horariosSnap.exists()) {
       const scheduleData = horariosSnap.data();
-      userSharedWith = scheduleData.sharedWith || [];
-      setSharedWith(userSharedWith);
+      userSharedWith = Array.isArray(scheduleData.sharedWith) ? scheduleData.sharedWith : [];
       const usuarioSnap = await getDoc(doc(db, 'usuarios', user.uid));
       if (usuarioSnap.exists()) {
         firstNameUser = getFirstName(formatName(usuarioSnap.data().name || 'Usuario'));
@@ -577,68 +589,60 @@ const HomePage = ({ user, userPlan, setCurrentView, setShowCopiModal, setShowPla
         estado: null,
         descanso: '00',
       });
-      setSharedWith([]);
     }
 
-    try {
-      const horariosRef = collection(db, 'HORARIOS');
-      const querySnapshot = await getDocs(horariosRef);
+    const sharedEmails = [...new Set(userSharedWith.map(normalizeEmail).filter(Boolean))];
 
-      for (const horariosDoc of querySnapshot.docs) {
-        // No incluir al usuario autenticado
-        if (horariosDoc.id === user.uid) continue;
-        
-        const horariosData = horariosDoc.data();
-        if (horariosData.sharedWith && horariosData.sharedWith.includes(user.email)) {
-          const usuarioDocRef = doc(db, 'usuarios', horariosDoc.id);
-          const usuarioDocSnap = await getDoc(usuarioDocRef);
+    for (const sharedEmail of sharedEmails) {
+      if (sharedEmail === normalizeEmail(user.email)) continue;
 
-          if (usuarioDocSnap.exists()) {
-            const userData = usuarioDocSnap.data();
-            const fullName = formatName(userData.name || 'Usuario');
-            const firstName = getFirstName(fullName);
-            const email = userData.email;
-            const savedWeek = horariosData?.semanas?.[weekStartDate];
-            const selectedScheduleShared = savedWeek?.days?.find((day) => day.date === selectedDateStr);
+      try {
+        const profile = await resolveParticipantProfile({ email: sharedEmail });
+        if (!profile.uid || profile.uid === user.uid) continue;
 
-            if (selectedScheduleShared && selectedScheduleShared.tipo === 'trabajado') {
-              allSchedules.push({
-                name: firstName,
-                fullName: fullName,
-                ingreso: selectedScheduleShared.startTime || '00:00',
-                salida: selectedScheduleShared.endTime || '00:00',
-                email: email,
-                estado: selectedScheduleShared.estado || null,
-                descanso: selectedScheduleShared.descanso || '00',
-              });
-            } else if (selectedScheduleShared && selectedScheduleShared.tipo !== 'trabajado') {
-              // Día de descanso o estado especial
-              allSchedules.push({
-                name: firstName,
-                fullName: fullName,
-                ingreso: 'LI',
-                salida: 'BRE',
-                email: email,
-                estado: selectedScheduleShared.estado || 'libre',
-                descanso: selectedScheduleShared.descanso || '00',
-              });
-            } else {
-              // No ha registrado
-              allSchedules.push({
-                name: firstName,
-                fullName: fullName,
-                ingreso: 'NO',
-                salida: 'REGISTRO',
-                email: email,
-                estado: null,
-                descanso: '00',
-              });
-            }
-          }
+        const sharedScheduleSnap = await getDoc(doc(db, 'HORARIOS', profile.uid));
+        if (!sharedScheduleSnap.exists()) continue;
+
+        const fullName = formatName(profile.name || 'Usuario');
+        const firstName = getFirstName(fullName);
+        const email = profile.email || sharedEmail;
+        const savedWeek = sharedScheduleSnap.data()?.semanas?.[weekStartDate];
+        const selectedScheduleShared = savedWeek?.days?.find((day) => day.date === selectedDateStr);
+
+        if (selectedScheduleShared && selectedScheduleShared.tipo === 'trabajado') {
+          allSchedules.push({
+            name: firstName,
+            fullName,
+            ingreso: selectedScheduleShared.startTime || '00:00',
+            salida: selectedScheduleShared.endTime || '00:00',
+            email,
+            estado: selectedScheduleShared.estado || null,
+            descanso: selectedScheduleShared.descanso || '00',
+          });
+        } else if (selectedScheduleShared && selectedScheduleShared.tipo !== 'trabajado') {
+          allSchedules.push({
+            name: firstName,
+            fullName,
+            ingreso: 'LI',
+            salida: 'BRE',
+            email,
+            estado: selectedScheduleShared.estado || 'libre',
+            descanso: selectedScheduleShared.descanso || '00',
+          });
+        } else {
+          allSchedules.push({
+            name: firstName,
+            fullName,
+            ingreso: 'NO',
+            salida: 'REGISTRO',
+            email,
+            estado: null,
+            descanso: '00',
+          });
         }
+      } catch (error) {
+        console.error(`Error cargando horario compartido con ${sharedEmail}:`, error);
       }
-    } catch (error) {
-      console.error('Error cargando horarios compartidos:', error);
     }
   };
 

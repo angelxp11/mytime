@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FiCalendar, FiClock, FiSave, FiX } from 'react-icons/fi';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../server/api';
 import { showToast } from '../ToastContainer';
+import { addHoursToTime, DEFAULT_BASIC_HOURS } from '../work/hoursBasic';
 import './RegisterHours.css';
 
 const getTodayDateInput = () => {
@@ -95,7 +96,11 @@ const RegisterHours = ({ user, setCurrentView, previousView = 'home' }) => {
   const [todayActive, setTodayActive]             = useState(true);
   const [selectedDate, setSelectedDate]           = useState(getTodayDateInput());
   const [entryTime, setEntryTime]                 = useState('18:00');
-  const [exitTime, setExitTime]                   = useState('02:00');
+  const [exitTime, setExitTime]                   = useState(() => addHoursToTime('18:00', DEFAULT_BASIC_HOURS));
+  const [basicHours, setBasicHours]               = useState(DEFAULT_BASIC_HOURS);
+  const isExitTimeManuallySet = useRef(false);
+  const entryTimeRef = useRef('18:00');
+  const tipoRef = useRef('trabajado');
   const [tipo, setTipo]                           = useState('trabajado');
   const [isSubmitting, setIsSubmitting]           = useState(false);
   const [missingDescansoDays, setMissingDescansoDays] = useState([]);
@@ -111,13 +116,62 @@ const RegisterHours = ({ user, setCurrentView, previousView = 'home' }) => {
     if (todayActive) setSelectedDate(getTodayDateInput());
   }, [todayActive]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    let isCurrentUser = true;
+    const loadBasicHours = async () => {
+      try {
+        const userSnap = await getDoc(doc(db, 'usuarios', user.uid));
+        const configuredHours = userSnap.exists() ? userSnap.data()?.basicHours : null;
+        const hours = Number.isInteger(configuredHours) && configuredHours >= 1 && configuredHours <= 24
+          ? configuredHours
+          : DEFAULT_BASIC_HOURS;
+
+        if (!isCurrentUser) return;
+        setBasicHours(hours);
+        if (tipoRef.current === 'trabajado' && !isExitTimeManuallySet.current) {
+          setExitTime(addHoursToTime(entryTimeRef.current, hours));
+        }
+      } catch (error) {
+        console.error('Error cargando horas básicas:', error);
+        showToast('No se pudieron cargar las horas básicas. Se usarán 5 horas.', 'warning');
+      }
+    };
+
+    loadBasicHours();
+    return () => {
+      isCurrentUser = false;
+    };
+  }, [user]);
+
   // Cuando tipo cambia a capacitacion, establecer automáticamente 6 horas (06:00-12:00)
   useEffect(() => {
     if (tipo === 'capacitacion') {
       setEntryTime('06:00');
+      entryTimeRef.current = '06:00';
       setExitTime('12:00');
+      isExitTimeManuallySet.current = false;
     }
   }, [tipo]);
+
+  const handleEntryTimeChange = (value) => {
+    setEntryTime(value);
+    entryTimeRef.current = value;
+    if (tipo === 'trabajado') {
+      setExitTime(addHoursToTime(value, basicHours));
+      isExitTimeManuallySet.current = false;
+    }
+  };
+
+  const handleTipoChange = (value) => {
+    setTipo(value);
+    tipoRef.current = value;
+    if (value === 'trabajado') {
+      setExitTime(addHoursToTime(entryTime, basicHours));
+      isExitTimeManuallySet.current = false;
+    }
+  };
 
   useEffect(() => {
     const loadMissingDescansoDays = async () => {
@@ -278,8 +332,11 @@ const RegisterHours = ({ user, setCurrentView, previousView = 'home' }) => {
         setCurrentView();
       } else {
         setEntryTime('18:00');
-        setExitTime('02:00');
+        entryTimeRef.current = '18:00';
+        setExitTime(addHoursToTime('18:00', basicHours));
+        isExitTimeManuallySet.current = false;
         setTipo('trabajado');
+        tipoRef.current = 'trabajado';
         setIsSubmitting(false);
       }
     } catch (error) {
@@ -441,7 +498,7 @@ const RegisterHours = ({ user, setCurrentView, previousView = 'home' }) => {
           {/* Tipo de día */}
           <div className="register-hours-field">
             <label>Tipo de día</label>
-            <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
+            <select value={tipo} onChange={(e) => handleTipoChange(e.target.value)}>
               <option value="trabajado">Trabajado</option>
               <option value="descanso">Día libre</option>
               <option value="vacaciones">Vacaciones</option>
@@ -460,7 +517,7 @@ const RegisterHours = ({ user, setCurrentView, previousView = 'home' }) => {
                   <input
                     type="time"
                     value={entryTime}
-                    onChange={(e) => setEntryTime(e.target.value)}
+                    onChange={(e) => handleEntryTimeChange(e.target.value)}
                     required
                   />
                 </div>
@@ -469,7 +526,10 @@ const RegisterHours = ({ user, setCurrentView, previousView = 'home' }) => {
                   <input
                     type="time"
                     value={exitTime}
-                    onChange={(e) => setExitTime(e.target.value)}
+                    onChange={(e) => {
+                      setExitTime(e.target.value);
+                      isExitTimeManuallySet.current = true;
+                    }}
                     required
                   />
                 </div>

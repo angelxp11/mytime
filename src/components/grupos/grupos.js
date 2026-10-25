@@ -7,6 +7,8 @@ import {
   updateDoc,
   serverTimestamp,
   getDoc,
+  arrayUnion,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../server/api';
 import ModalGrupo from './modalgrupos/modalgrupo';
@@ -52,6 +54,8 @@ const formatDateInput = (date) => {
 
 const Grupos = ({ user }) => {
   const [groups, setGroups] = useState([]);
+  const [allGroups, setAllGroups] = useState([]);
+  const [hiddenGroupIds, setHiddenGroupIds] = useState(null);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [activeGroup, setActiveGroup] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,7 +63,31 @@ const Grupos = ({ user }) => {
   const [expandedParticipants, setExpandedParticipants] = useState({});
   const [viewingGroupSchedule, setViewingGroupSchedule] = useState(null);
   const [groupsLastUpdated, setGroupsLastUpdated] = useState({});
+  const [leavingGroupIds, setLeavingGroupIds] = useState([]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    let isCurrentUser = true;
+    const loadHiddenGroups = async () => {
+      try {
+        const userDoc = await getDoc(doc(db, 'usuarios', user.uid));
+        const hiddenIds = userDoc.exists() ? userDoc.data()?.hiddenGroupIds : [];
+        if (isCurrentUser) {
+          setHiddenGroupIds(Array.isArray(hiddenIds) ? hiddenIds : []);
+        }
+      } catch (error) {
+        console.error('Error cargando grupos ocultos:', error);
+        if (isCurrentUser) setHiddenGroupIds([]);
+      }
+    };
+
+    setHiddenGroupIds(null);
+    loadHiddenGroups();
+    return () => {
+      isCurrentUser = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -73,17 +101,9 @@ const Grupos = ({ user }) => {
           .map((groupDoc) => ({
             id: groupDoc.id,
             ...groupDoc.data(),
-          }))
-          .filter((group) => {
-            const belongsAsOwner = group.ownerId === user.uid;
-            const email = user.email?.toLowerCase();
-            const belongsAsParticipant = group.participants?.some(
-              (participant) => participant.email?.toLowerCase() === email
-            );
-            return belongsAsOwner || belongsAsParticipant;
-          });
+          }));
 
-        setGroups(loaded);
+        setAllGroups(loaded);
         setLoadingGroups(false);
       },
       (error) => {
@@ -94,6 +114,24 @@ const Grupos = ({ user }) => {
 
     return () => unsubscribe();
   }, [user]);
+
+  useEffect(() => {
+    if (hiddenGroupIds === null) return;
+
+    const normalizedEmail = user.email?.trim().toLowerCase();
+    const visibleGroups = allGroups.filter((group) => {
+      if (hiddenGroupIds.includes(group.id) || group.hiddenFor?.includes(user.uid)) return false;
+      const belongsAsOwner = group.ownerId === user.uid;
+      const belongsAsParticipant = group.participants?.some(
+        (participant) =>
+          participant.uid === user.uid
+          || participant.email?.trim().toLowerCase() === normalizedEmail
+      );
+      return belongsAsOwner || belongsAsParticipant;
+    });
+
+    setGroups(visibleGroups);
+  }, [allGroups, hiddenGroupIds, user]);
 
   // Cargar última actualización de horarios para cada grupo
   useEffect(() => {
@@ -167,10 +205,37 @@ const Grupos = ({ user }) => {
   const getUnassignedParticipants = (participants = []) =>
     participants.filter((participant) => !participant.cargo);
 
+  const handleLeaveGroup = async (group) => {
+    const confirmed = window.confirm(
+      'El grupo y sus horarios seguirán disponibles para los demás integrantes. ¿Quieres dejar de verlo en tu cuenta?'
+    );
+    if (!confirmed) return;
+
+    setLeavingGroupIds((current) => [...current, group.id]);
+    try {
+      const batch = writeBatch(db);
+      batch.set(
+        doc(db, 'usuarios', user.uid),
+        { hiddenGroupIds: arrayUnion(group.id) },
+        { merge: true }
+      );
+      batch.update(doc(db, 'grupos', group.id), {
+        hiddenFor: arrayUnion(user.uid),
+      });
+      await batch.commit();
+      setHiddenGroupIds((current) => [...new Set([...(current || []), group.id])]);
+    } catch (error) {
+      console.error(`Error saliendo del grupo ${group.id}:`, error);
+      window.alert('No se pudo salir del grupo. Inténtalo de nuevo.');
+    } finally {
+      setLeavingGroupIds((current) => current.filter((id) => id !== group.id));
+    }
+  };
+
   const handleSaveGroup = async (groupData) => {
   if (!user) return;
 
-  if (!activeGroup && groups.length > 0) {
+  if (!activeGroup && allGroups.some((group) => group.ownerId === user.uid)) {
     alert('Ya tienes un grupo creado.');
     return;
   }
@@ -253,7 +318,7 @@ const Grupos = ({ user }) => {
       <h2>Grupo</h2>
 
       {/* 🔥 SOLO mostrar crear si NO hay grupo */}
-      {!loadingGroups && groups.length === 0 && (
+      {!loadingGroups && groups.length === 0 && !allGroups.some((group) => group.ownerId === user.uid) && (
         <div className="grupos-list">
           <div className="grupo-card create-card" onClick={openCreateModal}>
             <h3>+ Crear grupo</h3>
@@ -262,12 +327,18 @@ const Grupos = ({ user }) => {
         </div>
       )}
 
-      {loadingGroups ? (
+      {loadingGroups || hiddenGroupIds === null ? (
         <div className="grupo-card info-card">Cargando grupo...</div>
       ) : groups.length === 0 ? (
         <div className="grupo-card info-card">
-          <p>No tienes grupo todavía.</p>
-          <p>Crea uno para comenzar.</p>
+          {allGroups.some((group) => group.ownerId === user.uid) ? (
+            <p>Saliste de tu grupo. Sus horarios ya no aparecerán en tu home y el grupo sigue disponible para los demás integrantes.</p>
+          ) : (
+            <>
+              <p>No tienes grupo todavía.</p>
+              <p>Crea uno para comenzar.</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="grupos-list">
@@ -281,12 +352,22 @@ const Grupos = ({ user }) => {
                     {group.participants?.length === 1 ? '' : 's'}
                   </p>
                 </div>
-                <button
-                  className="edit-button"
-                  onClick={() => openEditModal(group)}
-                >
-                  Editar
-                </button>
+                <div className="grupo-header-actions">
+                  <button
+                    className="edit-button"
+                    onClick={() => openEditModal(group)}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className="leave-group-button"
+                    onClick={() => handleLeaveGroup(group)}
+                    disabled={leavingGroupIds.includes(group.id)}
+                  >
+                    {leavingGroupIds.includes(group.id) ? 'Saliendo...' : 'Salir del grupo'}
+                  </button>
+                </div>
               </div>
 
               <div className="grupo-details">
